@@ -17,16 +17,24 @@ fi
 # Simplicité	Nécessite des opérations de partitionnement.	                Plus simple à configurer et à gérer.
 # Gestion	    Nécessite des outils de partitionnement pour la création.	    Peut être géré par des commandes simples.
 
-SWAP_FILE="On" 
-SWAP_FILE_SIZE="4096"
+FILE_SWAP="Off"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
+SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
+SIZE_SWAP="16G"   # Taille de la partition swap ou du fichier swap
+SIZE_ROOT="100G"  # Taille de la partition root
+SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
+FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
+MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition, "Off" pour les séparer
+
+SHRED_PASS="1"
+
+MOUNT_POINT="/mnt"
 
 # Liste des programmes requis pour l'installation
 packages=("git" "tar" "curl" "wget")
 
 
-MOUNT_POINT="/mnt"
-
 REGION="Europe"
+PAYS="France"
 CITY="Paris"
 LOCALE="fr_FR.UTF-8 UTF-8"
 LANG="fr_FR.UTF-8"
@@ -51,3 +59,88 @@ SIMILAR="permit" # Valeurs : permit ou deny : Définit la politique en matière 
 RANDOM="47"
 ENFORCE="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
 RETRY="3" # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé.
+
+
+
+# Codes de type GPT courants
+
+#     EF00 : Partition de système EFI (ESP - EFI System Partition).
+#         Utilisée pour les systèmes basés sur UEFI.
+
+#     8300 : Partition Linux.
+#         Utilisée pour des systèmes de fichiers Linux (ext4, btrfs, etc.).
+
+#     8200 : Partition de swap Linux.
+#         Utilisée pour l'espace d'échange (swap) du système Linux.
+
+#     0700 : Partition Microsoft Windows (NTFS/exFAT).
+#         Utilisée pour les partitions de données NTFS ou exFAT dans Windows.
+
+#     0C01 : Partition Microsoft Windows (FAT32 avec LBA).
+#         Utilisée pour les partitions FAT32 avec prise en charge du mode LBA (Logical Block Addressing).
+
+#     2700 : Partition de récupération Windows.
+#         Utilisée pour les partitions de récupération (recovery) de Windows.
+
+#     8E00 : Partition LVM (Logical Volume Manager).
+#         Utilisée pour les volumes gérés par LVM sous Linux.
+
+#     FD00 : Partition RAID Linux.
+#         Utilisée pour les volumes RAID (Redundant Array of Independent Disks) sous Linux.
+
+#     8301 : Partition de démarrage (boot) Linux.
+#         Utilisée pour une partition de démarrage dédiée dans certains systèmes Linux.
+
+#     8302 : Partition de "root" (racine) Linux x86-64.
+#         Utilisée pour la partition racine dans les systèmes Linux (peut varier selon les distributions).
+
+#     BF00 : Partition Solaris.
+#         Utilisée pour le système d'exploitation Solaris.
+
+#     A504 : Partition FreeBSD.
+#         Utilisée pour les systèmes de fichiers de FreeBSD.
+
+#     A502 : Partition swap FreeBSD.
+#         Utilisée pour l'espace de swap dans FreeBSD.
+
+#     A501 : Partition FreeBSD boot.
+#         Utilisée pour la partition de démarrage de FreeBSD.
+
+#     A503 : Partition FreeBSD UFS.
+#         Utilisée pour les systèmes de fichiers UFS dans FreeBSD.
+
+#     A801 : Partition OpenBSD.
+#         Utilisée pour OpenBSD.
+
+#     A901 : Partition NetBSD.
+#         Utilisée pour NetBSD.
+
+#     AF00 : Partition Apple HFS+.
+#         Utilisée pour les systèmes de fichiers HFS+ dans macOS.
+
+#     AB00 : Partition Apple Recovery.
+#         Utilisée pour les partitions de récupération dans macOS.
+
+# Codes pour d'autres systèmes et types spécifiques
+
+#     0701 : Partition de données Windows Basic.
+
+#     Utilisée pour des partitions de données standards sous Windows.
+
+#     2701 : Partition Windows Reserved.
+
+#     Réservée pour les fonctionnalités spécifiques à Windows.
+
+#     EF02 : Partition BIOS boot.
+
+#     Utilisée pour le démarrage en mode BIOS sur les systèmes utilisant GPT.
+
+#     AF05 : Partition Apple UFS.
+
+#     Utilisée pour les partitions UFS sur les anciens systèmes macOS.
+
+#     EE00 : Partition de protection GPT (GPT protective MBR).
+
+#     Utilisée pour protéger l'intégrité des partitions GPT sur les systèmes qui ne supportent pas GPT.
+
+#     48465300-0000-11AA-AA11-00306543ECAC : Apple HFS/HFS+.

@@ -21,8 +21,8 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ## Définir le fuseau horaire                                                  
 ##############################################################################
 log_prompt "INFO" && echo "Configuration du fuseau horaire" && echo ""
-ln -sf /usr/share/zoneinfo/${REGION}/${CITY} /etc/localtime
-hwclock --systohc
+rm -f /etc/localtime && ln -sf /usr/share/zoneinfo/${REGION}/${CITY} /etc/localtime
+hwclock --systohc --utc
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
@@ -54,20 +54,42 @@ genfstab -U / >> /etc/fstab
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
+## Enable networking                                                
+##############################################################################
+log_prompt "INFO" && echo "Activation du réseau" && echo ""
+echo '[Match]' >> /etc/systemd/network/50-dhcp.network
+echo "Name=${INTERFACE}" >> /etc/systemd/network/50-dhcp.network
+echo '[Network]' >> /etc/systemd/network/50-dhcp.network
+echo 'DHCP=yes' >> /etc/systemd/network/50-dhcp.network
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+log_prompt "SUCCESS" && echo "Terminée"
+
+
+##############################################################################
+## Install packages                                                
+##############################################################################
+pacman -S --noconfirm sudo
+
+##############################################################################
+## Création d'un nouvel initramfs                                             
+##############################################################################
+mkinitcpio -p linux
+
+##############################################################################
 ## Installing grub and creating configuration                                               
 ##############################################################################
 log_prompt "INFO" && echo "Installation et configuration de grub" && echo ""
 
+pacman -S --noconfirm grub
+
 if [[ "$MODE" == "UEFI" ]]; then
-    echo 'GRUB_PLATFORMS="efi-64"' >> /etc/portage/make.conf
-    emerge --quiet sys-boot/grub
-    grub-install --target=x86_64-efi --efi-directory=/efi
+    pacman -S --noconfirm efibootmgr
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
 	grub-mkconfig -o /boot/grub/grub.cfg
 
 elif [[ "$MODE" == "BIOS" ]]; then
-    echo 'GRUB_PLATFORMS="pc"' >> /etc/portage/make.conf
-    emerge --quiet sys-boot/grub
-	grub-install /dev/"${DISK}"
+    grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
 	grub-mkconfig -o /boot/grub/grub.cfg
 
 else
@@ -75,8 +97,8 @@ else
 	exit 1
 fi
 
-GRUB_CONFIG="/etc/default/grub"
-sed -i 's/^#\?GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="init=\/lib\/systemd\/systemd"/' "$GRUB_CONFIG"
+# GRUB_CONFIG="/etc/default/grub"
+# sed -i 's/^#\?GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="init=\/lib\/systemd\/systemd"/' "$GRUB_CONFIG"
 
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
@@ -97,24 +119,6 @@ else
         exit 1
     fi
 fi
-
-
-##############################################################################
-## Enable networking                                                
-##############################################################################
-log_prompt "INFO" && echo "Activation du réseau" && echo ""
-echo '[Match]' >> /etc/systemd/network/50-dhcp.network
-echo "Name=${INTERFACE}" >> /etc/systemd/network/50-dhcp.network
-echo '[Network]' >> /etc/systemd/network/50-dhcp.network
-echo 'DHCP=yes' >> /etc/systemd/network/50-dhcp.network
-systemctl enable systemd-networkd.service
-systemctl enable systemd-resolved.service
-log_prompt "SUCCESS" && echo "Terminée"
-
-
-##############################################################################
-## Install packages                                                
-##############################################################################
 
 
 ##############################################################################

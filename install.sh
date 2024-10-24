@@ -29,9 +29,9 @@ timedatectl set-ntp true
 ##############################################################################
 ## Valide les applications pour le bon fonctionnement du script                                                          
 ##############################################################################
-for pkg in "${packages[@]}"; do
-    check_and_install "$pkg" # S'assurer que les packages requis sont installés
-done
+# for pkg in "${packages[@]}"; do
+#     check_and_install "$pkg" # S'assurer que les packages requis sont installés
+# done
 
 clear 
 
@@ -131,28 +131,109 @@ fi
 ##############################################################################
 ## Création des partitions + formatage et montage                                                      
 ##############################################################################
-bash disk.sh $DISK $MOUNT_POINT
+# bash disk.sh $DISK $MOUNT_POINT
+
+# Effacement du disque
+wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
+shred -n "${SHRED_PASS}" -v "/dev/${DISK}"
+
+# Réinitialisation de la table de partitions GPT
+sgdisk -Z /dev/${DISK} || { echo "Erreur lors de la réinitialisation du disque"; exit 1; }
+sgdisk -a 2048 -o /dev/${DISK} || { echo "Erreur lors de la configuration GPT"; exit 1; }
+
+# Création des partitions
+sgdisk -n 0:0:+"${SIZE_BOOT}" -t 0:EF00 -c 0:"boot" /dev/${DISK} || { echo "Erreur lors de la création de la partition boot"; exit 1; }
+
+# Si FILE_SWAP est sur "Off", on crée une partition pour le swap
+if [[ "${FILE_SWAP}" == "Off" ]]; then
+    sgdisk -n 0:0:+"${SIZE_SWAP}" -t 0:8200 -c 0:"swap" /dev/${DISK} || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+    PART_ROOT=3
+    PART_HOME=4
+else
+    PART_ROOT=2
+    PART_HOME=3
+fi
+
+# Gestion de la fusion root et home
+if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
+    # Création d'une seule partition pour root + home
+    sgdisk -n 0:0:"${SIZE_HOME}" -t 0:8302 -c 0:"root_home" /dev/${DISK} || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
+    PART_HOME=""  # Désactivation de la partition home spécifique
+else
+    # Création de partitions séparées pour root et home
+    sgdisk -n 0:0:+"${SIZE_ROOT}" -t 0:8302 -c 0:"root" /dev/${DISK} || { echo "Erreur lors de la création de la partition root"; exit 1; }
+    sgdisk -n 0:0:"${SIZE_HOME}" -t 0:8300 -c 0:"home" /dev/${DISK} || { echo "Erreur lors de la création de la partition home"; exit 1; }
+fi
+
+# Formatage de la partition boot en FAT32 (pour UEFI)
+mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en FAT32"; exit 1; }
+
+# Formatage des partitions en fonction du système de fichiers spécifié
+case "${FS_TYPE}" in
+    ext4)
+        mkfs.ext4 /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en ext4"; exit 1; }
+        [[ -n "${PART_HOME}" ]] && mkfs.ext4 /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en ext4"; exit 1; }
+        ;;
+    btrfs)
+        mkfs.btrfs /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en btrfs"; exit 1; }
+        [[ -n "${PART_HOME}" ]] && mkfs.btrfs /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en btrfs"; exit 1; }
+        ;;
+    xfs)
+        mkfs.xfs /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en xfs"; exit 1; }
+        [[ -n "${PART_HOME}" ]] && mkfs.xfs /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en xfs"; exit 1; }
+        ;;
+    *)
+        echo "Système de fichiers non pris en charge : ${FS_TYPE}"; exit 1
+        ;;
+esac
+
+# Gestion de la swap
+if [[ "${FILE_SWAP}" == "Off" ]]; then
+    mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+    swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
+else
+    # Création d'un fichier swap si FILE_SWAP="On"
+    dd if=/dev/zero of="${MOUNT_POINT}/swapfile" bs=1M count=$(echo "${SIZE_SWAP}" | sed 's/[^0-9]//g') || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+    chmod 600 "${MOUNT_POINT}/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
+    mkswap "${MOUNT_POINT}/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+    swapon "${MOUNT_POINT}/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
+fi
+
+# Montage des partitions
+mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
+mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+
+# Si root et home sont séparés, monter home
+if [[ -n "${PART_HOME}" ]]; then
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
+fi
+
+# Fin du script
+echo "Partitionnement et formatage terminés avec succès !"
+
 
 clear
-parted /dev/"${DISK}" print
+# Affichage de la table des partitions pour vérification
+sgdisk -p /dev/${DISK} || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
 ## Installation du système de base                                                
 ##############################################################################
-pacstrap -K ${MOUNT_POINT} base linux linux-firmware
+# reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+# pacstrap -K ${MOUNT_POINT} base linux linux-firmware
 
 ##############################################################################
 ## Chroot dans le nouvelle environnement                                             
 ##############################################################################
-log_prompt "INFO" && echo "Copie de la deuxième partie du script d'installation dans le nouvel environnement" && echo ""
+# log_prompt "INFO" && echo "Copie de la deuxième partie du script d'installation dans le nouvel environnement" && echo ""
 
-cp functions.sh $MOUNT_POINT
-cp config.sh $MOUNT_POINT
-cp chroot.sh $MOUNT_POINT
+# cp functions.sh $MOUNT_POINT
+# cp config.sh $MOUNT_POINT
+# cp chroot.sh $MOUNT_POINT
 
-log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
+# log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
 
-chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
+# chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
 
-log_prompt "SUCCESS" && echo "Terminée" && echo ""
+# log_prompt "SUCCESS" && echo "Terminée" && echo ""
