@@ -38,7 +38,7 @@ clear
 ##############################################################################
 ## Bienvenu                                                    
 ##############################################################################
-log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Gentoo !" && echo ""
+log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Arch Linux !" && echo ""
 
 ##############################################################################
 ## Récupération des disques disponible                                                      
@@ -119,7 +119,7 @@ done
 # Si l'utilisateur répond Y ou y
 if [[ "$CONFIGURATION" =~ ^[yY]$ ]]; then
     log_prompt "INFO" && echo "Suite de l'installation" && echo ""
-    break
+    continue
 else
     # Si l'utilisateur répond N ou n
     log_prompt "WARNING" && echo "Modifier le fichier config.sh."
