@@ -155,7 +155,7 @@ fi
 if [[ "${MODE}" == "UEFI" ]]; then
     # Partition de boot pour UEFI (FAT32)
     parted --script -a optimal /dev/${DISK} mkpart primary fat32 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
-    parted --script -a optimal /dev/${DISK} set 1 boot on
+    parted --script -a optimal /dev/${DISK} set 1 esp on
 else
     # Partition de boot pour MBR (ext4)
     parted --script -a optimal /dev/${DISK} mkpart primary ext4 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
