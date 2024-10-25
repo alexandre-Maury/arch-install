@@ -18,15 +18,15 @@ fi
 # Gestion	    Nécessite des outils de partitionnement pour la création.	    Peut être géré par des commandes simples.
 
 FILE_SWAP="On"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
+MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
+
 SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
 SIZE_SWAP="16G"   # Taille de la partition swap ou du fichier swap
 SIZE_ROOT="100G"  # Taille de la partition root
 SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
+
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
-MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
-
 SHRED_PASS="1"
-
 MOUNT_POINT="/mnt"
 
 # Liste des programmes requis pour l'installation
