@@ -130,52 +130,71 @@ fi
 ##############################################################################
 ## Création des partitions + formatage et montage                                                      
 ##############################################################################
-# bash disk.sh $DISK $MOUNT_POINT
 
-# Effacement du disque
-log_prompt "INFO" && echo "Préparation du disque dur /dev/${DISK}" && echo ""
 
-# Vérification que le disque existe
-if [[ ! -b "/dev/$DISK" ]]; then
-    log_prompt "ERROR" && echo "le disque spécifié (${DISK}) n'existe pas." && echo ""
-    exit 1
-fi
+while true; do
 
-# Liste les partitions du disque
-PARTITIONS=$(lsblk -ln -o NAME "/dev/${DISK}" | grep -E "${DISK}[0-9]+")
-if [[ -z $PARTITIONS ]]; then
-    log_prompt "INFO" && echo "Aucune partition trouvée sur ${DISK}." && echo ""
-else
-    log_prompt "INFO" && echo "Partitions trouvées sur ${DISK} :" && echo ""
-    echo "$PARTITIONS" && echo ""
+    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) : " DISKCLEAN && echo ""
     
-    # Boucle pour supprimer chaque partition
-    for PART in $PARTITIONS; do
+    # Vérifie la validité de l'entrée
+    if [[ "$DISKCLEAN" =~ ^[yYnN]$ ]]; then
+        break
+    else
+        log_prompt "WARNING" && echo "Veuillez répondre par Y/y (oui) ou N/n (non)." && echo ""
+    fi
+done
 
-        PART_PATH="/dev/${PART}"
+# Si l'utilisateur répond Y ou y
+if [[ "$DISKCLEAN" =~ ^[yY]$ ]]; then
+    # Effacement du disque
+    log_prompt "INFO" && echo "Préparation du disque dur /dev/${DISK}" && echo ""
 
-        # Désactiver le swap si la partition est configurée comme swap
-        if swapon --show=NAME | grep -q "${PART_PATH}"; then
-            echo "Désactivation du swap sur ${PART_PATH}..."
-            swapoff "${PART_PATH}" || { echo "Erreur lors de la désactivation du swap sur ${PART_PATH}"; exit 1; }
-        fi
+    # Vérification que le disque existe
+    if [[ ! -b "/dev/$DISK" ]]; then
+        log_prompt "ERROR" && echo "le disque spécifié (${DISK}) n'existe pas." && echo ""
+        exit 1
+    fi
 
-        # Vérifie si la partition est montée
-        if mount | grep -q "${PART_PATH}"; then
-            echo "Démontage de ${PART_PATH}..."
-            umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
-        fi
+    # Liste les partitions du disque
+    PARTITIONS=$(lsblk -ln -o NAME "/dev/${DISK}" | grep -E "${DISK}[0-9]+")
+    if [[ -z $PARTITIONS ]]; then
+        log_prompt "INFO" && echo "Aucune partition trouvée sur ${DISK}." && echo ""
+    else
+        log_prompt "INFO" && echo "Partitions trouvées sur ${DISK} :" && echo ""
+        echo "$PARTITIONS" && echo ""
+        
+        # Boucle pour supprimer chaque partition
+        for PART in $PARTITIONS; do
 
-        PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
-        log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
-        parted "/dev/${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
-    done
+            PART_PATH="/dev/${PART}"
+
+            # Désactiver le swap si la partition est configurée comme swap
+            if swapon --show=NAME | grep -q "${PART_PATH}"; then
+                echo "Désactivation du swap sur ${PART_PATH}..."
+                swapoff "${PART_PATH}" || { echo "Erreur lors de la désactivation du swap sur ${PART_PATH}"; exit 1; }
+            fi
+
+            # Vérifie si la partition est montée
+            if mount | grep -q "${PART_PATH}"; then
+                echo "Démontage de ${PART_PATH}..."
+                umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
+            fi
+
+            PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
+            log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
+            parted "/dev/${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
+        done
+    fi
+
+    log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
+
+    wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
+    shred -n "${SHRED_PASS}" -v "/dev/${DISK}" || { echo "Erreur lors de l'effacement sécurisé"; exit 1; }
+
+else
+    log_prompt "INFO" && echo "Suite de l'installation" && echo ""
 fi
 
-log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
-
-wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
-shred -n "${SHRED_PASS}" -v "/dev/${DISK}" || { echo "Erreur lors de l'effacement sécurisé"; exit 1; }
 
 # Détermination du mode (UEFI ou MBR)
 if [ -d /sys/firmware/efi ]; then
