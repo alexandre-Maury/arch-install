@@ -24,7 +24,7 @@ fi
 ##############################################################################
 ## Mettre à jour l'horloge du système                                                     
 ##############################################################################
-timedatectl set-ntp true
+timedatectl set-ntp true && pacman -Syy
 
 ##############################################################################
 ## Valide les applications pour le bon fonctionnement du script                                                          
