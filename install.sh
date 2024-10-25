@@ -142,7 +142,7 @@ if [[ ! -b "/dev/$DISK" ]]; then
 fi
 
 # Liste les partitions du disque
-PARTITIONS=$(lsblk -ln -o NAME "/dev/${DISK}" | grep -E "/dev/${DISK}[0-9]+")
+PARTITIONS=$(lsblk -ln -o NAME "/dev/${DISK}" | grep -E "${DISK}[0-9]+")
 if [[ -z $PARTITIONS ]]; then
     log_prompt "INFO" && echo "Aucune partition trouvée sur ${DISK}." && echo ""
 else
