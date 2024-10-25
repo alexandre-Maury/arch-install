@@ -136,7 +136,7 @@ fi
 log_prompt "INFO" && echo "Préparation du disque dur /dev/${DISK}" && echo ""
 
 # Vérification que le disque existe
-if [[ ! -b $DISK ]]; then
+if [[ ! -b "/dev/$DISK" ]]; then
     log_prompt "ERROR" && echo "le disque spécifié (${DISK}) n'existe pas." && echo ""
     exit 1
 fi
