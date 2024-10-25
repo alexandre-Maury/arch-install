@@ -136,8 +136,8 @@ while true; do
 
     # Affichage de la table des partitions pour vérification
     parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
-
-    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) : " DISKCLEAN && echo ""
+    echo ""
+    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) [Attention pas encore testé ==> risque de plantage]: " DISKCLEAN && echo ""
     
     # Vérifie la validité de l'entrée
     if [[ "$DISKCLEAN" =~ ^[yYnN]$ ]]; then
@@ -312,32 +312,25 @@ if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
     swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
 fi
 
-# Fin du script
-echo "Partitionnement et formatage terminés avec succès !"
+log_prompt "SUCCESS" && echo "Partitionnement et formatage terminés avec succès !" && echo ""
 
 # Affichage de la table des partitions pour vérification
 parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
 
-# Fin du script
-echo "Script terminé avec succès !"
-
 ##############################################################################
 ## Installation du système de base                                                
 ##############################################################################
-# reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-# pacstrap -K ${MOUNT_POINT} base linux linux-firmware
+reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+pacstrap -K ${MOUNT_POINT} base linux linux-firmware
 
 ##############################################################################
 ## Chroot dans le nouvelle environnement                                             
 ##############################################################################
-# log_prompt "INFO" && echo "Copie de la deuxième partie du script d'installation dans le nouvel environnement" && echo ""
+log_prompt "INFO" && echo "Copie de la deuxième partie du script d'installation dans le nouvel environnement" && echo ""
+cp functions.sh $MOUNT_POINT
+cp config.sh $MOUNT_POINT
+cp chroot.sh $MOUNT_POINT
 
-# cp functions.sh $MOUNT_POINT
-# cp config.sh $MOUNT_POINT
-# cp chroot.sh $MOUNT_POINT
-
-# log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
-
-# chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
-
-# log_prompt "SUCCESS" && echo "Terminée" && echo ""
+log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
+chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
+log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""
