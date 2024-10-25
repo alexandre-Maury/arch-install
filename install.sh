@@ -151,9 +151,20 @@ else
     
     # Boucle pour supprimer chaque partition
     for PART in $PARTITIONS; do
+
+        PART_PATH="/dev/${PART}"
+
+        # Vérifie si la partition est montée
+        if mount | grep -q "${PART_PATH}"; then
+            echo "Démontage de ${PART_PATH}..."
+            umount "${PART_PATH}" || { echo "Erreur lors du démontage de ${PART_PATH}"; exit 1; }
+        fi
+
         PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
         log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
         parted "/dev/${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
+    
+    
     done
 fi
 log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
