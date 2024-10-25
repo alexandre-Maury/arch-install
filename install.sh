@@ -194,6 +194,15 @@ fi
 mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
 [[ -n "${PART_HOME}" ]] && mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en "${FS_TYPE}" "; exit 1; }
 
+# Montage des partitions
+mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
+mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+
+# Si root et home sont séparés, monter home
+if [[ -n "${PART_HOME}" ]]; then
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
+fi
+
 # Gestion de la swap
 if [[ "${FILE_SWAP}" == "Off" ]]; then
     mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
@@ -204,15 +213,6 @@ else
     chmod 600 "${MOUNT_POINT}/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
     mkswap "${MOUNT_POINT}/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
     swapon "${MOUNT_POINT}/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
-fi
-
-# Montage des partitions
-mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
-mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
-
-# Si root et home sont séparés, monter home
-if [[ -n "${PART_HOME}" ]]; then
-    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
 fi
 
 # Fin du script
