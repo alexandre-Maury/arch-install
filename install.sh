@@ -136,7 +136,7 @@ while true; do
 
     # Affichage de la table des partitions pour vérification
     parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
-    
+
     log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) : " DISKCLEAN && echo ""
     
     # Vérifie la validité de l'entrée
@@ -180,7 +180,7 @@ if [[ "$DISKCLEAN" =~ ^[yY]$ ]]; then
             # Vérifie si la partition est montée
             if mount | grep -q "${PART_PATH}"; then
                 echo "Démontage de ${PART_PATH}..."
-                umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
+                umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "Impossible de démonter ${PART_PATH}."; }
             fi
 
             PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
