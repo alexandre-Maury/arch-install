@@ -217,10 +217,12 @@ else
     parted --script -a optimal /dev/${DISK} set 1 boot on
 fi
 
-# Si FILE_SWAP est sur "Off", on crée une partition pour le swap
-if [[ "${FILE_SWAP}" == "Off" ]]; then
+if  [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "Off" ]]; then
 
     parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+
+    mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+    swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
 
     # Gestion de la fusion root et home
     if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
@@ -235,7 +237,9 @@ if [[ "${FILE_SWAP}" == "Off" ]]; then
         PART_ROOT=3
         PART_HOME=4
     fi
-else
+
+else # Le swap est désactiver
+
     # Gestion de la fusion root et home
     if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
         # Création d'une seule partition pour root + home
@@ -272,13 +276,11 @@ if [[ -n "${PART_HOME}" ]]; then
 fi
 
 # Gestion de la swap
-if [[ "${FILE_SWAP}" == "Off" ]]; then
-    mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
-    swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
-else
+if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
     # Création d'un fichier swap si FILE_SWAP="On"
     log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" && echo ""
     mkdir -p $MOUNT_POINT/swap
+    
 
     log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" && echo ""
     dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }

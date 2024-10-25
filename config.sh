@@ -17,7 +17,8 @@ fi
 # Simplicité	Nécessite des opérations de partitionnement.	                Plus simple à configurer et à gérer.
 # Gestion	    Nécessite des outils de partitionnement pour la création.	    Peut être géré par des commandes simples.
 
-FILE_SWAP="On"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
+ENABLE_SWAP="On"   # Mettre sur "On" pour activer le swap [création part ou fichier swap] ou "Off" pour le désactiver
+FILE_SWAP="Off"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
 MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
 
 SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
