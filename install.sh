@@ -277,9 +277,13 @@ if [[ "${FILE_SWAP}" == "Off" ]]; then
     swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
 else
     # Création d'un fichier swap si FILE_SWAP="On"
-    log_prompt "INFO" && echo "création du fichier swap" && echo ""
+    log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" && echo ""
     mkdir -p $MOUNT_POINT/swap
+
+    log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" && echo ""
     dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+
+    log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" && echo ""
     chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
     mkswap "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
     swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
