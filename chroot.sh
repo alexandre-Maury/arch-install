@@ -22,7 +22,7 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ##############################################################################
 log_prompt "INFO" && echo "Configuration du fuseau horaire" && echo ""
 rm -f /etc/localtime && ln -sf /usr/share/zoneinfo/${REGION}/${CITY} /etc/localtime
-hwclock --systohc --utc
+hwclock --systohc
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
