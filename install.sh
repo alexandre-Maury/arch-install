@@ -154,19 +154,24 @@ else
 
         PART_PATH="/dev/${PART}"
 
+        # Désactiver le swap si la partition est configurée comme swap
+        if swapon --show=NAME | grep -q "${PART_PATH}"; then
+            echo "Désactivation du swap sur ${PART_PATH}..."
+            swapoff "${PART_PATH}" || { echo "Erreur lors de la désactivation du swap sur ${PART_PATH}"; exit 1; }
+        fi
+
         # Vérifie si la partition est montée
         if mount | grep -q "${PART_PATH}"; then
             echo "Démontage de ${PART_PATH}..."
-            umount -R "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
+            umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
         fi
 
         PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
         log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
         parted "/dev/${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
-    
-    
     done
 fi
+
 log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
 
 wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
