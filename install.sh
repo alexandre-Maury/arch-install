@@ -157,7 +157,7 @@ else
         # Vérifie si la partition est montée
         if mount | grep -q "${PART_PATH}"; then
             echo "Démontage de ${PART_PATH}..."
-            umount -R "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté" }
+            umount -R "${PART_PATH}" || { log_prompt "INFO" && echo "${PART_PATH} n'est pas monté"; }
         fi
 
         PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
