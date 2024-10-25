@@ -208,31 +208,38 @@ fi
 
 # Réinitialisation de la table de partitions
 if [[ "${MODE}" == "UEFI" ]]; then
+    log_prompt "INFO" && echo "Création de la table GPT" && echo ""
     parted --script -a optimal /dev/${DISK} mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
+    log_prompt "INFO" && echo "Création de la partition EFI" && echo ""
     parted --script -a optimal /dev/${DISK} mkpart primary fat32 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
     parted --script -a optimal /dev/${DISK} set 1 esp on
 else
+    log_prompt "INFO" && echo "Création de la table MBR" && echo ""
     parted --script -a optimal /dev/${DISK} mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }
+    log_prompt "INFO" && echo "Création de la partition BOOT" && echo ""
     parted --script -a optimal /dev/${DISK} mkpart primary ext4 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
     parted --script -a optimal /dev/${DISK} set 1 boot on
 fi
 
 if  [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "Off" ]]; then
-
+    log_prompt "INFO" && echo "Création de la partition SWAP" && echo ""
     parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
-
+    log_prompt "INFO" && echo "Activation du SWAP" && echo ""
     mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
     swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
 
     # Gestion de la fusion root et home
     if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
         # Création d'une seule partition pour root + home
+        log_prompt "INFO" && echo "Création de la partition ROOT/HOME" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
         PART_ROOT=3
         PART_HOME=""  # Désactivation de la partition home spécifique
     else
         # Création de partitions séparées pour root et home
+        log_prompt "INFO" && echo "Création de la partition ROOT" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
+        log_prompt "INFO" && echo "Création de la partition HOME" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
         PART_ROOT=3
         PART_HOME=4
@@ -243,12 +250,15 @@ else # Le swap est désactiver
     # Gestion de la fusion root et home
     if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
         # Création d'une seule partition pour root + home
+        log_prompt "INFO" && echo "Création de la partition ROOT/HOME" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
         PART_ROOT=2
         PART_HOME=""  # Désactivation de la partition home spécifique
     else
         # Création de partitions séparées pour root et home
+        log_prompt "INFO" && echo "Création de la partition ROOT" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
+        log_prompt "INFO" && echo "Création de la partition HOME" && echo ""
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
         PART_ROOT=2
         PART_HOME=3
@@ -257,21 +267,29 @@ fi
 
 # Formatage de la partition boot en fonction du mode
 if [[ "${MODE}" == "UEFI" ]]; then
+    log_prompt "INFO" && echo "Formatage de la partition EFI" && echo ""
     mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en FAT32"; exit 1; }
 else
+    log_prompt "INFO" && echo "Formatage de la partition BOOT" && echo ""
     mkfs.ext4 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en ext4"; exit 1; }
 fi
 
 # Formatage des partitions en fonction du système de fichiers spécifié
+log_prompt "INFO" && echo "Formatage de la partition ROOT" && echo ""
 mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
-[[ -n "${PART_HOME}" ]] && mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en "${FS_TYPE}" "; exit 1; }
+[[ -n "${PART_HOME}" ]] && log_prompt "INFO" && echo "Formatage de la partition HOME" && echo "" && mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en "${FS_TYPE}" "; exit 1; }
 
 # Montage des partitions
+[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT/HOME" && echo ""
+[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT" && echo ""
 mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
+
+log_prompt "INFO" && echo "Création du point de montage de la partition BOOT" && echo ""
 mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
 
 # Si root et home sont séparés, monter home
 if [[ -n "${PART_HOME}" ]]; then
+    log_prompt "INFO" && echo "Création du point de montage de la partition HOME" && echo ""
     mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
 fi
 
