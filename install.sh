@@ -134,6 +134,9 @@ fi
 
 while true; do
 
+    # Affichage de la table des partitions pour vérification
+    parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
+    
     log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) : " DISKCLEAN && echo ""
     
     # Vérifie la validité de l'entrée
