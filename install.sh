@@ -133,6 +133,31 @@ fi
 # bash disk.sh $DISK $MOUNT_POINT
 
 # Effacement du disque
+log_prompt "INFO" && echo "Préparation du disque dur /dev/${DISK}" && echo ""
+
+# Vérification que le disque existe
+if [[ ! -b $DISK ]]; then
+    log_prompt "ERROR" && echo "le disque spécifié (${DISK}) n'existe pas." && echo ""
+    exit 1
+fi
+
+# Liste les partitions du disque
+PARTITIONS=$(lsblk -ln -o NAME "${DISK}" | grep -E "${DISK}[0-9]+")
+if [[ -z $PARTITIONS ]]; then
+    log_prompt "INFO" && echo "Aucune partition trouvée sur ${DISK}." && echo ""
+else
+    log_prompt "INFO" && echo "Partitions trouvées sur ${DISK} :" && echo ""
+    echo "$PARTITIONS" && echo ""
+    
+    # Boucle pour supprimer chaque partition
+    for PART in $PARTITIONS; do
+        PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
+        log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
+        parted "${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
+    done
+fi
+log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
+
 wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
 shred -n "${SHRED_PASS}" -v "/dev/${DISK}" || { echo "Erreur lors de l'effacement sécurisé"; exit 1; }
 
