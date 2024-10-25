@@ -21,8 +21,8 @@ FILE_SWAP="On"   # "On" pour utiliser un fichier swap, "Off" pour une partition 
 MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
 
 SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
-SIZE_SWAP="16G"    # Taille de la partition swap ou du fichier swap
-SIZE_ROOT="40G"  # Taille de la partition root
+SIZE_SWAP="4G"    # Taille de la partition swap ou du fichier swap
+SIZE_ROOT="20G"  # Taille de la partition root
 SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
 
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
