@@ -146,37 +146,31 @@ fi
 # Réinitialisation de la table de partitions
 if [[ "${MODE}" == "UEFI" ]]; then
     parted --script -a optimal /dev/${DISK} mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
-else
-    parted --script -a optimal /dev/${DISK} mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }
-fi
-
-# Création des partitions avec parted
-if [[ "${MODE}" == "UEFI" ]]; then
-    # Partition de boot pour UEFI (FAT32)
     parted --script -a optimal /dev/${DISK} mkpart primary fat32 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
     parted --script -a optimal /dev/${DISK} set 1 esp on
 else
-    # Partition de boot pour MBR (ext4)
+    parted --script -a optimal /dev/${DISK} mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }
     parted --script -a optimal /dev/${DISK} mkpart primary ext4 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
     parted --script -a optimal /dev/${DISK} set 1 boot on
 fi
 
 # Si FILE_SWAP est sur "Off", on crée une partition pour le swap
 if [[ "${FILE_SWAP}" == "Off" ]]; then
-    parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
 
-    PART_ROOT=3
-    PART_HOME=4
+    parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
 
     # Gestion de la fusion root et home
     if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
         # Création d'une seule partition pour root + home
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
+        PART_ROOT=3
         PART_HOME=""  # Désactivation de la partition home spécifique
     else
         # Création de partitions séparées pour root et home
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
+        PART_ROOT=3
+        PART_HOME=4
     fi
 else
 
@@ -193,8 +187,6 @@ else
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
         parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
     fi
-
-
 fi
 
 # Formatage de la partition boot en fonction du mode
