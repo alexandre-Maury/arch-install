@@ -457,7 +457,7 @@ fi
 # Détection et installation des pilotes graphiques
 if lspci | grep -E "NVIDIA|GeForce"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes NVIDIA" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings --noconfirm
+    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings mesa --noconfirm
 
     # Configuration de mkinitcpio.conf pour NVIDIA
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour NVIDIA" && echo ""
@@ -478,7 +478,7 @@ if lspci | grep -E "NVIDIA|GeForce"; then
 
 elif lspci | grep -E "Radeon"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu --noconfirm 
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu mesa --noconfirm 
 
     # Configuration de mkinitcpio.conf pour AMD Radeon
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour AMD Radeon" && echo ""
@@ -487,7 +487,7 @@ elif lspci | grep -E "Radeon"; then
 
 elif lspci | grep -E "Integrated Graphics Controller"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes Intel pour GPU intégré" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools --noconfirm 
+    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools mesa --noconfirm 
 
     # Configuration de mkinitcpio.conf pour GPU Intel intégré
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour Intel intégré" && echo ""
@@ -496,6 +496,7 @@ elif lspci | grep -E "Integrated Graphics Controller"; then
 
 else
     log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vesa mesa --noconfirm
 fi
 
 ##############################################################################
