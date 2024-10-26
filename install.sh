@@ -533,7 +533,7 @@ title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /${proc_ucode}
 initrd  /initramfs-linux.img
-options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/"${DISK}X") rw
+options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/"${DISK}${PART_ROOT}") rw
 EOF
 
         # Configuration de systemd-boot
