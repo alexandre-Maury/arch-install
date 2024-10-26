@@ -14,27 +14,23 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ##############################################################################
 log_prompt "INFO" && echo "Vérification de la connexion Internet" && echo ""
 
-if ! ping -c 1 archlinux.org > /dev/null 2>&1; then
-    log_prompt "ERROR" && echo "Pas de connexion Internet"
-    exit 1
-else
-    log_prompt "SUCCESS" && echo "Terminée" && echo ""
-fi
+# if ! ping -c 1 archlinux.org > /dev/null 2>&1; then
+#     log_prompt "ERROR" && echo "Pas de connexion Internet"
+#     exit 1
+# else
+#     log_prompt "SUCCESS" && echo "Terminée" && echo ""
+# fi
 
+$(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo "")
+log_prompt "SUCCESS" && echo "Terminée" && echo "" && sleep 3
 ##############################################################################
 ## Mettre à jour l'horloge du système                                                     
 ##############################################################################
-timedatectl set-ntp true && pacman -Syy
-
-##############################################################################
-## Valide les applications pour le bon fonctionnement du script                                                          
-##############################################################################
-# for pkg in "${packages[@]}"; do
-#     check_and_install "$pkg" # S'assurer que les packages requis sont installés
-# done
+timedatectl set-ntp true
+log_prompt "WARNING" && echo "Le statut du service Date/Heure est . . ." && echo ""
+timedatectl status && sleep 4
 
 clear 
-
 ##############################################################################
 ## Bienvenu                                                    
 ##############################################################################
@@ -43,21 +39,6 @@ log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Arch Linux
 ##############################################################################
 ## Récupération des disques disponible                                                      
 ##############################################################################
-
-# LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
-
-# echo "${LIST}"
-# OPTION=""
-
-# while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-#     printf "Choisissez un disque pour la suite de l'installation (ex : 1) : "
-#     read -r OPTION
-# done
-
-# DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
-# log_prompt "SUCCESS" "Terminée" && echo ""
-
-# Générer la liste des disques physiques sans les disques loop et sr (CD/DVD)
 LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
 if [[ -z "${LIST}" ]]; then
@@ -67,7 +48,6 @@ else
     log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
     echo "${LIST}" && echo ""
 fi
-
 
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
 OPTION=""
@@ -321,7 +301,9 @@ parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions";
 ## Installation du système de base                                                
 ##############################################################################
 reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-pacstrap -K ${MOUNT_POINT} base linux linux-firmware
+pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dkms
+
+
 
 ##############################################################################
 ## Chroot dans le nouvelle environnement                                             
