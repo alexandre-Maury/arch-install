@@ -65,16 +65,16 @@ echo "=============================================="
 echo ""
 echo "Mode d'installation : $MODE"
 
-if [ "$MODE " == "UEFI" ]; then
+if [[ "${MODE} " == "UEFI" ]]; then
     echo "Taille de la partition EFI : $SIZE_BOOT"
 else
     echo "Taille de la partition de boot : $SIZE_BOOT"
 fi
 
-if [ "$ENABLE_SWAP" == "On" ]; then
+if [[ "${ENABLE_SWAP}" == "On" ]]; then
     echo "Activation du swap : $ENABLE_SWAP"
 
-    if [ "$FILE_SWAP" == "On" ]; then
+    if [[ "${FILE_SWAP}" == "On" ]]; then
         echo "Utilisation d'un fichier swap : $FILE_SWAP"
         echo "Taille de la partition swap : $SIZE_SWAP"
     else
@@ -87,7 +87,7 @@ else
 fi
 
 # Afficher des informations sur la fusion root/home
-if [ "$MERGE_ROOT_HOME" == "On" ]; then
+if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
     echo "Fusion root/home : Activée"
     echo "Taille de la partition root : $SIZE_ROOT"
 else
