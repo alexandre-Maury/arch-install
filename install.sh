@@ -362,17 +362,17 @@ log_prompt "INFO" && echo "Changement des makeflags pour " $nc " coeurs." && ech
 
 TOTALMEM=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')  # Récupère la mémoire totale
 if [[  $TOTALMEM -gt 8000000 ]]; then  # Vérifie si la mémoire totale est supérieure à 8 Go
-    arch-chroot ${MOUNT_POINT} sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" /etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
+    sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
     log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " coeurs." && echo ""
-    arch-chroot ${MOUNT_POINT} sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" /etc/makepkg.conf  # Modifie les paramètres de compression
+    sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les paramètres de compression
 fi
 
 ##############################################################################
 ## arch-chroot Définir le fuseau horaire + local                                                  
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Configuration des locales" && echo ""
-arch-chroot ${MOUNT_POINT} echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
-arch-chroot ${MOUNT_POINT} sed -i "/^#$LOCALE/s/^#//g" /etc/locale.gen
+echo "KEYMAP=${KEYMAP}" > ${MOUNT_POINT}/etc/vconsole.conf
+sed -i "/^#$LOCALE/s/^#//g" ${MOUNT_POINT}/etc/locale.gen
 arch-chroot ${MOUNT_POINT} locale-gen
 
 log_prompt "INFO" && echo "arch-chroot - Configuration du fuseau horaire" && echo ""
@@ -387,8 +387,8 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 ## arch-chroot Modification pacman.cof                                                  
 ##############################################################################
-arch-chroot ${MOUNT_POINT} sed -i 's/^#Para/Para/' /etc/pacman.conf
-arch-chroot ${MOUNT_POINT} sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
+sed -i 's/^#Para/Para/' ${MOUNT_POINT}/etc/pacman.conf
+sed -i "/\[multilib\]/,/Include/"'s/^#//' ${MOUNT_POINT}/etc/pacman.conf
 
 arch-chroot ${MOUNT_POINT} pacman -Sy --noconfirm
 
@@ -462,20 +462,20 @@ if lspci | grep -E "NVIDIA|GeForce"; then
 
     # Configuration de mkinitcpio.conf pour NVIDIA
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour NVIDIA" && echo ""
-    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" /etc/mkinitcpio.conf
-    [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && arch-chroot "${MOUNT_POINT}" mkdir -p /etc/pacman.d/hooks
+    sed -i "s/^MODULES=.*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && mkdir -p ${MOUNT_POINT}/etc/pacman.d/hooks
 
-    arch-chroot "${MOUNT_POINT}" echo "[Trigger]" > /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Operation=Install" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Operation=Upgrade" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Operation=Remove" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Type=Package" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Target=nvidia" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "[Action]" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Depends=mkinitcpio" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "When=PostTransaction" >> /etc/pacman.d/hooks/nvidia.hook
-    arch-chroot "${MOUNT_POINT}" echo "Exec=/usr/bin/mkinitcpio -P" >> /etc/pacman.d/hooks/nvidia.hook
+    echo "[Trigger]" > ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Operation=Install" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Operation=Upgrade" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Operation=Remove" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Type=Package" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Target=nvidia" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "[Action]" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Depends=mkinitcpio" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "When=PostTransaction" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+    echo "Exec=/usr/bin/mkinitcpio -P" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
 
 elif lspci | grep -E "Radeon"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
@@ -483,7 +483,7 @@ elif lspci | grep -E "Radeon"; then
 
     # Configuration de mkinitcpio.conf pour AMD Radeon
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour AMD Radeon" && echo ""
-    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(amdgpu radeon)/" /etc/mkinitcpio.conf
+    sed -i "s/^MODULES=.*/MODULES=(amdgpu radeon)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
 elif lspci | grep -E "Integrated Graphics Controller"; then
@@ -492,7 +492,7 @@ elif lspci | grep -E "Integrated Graphics Controller"; then
 
     # Configuration de mkinitcpio.conf pour GPU Intel intégré
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour Intel intégré" && echo ""
-    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(i915)/" /etc/mkinitcpio.conf
+    sed -i "s/^MODULES=.*/MODULES=(i915)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
 else
@@ -502,8 +502,6 @@ fi
 ##############################################################################
 ## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS                                               
 ##############################################################################
-log_prompt "INFO" && echo "Vous avez choisi $BOOTLOADER comme bootloader" && echo ""
-
 if [[ "${BOOTLOADER}" == "grub" ]]; then
     log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" && echo ""
     arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
@@ -522,7 +520,7 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
     arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
 
     if [[ -n "${proc_ucode}" ]]; then
-        arch-chroot ${MOUNT_POINT} echo "initrd /boot/$proc_ucode" >> /boot/grub/grub.cfg
+        echo "initrd /boot/$proc_ucode" >> ${MOUNT_POINT}/boot/grub/grub.cfg
     fi
 
     
@@ -532,15 +530,15 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
         arch-chroot ${MOUNT_POINT} bootctl install
-        arch-chroot ${MOUNT_POINT} echo "title   Arch Linux" >> /boot/loader/entries/arch.conf
-        arch-chroot ${MOUNT_POINT} echo "linux   /vmlinuz-linux" >> /boot/loader/entries/arch.conf
-        arch-chroot ${MOUNT_POINT} echo "initrd  /${proc_ucode}" >> /boot/loader/entries/arch.conf
-        arch-chroot ${MOUNT_POINT} echo "initrd  /initramfs-linux.img" >> /boot/loader/entries/arch.conf
-        arch-chroot ${MOUNT_POINT} echo "options root=PARTUUID=\$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> /boot/loader/entries/arch.conf
+        echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "options root=PARTUUID=\$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
 
         # Configuration de systemd-boot
-        arch-chroot ${MOUNT_POINT} echo "default arch" >> /boot/loader/loader.conf
-        arch-chroot ${MOUNT_POINT} echo "timeout 3" >> /boot/loader/loader.conf
+        echo "default arch" >> ${MOUNT_POINT}/boot/loader/loader.conf
+        echo "timeout 3" >> ${MOUNT_POINT}/boot/loader/loader.conf
 
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
