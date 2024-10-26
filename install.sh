@@ -491,7 +491,9 @@ fi
 
 # arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
 
-if [[ "$BOOTLOADER" == "grub" ]]; then
+log_prompt "INFO" && echo "Vous avez choisi $BOOTLOADER comme bootloader" && echo ""
+
+if [[ "${BOOTLOADER}" == "grub" ]]; then
     log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" && echo ""
     arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
 
@@ -514,7 +516,7 @@ EOF
 
 arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
 
-elif [[ "$BOOTLOADER" == "systemd-boot" ]]; then
+elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
         arch-chroot ${MOUNT_POINT} bootctl install
@@ -538,7 +540,8 @@ EOF
     fi
 
 else
-    log_prompt "ERROR" && echo "Bootloader non reconnu : $BOOTLOADER" && exit 1
+    
+    log_prompt "ERROR" && echo "Bootloader non reconnu" && exit 1
 fi
 
 log_prompt "SUCCESS" && echo "Installation terminée." && echo ""
