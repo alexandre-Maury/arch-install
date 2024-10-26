@@ -23,16 +23,12 @@ MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partit
 
 SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
 SIZE_SWAP="4G"    # Taille de la partition swap ou du fichier swap
-SIZE_ROOT="30G"  # Taille de la partition root
+SIZE_ROOT="100G"  # Taille de la partition root
 SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
 
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
-
-# Liste des programmes requis pour l'installation
-packages=("git" "tar" "curl" "wget")
-
 
 REGION="Europe"
 PAYS="France"

@@ -13,28 +13,21 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ## Valide la connexion internet                                                          
 ##############################################################################
 log_prompt "INFO" && echo "Vérification de la connexion Internet" && echo ""
-
-# if ! ping -c 1 archlinux.org > /dev/null 2>&1; then
-#     log_prompt "ERROR" && echo "Pas de connexion Internet"
-#     exit 1
-# else
-#     log_prompt "SUCCESS" && echo "Terminée" && echo ""
-# fi
-
 $(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo "")
 log_prompt "SUCCESS" && echo "Terminée" && echo "" && sleep 3
+
 ##############################################################################
 ## Mettre à jour l'horloge du système                                                     
 ##############################################################################
+clear 
 timedatectl set-ntp true
 log_prompt "WARNING" && echo "Le statut du service Date/Heure est . . ." && echo ""
 timedatectl status && sleep 4
 
-clear 
 ##############################################################################
 ## Bienvenu                                                    
 ##############################################################################
-log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Arch Linux !" && echo ""
+log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Arch Linux !" && echo "" 
 
 ##############################################################################
 ## Récupération des disques disponible                                                      
@@ -117,7 +110,7 @@ while true; do
     # Affichage de la table des partitions pour vérification
     parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
     echo ""
-    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) [Attention pas encore testé ==> risque de plantage]: " DISKCLEAN && echo ""
+    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) [ Attention pas encore testé ]: " DISKCLEAN && echo ""
     
     # Vérifie la validité de l'entrée
     if [[ "$DISKCLEAN" =~ ^[yYnN]$ ]]; then
@@ -251,7 +244,7 @@ if [[ "${MODE}" == "UEFI" ]]; then
     mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
 
     log_prompt "INFO" && echo "Création du point de montage de la partition EFI" && echo ""
-    mkdir -p "${MOUNT_POINT}/boot/efi" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot/efi" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+    mkdir -p "${MOUNT_POINT}/efi" && mount /dev/${DISK}1 "${MOUNT_POINT}/efi" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
 else
     log_prompt "INFO" && echo "Formatage de la partition BOOT" && echo ""
     mkfs.ext4 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en ext4"; exit 1; }
@@ -424,7 +417,7 @@ arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
 
 if [[ "$MODE" == "UEFI" ]]; then
     arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
-    arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+    arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 
 elif [[ "$MODE" == "BIOS" ]]; then
     arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
