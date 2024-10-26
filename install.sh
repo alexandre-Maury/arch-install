@@ -239,24 +239,24 @@ else # Le swap est désactiver
 fi
 
 # Formatage des partitions en fonction du système de fichiers spécifié
-[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT/HOME" && echo ""
-[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT" && echo ""
+[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" && echo ""
+[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" && echo ""
 mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
 # Montage des partitions
-[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT/HOME" && echo ""
-[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT" && echo ""
+[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" && echo ""
+[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" && echo ""
 mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
 
 if [[ -n "${PART_HOME}" ]]; then
-    log_prompt "INFO" && echo "Formatage de la partition HOME" && echo ""
-    mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home en "${FS_TYPE}" "; exit 1; }
-    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
+    log_prompt "INFO" && echo "Formatage de la partition HOME ==> /dev/${DISK}${PART_HOME}" && echo ""
+    mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home ==> /dev/${DISK}${PART_HOME} en "${FS_TYPE}" "; exit 1; }
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
 fi
 
 # Si root et home sont séparés, monter home
 if [[ -n "${PART_HOME}" ]]; then
-    log_prompt "INFO" && echo "Création du point de montage de la partition HOME" && echo ""
-    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
+    log_prompt "INFO" && echo "Création du point de montage de la partition HOME ==> /dev/${DISK}${PART_HOME}" && echo ""
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
 fi
 
 # Formatage de la partition boot en fonction du mode
