@@ -344,6 +344,7 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ## arch-chroot Install packages                                                
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
+arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S git openssh networkmanager dhcpcd man-db man-pages pambase --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
 
