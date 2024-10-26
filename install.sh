@@ -332,5 +332,5 @@ cp config.sh $MOUNT_POINT
 cp chroot.sh $MOUNT_POINT
 
 log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
-chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
+arch-chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
 log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""
