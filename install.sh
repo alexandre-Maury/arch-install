@@ -62,33 +62,41 @@ clear
 echo "=============================================="
 echo "Informations de configuration"
 echo "=============================================="
+echo ""
 echo "Mode d'installation : $MODE"
 
-# Afficher des informations sur le swap si activé
-if [ "$ENABLE_SWAP" == "On" ]; then
-  echo "Activation du swap : $ENABLE_SWAP"
-  if [ "$FILE_SWAP" == "On" ]; then
-    echo "Utilisation d'un fichier swap : $FILE_SWAP"
-  else
-    echo "Utilisation d'une partition swap : Off"
-  fi
-  echo "Taille de la partition swap : $SIZE_SWAP"
+if [ "$MODE " == "UEFI" ]; then
+    echo "Taille de la partition EFI : $SIZE_BOOT"
 else
-  echo "Activation du swap : Off"
+    echo "Taille de la partition de boot : $SIZE_BOOT"
+fi
+
+if [ "$ENABLE_SWAP" == "On" ]; then
+    echo "Activation du swap : $ENABLE_SWAP"
+
+    if [ "$FILE_SWAP" == "On" ]; then
+        echo "Utilisation d'un fichier swap : $FILE_SWAP"
+        echo "Taille de la partition swap : $SIZE_SWAP"
+    else
+        echo "Utilisation d'une partition swap"
+        echo "Taille de la partition swap : $SIZE_SWAP"
+    fi
+
+else
+    echo "Activation du swap : Off"
 fi
 
 # Afficher des informations sur la fusion root/home
 if [ "$MERGE_ROOT_HOME" == "On" ]; then
-  echo "Fusion root/home : Activée"
-  echo "Taille de la partition root : $SIZE_ROOT"
-  echo "Taille de la partition home : $SIZE_HOME"
+    echo "Fusion root/home : Activée"
+    echo "Taille de la partition root : $SIZE_ROOT"
 else
-  echo "Fusion root/home : Désactivée"
+    echo "Taille de la partition root : $SIZE_ROOT"
+    echo "Taille de la partition home : $SIZE_HOME"
 fi
 
-# Autres informations
-echo "Taille de la partition de boot : $SIZE_BOOT"
 echo "Système de fichiers : $FS_TYPE"
+echo ""
 echo "=============================================="
 echo ""
 # Demande tant que la réponse n'est pas y/Y ou n/N
