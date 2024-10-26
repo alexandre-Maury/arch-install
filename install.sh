@@ -117,8 +117,7 @@ if [[ "$CONFIGURATION" =~ ^[yY]$ ]]; then
     log_prompt "INFO" && echo "Suite de l'installation" && echo ""
 else
     # Si l'utilisateur répond N ou n
-    log_prompt "WARNING" && echo "Modifier le fichier config.sh."
-    log_prompt "ERROR" && echo "Annulation de l'installation."
+    log_prompt "WARNING" && echo "Annulation de l'installation, modifier le fichier config.sh."
     exit 0
 fi
 
