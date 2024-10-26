@@ -39,8 +39,6 @@ HOSTNAME="archlinux"
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
 KEYMAP="fr"
 
-USERNAME="alexandre"
-
 PASSWDQC_CONF="/etc/security/passwdqc.conf"
 MIN_SIMPLE="4" # Valeurs : disabled : Longueur minimale pour un mot de passe simple, c'est-à-dire uniquement des lettres minuscules (ex. : "abcdef").
 MIN_2CLASSES="4" # Longueur minimale pour un mot de passe avec deux classes de caractères, par exemple minuscules + majuscules ou minuscules + chiffres (ex. : "Abcdef" ou "abc123").
