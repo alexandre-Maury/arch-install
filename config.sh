@@ -29,11 +29,14 @@ SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
+BOOTLOADER="grub" # grub ou systemd-boot
 
 REGION="Europe"
 PAYS="France"
 CITY="Paris"
-LOCALE="fr_FR.UTF-8 UTF-8"
+# LOCALE="fr_FR.UTF-8 UTF-8"
+LOCALE="fr_FR"
+
 LANG="fr_FR.UTF-8"
 HOSTNAME="archlinux"
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"

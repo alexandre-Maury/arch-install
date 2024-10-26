@@ -17,15 +17,7 @@ $(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de co
 log_prompt "SUCCESS" && echo "Terminée" && echo "" && sleep 3
 
 ##############################################################################
-## Mettre à jour l'horloge du système                                                     
-##############################################################################
-clear 
-timedatectl set-ntp true
-log_prompt "WARNING" && echo "Le statut du service Date/Heure est . . ." && echo ""
-timedatectl status && sleep 4
-
-##############################################################################
-## Bienvenu                                                    
+## Bienvenue                                                    
 ##############################################################################
 log_prompt "INFO" && echo "Bienvenue dans le script d'installation de Arch Linux !" && echo "" 
 
@@ -296,6 +288,15 @@ log_prompt "SUCCESS" && echo "Partitionnement et formatage terminés avec succè
 parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
 
 ##############################################################################
+## Mettre à jour l'horloge du système                                                     
+##############################################################################
+clear 
+timedatectl set-ntp true
+log_prompt "WARNING" && echo "Le statut du service Date/Heure est . . ." && echo ""
+timedatectl status && sleep 4
+
+
+##############################################################################
 ## Installation du système de base                                                
 ##############################################################################
 reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
@@ -310,23 +311,44 @@ cat ${MOUNT_POINT}/etc/fstab
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
-## arch-chroot Définir le fuseau horaire                                                  
+## Configuration du system                                                    
 ##############################################################################
-log_prompt "INFO" && echo "arch-chroot - Configuration du fuseau horaire" && echo ""
-arch-chroot ${MOUNT_POINT} ln -sf /usr/share/zoneinfo/${REGION}/${CITY} /etc/localtime
-arch-chroot ${MOUNT_POINT} hwclock --systohc --utc
-arch-chroot ${MOUNT_POINT} date
-log_prompt "SUCCESS" && echo "Terminée" && echo ""
+nc=$(grep -c ^processor /proc/cpuinfo)  # Compte le nombre de cœurs de processeur
+log_prompt "INFO" && echo "Vous avez " $nc " cœurs." && echo ""
+log_prompt "INFO" && echo "Changement des makeflags pour " $nc " cœurs." && echo ""
+
+sleep 10
+
+TOTALMEM=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')  # Récupère la mémoire totale
+if [[  $TOTALMEM -gt 8000000 ]]; then  # Vérifie si la mémoire totale est supérieure à 8 Go
+    arch-chroot ${MOUNT_POINT} sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" /etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
+    log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " cœurs." && echo ""
+    arch-chroot ${MOUNT_POINT} sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" /etc/makepkg.conf  # Modifie les paramètres de compression
+fi
 
 ##############################################################################
-## arch-chroot Configuration de la langue + clavier                                                    
+## arch-chroot Définir le fuseau horaire + local                                                  
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Configuration des locales" && echo ""
 arch-chroot ${MOUNT_POINT} echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
-arch-chroot ${MOUNT_POINT} echo "${LOCALE}" > /etc/locale.gen
-arch-chroot ${MOUNT_POINT} echo "LANG=$LANG" > /etc/locale.conf
+arch-chroot ${MOUNT_POINT} sed -i "/^#$LOCALE/s/^#//g" /etc/locale.gen
 arch-chroot ${MOUNT_POINT} locale-gen
+
+log_prompt "INFO" && echo "arch-chroot - Configuration du fuseau horaire" && echo ""
+arch-chroot ${MOUNT_POINT} timedatectl set-timezone ${REGION}/${CITY}
+arch-chroot ${MOUNT_POINT} timedatectl set-ntp 1
+arch-chroot ${MOUNT_POINT} localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
+arch-chroot ${MOUNT_POINT} hwclock --systohc --utc
+
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## arch-chroot Modification pacman.cof                                                  
+##############################################################################
+arch-chroot ${MOUNT_POINT} sed -i 's/^#Para/Para/' /etc/pacman.conf
+arch-chroot ${MOUNT_POINT} sed -i "/\[multilib\]/,/Include/"'s/^#//' /etc/pacman.conf
+
+arch-chroot ${MOUNT_POINT} pacman -Sy --noconfirm
 
 ##############################################################################
 ## arch-chroot Configuration du réseau                                             
@@ -398,47 +420,99 @@ if lspci | grep -E "NVIDIA|GeForce"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes NVIDIA" && echo ""
     arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia \
     libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings \
-    --noconfirm 
+    --noconfirm
+
+        # Configuration de mkinitcpio.conf pour NVIDIA
+    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour NVIDIA" && echo ""
+    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" /etc/mkinitcpio.conf
+    [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && arch-chroot "${MOUNT_POINT}" mkdir -p /etc/pacman.d/hooks
+    cat <<EOF | arch-chroot "${MOUNT_POINT}" tee /etc/pacman.d/hooks/nvidia.hook
+[Trigger]
+Operation=Install
+Operation=Upgrade
+Operation=Remove
+Type=Package
+Target=nvidia
+
+[Action]
+Depends=mkinitcpio
+When=PostTransaction
+Exec=/usr/bin/mkinitcpio -P
+EOF 
 
 elif lspci | grep -E "Radeon"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
     arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu --noconfirm 
 
+    # Configuration de mkinitcpio.conf pour AMD Radeon
+    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour AMD Radeon" && echo ""
+    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(amdgpu radeon)/" /etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+
 elif lspci | grep -E "Integrated Graphics Controller"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes Intel pour GPU intégré" && echo ""
     arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl \
     lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools --noconfirm 
+
+    # Configuration de mkinitcpio.conf pour GPU Intel intégré
+    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour Intel intégré" && echo ""
+    arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(i915)/" /etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+
 else
     log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
 fi
 
 
 ##############################################################################
-## arch-chroot Installing grub and creating configuration                                               
+## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS                                               
 ##############################################################################
-log_prompt "INFO" && echo "arch-chroot - Installation de grub" && echo ""
+# log_prompt "INFO" && echo "arch-chroot - Installation de grub" && echo ""
 
-arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
+# arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
 
-if [[ "$MODE" == "UEFI" ]]; then
-    arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
-    arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
+# if [[ "$MODE" == "UEFI" ]]; then
+#     arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
+#     arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
 
-elif [[ "$MODE" == "BIOS" ]]; then
-    arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
+# elif [[ "$MODE" == "BIOS" ]]; then
+#     arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
 
-else
-	log_prompt "ERROR" && echo "Une erreur est survenue $MODE non reconnu"
-	exit 1
-fi
+# else
+# 	log_prompt "ERROR" && echo "Une erreur est survenue $MODE non reconnu"
+# 	exit 1
+# fi
 
-log_prompt "SUCCESS" && echo "Terminée" && echo ""
+# log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
-##############################################################################
-## Générer la configuration de GRUB                                           
-##############################################################################
-log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
+# ##############################################################################
+# ## Générer la configuration de GRUB                                           
+# ##############################################################################
+# log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
 
+
+# cat <<EOF | arch-chroot "$MOUNT_POINT" bash
+# if [[ -n "$proc_ucode" ]]; then
+#     echo "initrd /boot/$proc_ucode" >> /boot/grub/grub.cfg
+# fi
+# EOF
+
+# arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+
+if [[ "$BOOTLOADER" == "grub" ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" && echo ""
+    arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
+
+    if [[ "$MODE" == "UEFI" ]]; then
+        arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
+        arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
+    elif [[ "$MODE" == "BIOS" ]]; then
+        arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
+    else
+        log_prompt "ERROR" && echo "Une erreur est survenue : $MODE non reconnu." && exit 1
+    fi
+
+    log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
 
 cat <<EOF | arch-chroot "$MOUNT_POINT" bash
 if [[ -n "$proc_ucode" ]]; then
@@ -447,6 +521,36 @@ fi
 EOF
 
 arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+
+elif [[ "$BOOTLOADER" == "systemd-boot" ]]; then
+    if [[ "$MODE" == "UEFI" ]]; then
+        log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
+        arch-chroot ${MOUNT_POINT} bootctl install
+
+        # Création de l'entrée de démarrage pour Arch Linux
+        cat <<EOF | arch-chroot ${MOUNT_POINT} tee /boot/loader/entries/arch.conf
+title   Arch Linux
+linux   /vmlinuz-linux
+initrd  /${proc_ucode}
+initrd  /initramfs-linux.img
+options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/"${DISK}X") rw
+EOF
+
+        # Configuration de systemd-boot
+        cat <<EOF | arch-chroot ${MOUNT_POINT} tee /boot/loader/loader.conf
+default arch
+timeout 3
+EOF
+    else
+        log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
+    fi
+
+else
+    log_prompt "ERROR" && echo "Bootloader non reconnu : $BOOTLOADER" && exit 1
+fi
+
+log_prompt "SUCCESS" && echo "Installation terminée." && echo ""
+
 
 
 ##############################################################################
@@ -517,7 +621,7 @@ done
 if [[ "$USER" =~ ^[yY]$ ]]; then
 
     log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user && echo ""
-    arch-chroot ${MOUNT_POINT} useradd -m -G wheel "$sudo_user"
+    arch-chroot ${MOUNT_POINT} useradd -m -G wheel,audio,video,optical,storage,power "$sudo_user"
 
     # Demande de changer le mot de passe $USER
     while true; do
