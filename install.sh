@@ -364,6 +364,8 @@ arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
 arch-chroot ${MOUNT_POINT} systemctl enable NetworkManager.service
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 
+clear
+
 ##############################################################################
 ## Installation des pilotes CPU et GPU                                          
 ##############################################################################
@@ -402,6 +404,8 @@ else
             ;;
     esac
 fi
+
+sleep 10
 
 # Détection et installation des pilotes graphiques
 if lspci | grep -E "NVIDIA|GeForce"; then
@@ -451,7 +455,9 @@ else
     log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
 fi
 
-clear && sleep 10
+clear 
+
+sleep 10
 
 ##############################################################################
 ## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS                                               
