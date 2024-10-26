@@ -34,7 +34,6 @@ BOOTLOADER="grub" # grub ou systemd-boot
 REGION="Europe"
 PAYS="France"
 CITY="Paris"
-# LOCALE="fr_FR.UTF-8 UTF-8"
 LOCALE="fr_FR"
 
 LANG="fr_FR.UTF-8"
