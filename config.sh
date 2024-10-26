@@ -37,7 +37,7 @@ CITY="Paris"
 LOCALE="fr_FR"
 
 LANG="fr_FR.UTF-8"
-HOSTNAME="archlinux"
+HOSTNAME="archlinux-alexandre"
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
 KEYMAP="fr"
 
