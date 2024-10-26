@@ -29,7 +29,7 @@ SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
-BOOTLOADER="grub" # grub ou systemd-boot
+BOOTLOADER="systemd-boot" # grub ou systemd-boot
 
 REGION="Europe"
 PAYS="France"
