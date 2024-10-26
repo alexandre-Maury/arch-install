@@ -57,17 +57,40 @@ done
 ##############################################################################
 clear
 
-echo "[ ${DISK} ]"                   "- Disque"
-echo "[ ${MODE} ]"                   "- Mode"
-echo "[ ${REGION} ]"                 "- Zone Info - region" 
-echo "[ ${CITY} ]"                   "- Zone Info - city" 
-echo "[ ${LOCALE} ]"                 "- Locale" 
-echo "[ ${HOSTNAME} ]"               "- Nom d'hôte" 
-echo "[ ${INTERFACE} ]"              "- Interface" 
-echo "[ ${KEYMAP} ]"                 "- Disposition du clavier" 
-echo "[ ${USERNAME} ]"               "- Votre utilisateur" 
-echo ""
+# Affichage des informations
+# Affichage des informations
+echo "=============================================="
+echo "Informations de configuration"
+echo "=============================================="
+echo "Mode d'installation : $MODE"
 
+# Afficher des informations sur le swap si activé
+if [ "$ENABLE_SWAP" == "On" ]; then
+  echo "Activation du swap : $ENABLE_SWAP"
+  if [ "$FILE_SWAP" == "On" ]; then
+    echo "Utilisation d'un fichier swap : $FILE_SWAP"
+  else
+    echo "Utilisation d'une partition swap : Off"
+  fi
+  echo "Taille de la partition swap : $SIZE_SWAP"
+else
+  echo "Activation du swap : Off"
+fi
+
+# Afficher des informations sur la fusion root/home
+if [ "$MERGE_ROOT_HOME" == "On" ]; then
+  echo "Fusion root/home : Activée"
+  echo "Taille de la partition root : $SIZE_ROOT"
+  echo "Taille de la partition home : $SIZE_HOME"
+else
+  echo "Fusion root/home : Désactivée"
+fi
+
+# Autres informations
+echo "Taille de la partition de boot : $SIZE_BOOT"
+echo "Système de fichiers : $FS_TYPE"
+echo "=============================================="
+echo ""
 # Demande tant que la réponse n'est pas y/Y ou n/N
 while true; do
 
