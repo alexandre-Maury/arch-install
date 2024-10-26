@@ -14,7 +14,7 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ##############################################################################
 log_prompt "INFO" && echo "Vérification de la connexion Internet" && echo ""
 
-if ! ping -c1 -w1 1.1.1.1 > /dev/null 2>&1; then
+if ! ping -c 1 archlinux.org > /dev/null 2>&1; then
     log_prompt "ERROR" && echo "Pas de connexion Internet"
     exit 1
 else
