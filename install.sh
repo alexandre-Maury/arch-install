@@ -238,21 +238,6 @@ else # Le swap est désactiver
     fi
 fi
 
-# Formatage de la partition boot en fonction du mode
-if [[ "${MODE}" == "UEFI" ]]; then
-    log_prompt "INFO" && echo "Formatage de la partition EFI" && echo ""
-    mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
-
-    log_prompt "INFO" && echo "Création du point de montage de la partition EFI" && echo ""
-    mkdir -p "${MOUNT_POINT}/efi" && mount /dev/${DISK}1 "${MOUNT_POINT}/efi" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
-else
-    log_prompt "INFO" && echo "Formatage de la partition BOOT" && echo ""
-    mkfs.ext4 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en ext4"; exit 1; }
-
-    log_prompt "INFO" && echo "Création du point de montage de la partition BOOT" && echo ""
-    mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
-fi
-
 # Formatage des partitions en fonction du système de fichiers spécifié
 log_prompt "INFO" && echo "Formatage de la partition ROOT" && echo ""
 mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
@@ -267,6 +252,21 @@ mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || 
 if [[ -n "${PART_HOME}" ]]; then
     log_prompt "INFO" && echo "Création du point de montage de la partition HOME" && echo ""
     mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home"; exit 1; }
+fi
+
+# Formatage de la partition boot en fonction du mode
+if [[ "${MODE}" == "UEFI" ]]; then
+    log_prompt "INFO" && echo "Formatage de la partition EFI" && echo ""
+    mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
+
+    log_prompt "INFO" && echo "Création du point de montage de la partition EFI" && echo ""
+    mkdir -p "${MOUNT_POINT}/efi" && mount /dev/${DISK}1 "${MOUNT_POINT}/efi" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+else
+    log_prompt "INFO" && echo "Formatage de la partition BOOT" && echo ""
+    mkfs.ext4 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en ext4"; exit 1; }
+
+    log_prompt "INFO" && echo "Création du point de montage de la partition BOOT" && echo ""
+    mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
 fi
 
 # Gestion de la swap
