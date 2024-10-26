@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
+source config.sh # Inclure le fichier de configuration.
+source functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
 
+chmod +x *.sh # Rendre les scripts exécutables.
 
 log_prompt "INFO" && echo "Vous avez choisi $BOOTLOADER comme bootloader" && echo ""
 
