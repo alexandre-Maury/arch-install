@@ -29,6 +29,8 @@ SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
 FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
+
+# systemd-boot ne peut être utilisé qu'en mode UEFI.
 BOOTLOADER="systemd-boot" # grub ou systemd-boot
 
 REGION="Europe"

@@ -530,15 +530,15 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
         arch-chroot ${MOUNT_POINT} bootctl install
-        echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-        echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-        echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-        echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-        echo "options root=PARTUUID=\$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "title   Arch Linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "options root=PARTUUID=\$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
 
         # Configuration de systemd-boot
-        echo "default arch" >> ${MOUNT_POINT}/boot/loader/loader.conf
-        echo "timeout 3" >> ${MOUNT_POINT}/boot/loader/loader.conf
+        echo "default arch" >> ${MOUNT_POINT}/efi/loader/loader.conf
+        echo "timeout 3" >> ${MOUNT_POINT}/efi/loader/loader.conf
 
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
