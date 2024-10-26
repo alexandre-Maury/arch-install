@@ -288,15 +288,6 @@ log_prompt "SUCCESS" && echo "Partitionnement et formatage terminés avec succè
 parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
 
 ##############################################################################
-## Mettre à jour l'horloge du système                                                     
-##############################################################################
-clear 
-timedatectl set-ntp true
-log_prompt "WARNING" && echo "Le statut du service Date/Heure est . . ." && echo ""
-timedatectl status && sleep 4
-
-
-##############################################################################
 ## Installation du système de base                                                
 ##############################################################################
 reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
