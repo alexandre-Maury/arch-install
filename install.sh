@@ -65,7 +65,7 @@ echo "=============================================="
 echo ""
 echo "Mode d'installation : $MODE"
 
-if [[ "${MODE} " == "UEFI" ]]; then
+if [[ "${MODE}" == "UEFI" ]]; then
     echo "Taille de la partition EFI : $SIZE_BOOT"
 else
     echo "Taille de la partition de boot : $SIZE_BOOT"
