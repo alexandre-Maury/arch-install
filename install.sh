@@ -364,8 +364,6 @@ arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
 arch-chroot ${MOUNT_POINT} systemctl enable NetworkManager.service
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 
-clear
-
 ##############################################################################
 ## Installation des pilotes CPU et GPU                                          
 ##############################################################################
@@ -405,32 +403,27 @@ else
     esac
 fi
 
-sleep 10
-
 # Détection et installation des pilotes graphiques
 if lspci | grep -E "NVIDIA|GeForce"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes NVIDIA" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia \
-    libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings \
-    --noconfirm
+    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings --noconfirm
 
-        # Configuration de mkinitcpio.conf pour NVIDIA
+    # Configuration de mkinitcpio.conf pour NVIDIA
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour NVIDIA" && echo ""
     arch-chroot "${MOUNT_POINT}" sed -i "s/^MODULES=.*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" /etc/mkinitcpio.conf
     [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && arch-chroot "${MOUNT_POINT}" mkdir -p /etc/pacman.d/hooks
-    cat <<EOF | arch-chroot "${MOUNT_POINT}" tee /etc/pacman.d/hooks/nvidia.hook
-[Trigger]
-Operation=Install
-Operation=Upgrade
-Operation=Remove
-Type=Package
-Target=nvidia
 
-[Action]
-Depends=mkinitcpio
-When=PostTransaction
-Exec=/usr/bin/mkinitcpio -P
-EOF 
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "[Trigger]" > /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Operation=Install" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Operation=Upgrade" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Operation=Remove" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Type=Package" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Target=nvidia" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "[Action]" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Depends=mkinitcpio" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "When=PostTransaction" >> /etc/pacman.d/hooks/nvidia.hook'
+    arch-chroot "${MOUNT_POINT}" bash -c 'echo "Exec=/usr/bin/mkinitcpio -P" >> /etc/pacman.d/hooks/nvidia.hook' 
 
 elif lspci | grep -E "Radeon"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
@@ -443,8 +436,7 @@ elif lspci | grep -E "Radeon"; then
 
 elif lspci | grep -E "Integrated Graphics Controller"; then
     log_prompt "INFO" && echo "arch-chroot - Installation des pilotes Intel pour GPU intégré" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl \
-    lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools --noconfirm 
+    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools --noconfirm 
 
     # Configuration de mkinitcpio.conf pour GPU Intel intégré
     log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour Intel intégré" && echo ""
@@ -454,10 +446,6 @@ elif lspci | grep -E "Integrated Graphics Controller"; then
 else
     log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
 fi
-
-clear 
-
-sleep 10
 
 ##############################################################################
 ## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS                                               
