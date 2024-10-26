@@ -19,7 +19,7 @@ fi
 
 ENABLE_SWAP="On"   # Mettre sur "On" pour activer le swap [création part ou fichier swap] ou "Off" pour le désactiver
 FILE_SWAP="Off"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
-MERGE_ROOT_HOME="Off"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
+MERGE_ROOT_HOME="On"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
 
 SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
 SIZE_SWAP="4G"    # Taille de la partition swap ou du fichier swap
