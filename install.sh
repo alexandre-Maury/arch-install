@@ -465,22 +465,30 @@ while true; do
     if [[ "$PASSROOT" =~ ^[yYnN]$ ]]; then
         break
     else
-        log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)."
-        echo ""
+        log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)." && echo ""
     fi
 done
 
 # Si l'utilisateur répond Y ou y
 if [[ "$PASSROOT" =~ ^[yY]$ ]]; then
     log_prompt "INFO" && echo "arch-chroot - Configuration du compte root" && echo ""
-    
-    # Demande de changer le mot de passe root, boucle jusqu'à réussite
-    while ! arch-chroot ${MOUNT_POINT} passwd "root" ; do
-        sleep 1
+
+    # Demande de changer le mot de passe root
+    while true; do
+        read -p "Veuillez entrer le nouveau mot de passe pour root : " -s NEW_PASS && echo ""
+        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS && echo ""
+
+        # Vérifie si les mots de passe correspondent
+        if [[ "$NEW_PASS" == "$CONFIRM_PASS" ]]; then
+            echo -e "$NEW_PASS\n$NEW_PASS" | arch-chroot ${MOUNT_POINT} passwd "root"
+            echo ""
+            log_prompt "SUCCESS" && echo "Mot de passe root configuré avec succès." && echo ""
+            break
+        else
+            log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
+        fi
     done
-    
-    log_prompt "SUCCESS" && echo "Mot de passe root configuré avec succès."
-    
+
 # Si l'utilisateur répond N ou n
 else
     log_prompt "WARNING" && echo "Attention, le mot de passe root d'origine est conservé." && echo ""
@@ -493,16 +501,47 @@ fi
 arch-chroot ${MOUNT_POINT} sed -i 's/# %wheel/%wheel/g' /etc/sudoers
 arch-chroot ${MOUNT_POINT} sed -i 's/%wheel ALL=(ALL) NOPASSWD: ALL/# %wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers
 
-log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user 
-arch-chroot ${MOUNT_POINT} useradd -m -G wheel "$sudo_user"
-
-log_prompt "INFO" && echo "arch-chroot - Configuration du mot de passe pour l'utilisateur $sudo_user" && echo ""
-while ! arch-chroot ${MOUNT_POINT} passwd "$sudo_user"; do
-    sleep 1
+# Demande tant que la réponse n'est pas y/Y ou n/N
+while true; do
+    log_prompt "INFO" && read -p "Souhaitez-vous créer un utilisateur (Y/n) : " USER && echo ""
+    
+    # Vérifie la validité de l'entrée
+    if [[ "$USER" =~ ^[yYnN]$ ]]; then
+        break
+    else
+        log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)." && echo ""
+    fi
 done
+
+# Si l'utilisateur répond Y ou y
+if [[ "$USER" =~ ^[yY]$ ]]; then
+
+    log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user && echo ""
+    arch-chroot ${MOUNT_POINT} useradd -m -G wheel "$sudo_user"
+
+    # Demande de changer le mot de passe $USER
+    while true; do
+        read -p "Veuillez entrer le nouveau mot de passe pour $sudo_user : " -s NEW_PASS && echo ""
+        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS && echo ""
+
+        # Vérifie si les mots de passe correspondent
+        if [[ "$NEW_PASS" == "$CONFIRM_PASS" ]]; then
+            echo -e "$NEW_PASS\n$NEW_PASS" | arch-chroot ${MOUNT_POINT} passwd $sudo_user
+            echo ""
+            log_prompt "SUCCESS" && echo "Mot de passe $sudo_user configuré avec succès." && echo ""
+            break
+        else
+            log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
+        fi
+    done
+fi
 
 
 ##############################################################################
 ## Fin du script                                          
 ##############################################################################
 log_prompt "SUCCESS" && echo "Installation Terminée ==> shutdown -h" && echo ""
+
+
+
+
