@@ -305,15 +305,13 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ## Configuration du system                                                    
 ##############################################################################
 nc=$(grep -c ^processor /proc/cpuinfo)  # Compte le nombre de cœurs de processeur
-log_prompt "INFO" && echo "Vous avez " $nc " cœurs." && echo ""
-log_prompt "INFO" && echo "Changement des makeflags pour " $nc " cœurs." && echo ""
-
-sleep 10
+log_prompt "INFO" && echo "Vous avez " $nc " coeurs." && echo ""
+log_prompt "INFO" && echo "Changement des makeflags pour " $nc " coeurs." && echo ""
 
 TOTALMEM=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')  # Récupère la mémoire totale
 if [[  $TOTALMEM -gt 8000000 ]]; then  # Vérifie si la mémoire totale est supérieure à 8 Go
     arch-chroot ${MOUNT_POINT} sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" /etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
-    log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " cœurs." && echo ""
+    log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " coeurs." && echo ""
     arch-chroot ${MOUNT_POINT} sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" /etc/makepkg.conf  # Modifie les paramètres de compression
 fi
 
@@ -371,14 +369,12 @@ arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 ##############################################################################
 
 # Détection du type de processeur
-proc_type=$(lscpu | awk '/Vendor ID:/ {print $3}')
-
-if echo "$proc_type" | grep -q "GenuineIntel"; then
+if lscpu | awk '{print $3}' | grep -E "GenuineIntel"; then
     log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel" && echo ""
     arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
     proc_ucode="intel-ucode.img"
 
-elif echo "$proc_type" | grep -q "AuthenticAMD"; then
+elif lscpu | awk '{print $3}' | grep -E "AuthenticAMD"; then
     log_prompt "INFO" && echo "arch-chroot - Installation du microcode AMD" && echo ""
     arch-chroot "${MOUNT_POINT}" pacman -S amd-ucode --noconfirm
     proc_ucode="amd-ucode.img"
