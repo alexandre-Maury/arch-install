@@ -31,9 +31,9 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 log_prompt "INFO" && echo "Configuration des langues" && echo ""
 echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
-echo "LANG=${LOCALE}" >> /etc/locale.gen
-locale-gen
+echo "${LOCALE}" > /etc/locale.gen
 echo "LANG=$LANG" > /etc/locale.conf
+locale-gen
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
