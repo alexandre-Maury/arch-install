@@ -451,6 +451,7 @@ else
     log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
 fi
 
+clear
 
 ##############################################################################
 ## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS                                               
