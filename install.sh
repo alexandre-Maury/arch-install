@@ -519,11 +519,13 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
 
     log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
 
-    if [[ -n "$proc_ucode" ]]; then
+    arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+
+    if [[ -n "${proc_ucode}" ]]; then
         arch-chroot ${MOUNT_POINT} echo "initrd /boot/$proc_ucode" >> /boot/grub/grub.cfg
     fi
 
-    arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+    
 
 elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
 
