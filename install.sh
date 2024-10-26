@@ -303,16 +303,207 @@ parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions";
 reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
 pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dkms
 
+##############################################################################
+## arch-chroot Generating the fstab                                                 
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - Génération du fstab" && echo ""
+genfstab -U -p ${MOUNT_POINT} >> ${MOUNT_POINT}/etc/fstab
+cat ${MOUNT_POINT}/etc/fstab
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## arch-chroot Définir le fuseau horaire                                                  
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - Configuration du fuseau horaire" && echo ""
+arch-chroot ${MOUNT_POINT} ln -sf /usr/share/zoneinfo/${REGION}/${CITY} /etc/localtime
+arch-chroot ${MOUNT_POINT} hwclock --systohc --utc
+arch-chroot ${MOUNT_POINT} date
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## arch-chroot Configuration de la langue + clavier                                                    
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - Configuration des locales" && echo ""
+arch-chroot ${MOUNT_POINT} echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
+arch-chroot ${MOUNT_POINT} echo "${LOCALE}" > /etc/locale.gen
+arch-chroot ${MOUNT_POINT} echo "LANG=$LANG" > /etc/locale.conf
+arch-chroot ${MOUNT_POINT} locale-gen
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## arch-chroot Configuration du réseau                                             
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - Génération du hostname" && echo ""
+echo "${HOSTNAME}" > ${MOUNT_POINT}/etc/hostname
+echo "127.0.0.1 localhost" >> ${MOUNT_POINT}/etc/hosts
+echo "::1 localhost" >> ${MOUNT_POINT}/etc/hosts
+echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> ${MOUNT_POINT}/etc/hosts
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## arch-chroot Install packages                                                
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
+arch-chroot ${MOUNT_POINT} pacman -S git openssh networkmanager dhcpcd man-db man-pages pambase --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
+
+
+arch-chroot ${MOUNT_POINT} systemctl enable dhcpcd.service
+arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
+arch-chroot ${MOUNT_POINT} systemctl enable NetworkManager.service
+arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
+
+##############################################################################
+## Installation des pilotes CPU et GPU                                          
+##############################################################################
+
+# Détection du type de processeur
+proc_type=$(lscpu | awk '/Vendor ID:/ {print $3}')
+
+if echo "$proc_type" | grep -q "GenuineIntel"; then
+    log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel" && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
+    proc_ucode="intel-ucode.img"
+
+elif echo "$proc_type" | grep -q "AuthenticAMD"; then
+    log_prompt "INFO" && echo "arch-chroot - Installation du microcode AMD" && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S amd-ucode --noconfirm
+    proc_ucode="amd-ucode.img"
+
+else
+    log_prompt "WARNING" && echo "arch-chroot - Processeur non reconnu" && echo ""
+    read -p "Quel microcode installer (Intel/AMD/ignorer) ? " proctype && echo ""
+    
+    case "$proctype" in
+        Intel|intel)
+            log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel" && echo ""
+            arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
+            proc_ucode="intel-ucode.img"
+            ;;
+        AMD|amd)
+            log_prompt "INFO" && echo "arch-chroot - Installation du microcode AMD" && echo ""
+            arch-chroot "${MOUNT_POINT}" pacman -S amd-ucode --noconfirm
+            proc_ucode="amd-ucode.img"
+            ;;
+        ignore|Ignore)
+            log_prompt "WARNING" && echo "arch-chroot - L'utilisateur a choisi de ne pas installer de microcode" && echo ""
+            ;;
+        *)
+            log_prompt "ERROR" && echo "Option invalide. Aucun microcode installé." && echo ""
+            ;;
+    esac
+fi
+
+# Détection et installation des pilotes graphiques
+if lspci | grep -E "NVIDIA|GeForce"; then
+    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes NVIDIA" && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia \
+    libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings \
+    --noconfirm 
+
+elif lspci | grep -E "Radeon"; then
+    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu --noconfirm 
+
+elif lspci | grep -E "Integrated Graphics Controller"; then
+    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes Intel pour GPU intégré" && echo ""
+    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl \
+    lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools --noconfirm 
+else
+    log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, aucun pilote installé." && echo ""
+fi
 
 
 ##############################################################################
-## Chroot dans le nouvelle environnement                                             
+## arch-chroot Installing grub and creating configuration                                               
 ##############################################################################
-log_prompt "INFO" && echo "Copie de la deuxième partie du script d'installation dans le nouvel environnement" && echo ""
-cp functions.sh $MOUNT_POINT
-cp config.sh $MOUNT_POINT
-cp chroot.sh $MOUNT_POINT
+log_prompt "INFO" && echo "arch-chroot - Installation de grub" && echo ""
 
-log_prompt "INFO" && echo "Entrée dans le nouvel environnement et exécution de la deuxième partie du script" && echo ""
-arch-chroot $MOUNT_POINT /bin/bash -c "./chroot.sh $DISK"
-log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""
+arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
+
+if [[ "$MODE" == "UEFI" ]]; then
+    arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
+    arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+
+elif [[ "$MODE" == "BIOS" ]]; then
+    arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
+
+else
+	log_prompt "ERROR" && echo "Une erreur est survenue $MODE non reconnu"
+	exit 1
+fi
+
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+##############################################################################
+## Générer la configuration de GRUB                                           
+##############################################################################
+log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
+
+
+cat <<EOF | arch-chroot "$MOUNT_POINT" bash
+if [[ -n "$proc_ucode" ]]; then
+    echo "initrd /boot/$proc_ucode" >> /boot/grub/grub.cfg
+fi
+EOF
+
+arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+
+
+##############################################################################
+## arch-chroot Création d'un nouvel initramfs                                             
+##############################################################################
+arch-chroot ${MOUNT_POINT} mkinitcpio -p linux
+
+##############################################################################
+## arch-chroot Création d'un mot de passe root                                             
+##############################################################################
+# Demande tant que la réponse n'est pas y/Y ou n/N
+while true; do
+    log_prompt "INFO" && read -p "Souhaitez-vous changer le mot de passe root (Y/n) : " PASSROOT && echo ""
+    
+    # Vérifie la validité de l'entrée
+    if [[ "$PASSROOT" =~ ^[yYnN]$ ]]; then
+        break
+    else
+        log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)."
+        echo ""
+    fi
+done
+
+# Si l'utilisateur répond Y ou y
+if [[ "$PASSROOT" =~ ^[yY]$ ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration du compte root" && echo ""
+    
+    # Demande de changer le mot de passe root, boucle jusqu'à réussite
+    while ! arch-chroot ${MOUNT_POINT} passwd "root" ; do
+        sleep 1
+    done
+    
+    log_prompt "SUCCESS" && echo "Mot de passe root configuré avec succès."
+    
+# Si l'utilisateur répond N ou n
+else
+    log_prompt "WARNING" && echo "Attention, le mot de passe root d'origine est conservé." && echo ""
+fi
+
+
+##############################################################################
+## arch-chroot Création d'un utilisateur + mot de passe                                            
+##############################################################################
+arch-chroot ${MOUNT_POINT} sed -i 's/# %wheel/%wheel/g' /etc/sudoers
+arch-chroot ${MOUNT_POINT} sed -i 's/%wheel ALL=(ALL) NOPASSWD: ALL/# %wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers
+
+log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user 
+arch-chroot ${MOUNT_POINT} useradd -m -G wheel "$sudo_user"
+
+log_prompt "INFO" && echo "arch-chroot - Configuration du mot de passe pour l'utilisateur $sudo_user" && echo ""
+while ! arch-chroot ${MOUNT_POINT} passwd "$sudo_user"; do
+    sleep 1
+done
+
+
+##############################################################################
+## Fin du script                                          
+##############################################################################
+log_prompt "SUCCESS" && echo "Installation Terminée ==> shutdown -h" && echo ""
