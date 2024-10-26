@@ -98,7 +98,16 @@ fi
 
 echo "Système de fichiers : $FS_TYPE"
 echo "Point de montage : $MOUNT_POINT"
-echo "Bootloader : $BOOTLOADER"
+
+if [[ "${MODE}" == "UEFI" ]]; then
+    echo "Bootloader : $BOOTLOADER"
+elif [[ "${MODE}" == "MBR" ]] && [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
+    log_prompt "WARNING" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI."
+else
+    echo "Bootloader : $BOOTLOADER"
+fi
+
+
 echo "Pays : $PAYS"
 echo "Region : $REGION"
 echo "City : $CITY"
@@ -407,6 +416,7 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
 arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S git openssh networkmanager dhcpcd man-db man-pages pambase --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S vim nano --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
 
 
