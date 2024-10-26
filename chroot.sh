@@ -51,7 +51,7 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ## Generating the fstab                                                 
 ##############################################################################
 log_prompt "INFO" && echo "Génération du fstab" && echo ""
-genfstab -U / >> /etc/fstab
+genfstab -U -p /mnt >> /mnt/etc/fstab
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
