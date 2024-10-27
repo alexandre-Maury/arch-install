@@ -50,12 +50,24 @@ sudo pacman -S noto-fonts-emoji --noconfirm
 
 
 ##############################################################################
+## Install SDDM                                            
+##############################################################################
+# sudo pacman -S sddm sddm-sugar-dark --noconfirm
+# sudo systemctl enable sddm
+
+# sudo mkdir /etc/sddm.conf.d
+# sudo cp /usr/lib/sddm/sddm.conf.d/default.conf /etc/sddm.conf.d/sddm.conf
+# sudo nvim /etc/sddm.conf.d/sddm.conf
+
+
+##############################################################################
 ## Install Hyprland                                               
 ##############################################################################
-yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
+# yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
 
-cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
-cd /tmp/Hyprland && make all && sudo make install
+# cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
+# cd /tmp/Hyprland && make all && sudo make install
+yay -S hyprland-git
 
 ##############################################################################
 ## Clean                                                
