@@ -713,6 +713,7 @@ arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd 
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
 
+umount -R ${MOUNT_POINT}
 
 ##############################################################################
 ## Fin du script                                          
