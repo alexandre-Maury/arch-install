@@ -18,6 +18,9 @@ timedatectl set-ntp true
 timedatectl set-timezone ${REGION}/${CITY}
 localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
 hwclock --systohc --utc
+
+timedatectl status
+
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
