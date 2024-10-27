@@ -508,7 +508,9 @@ if [[ "$GPU_VENDOR" == *"nvidia"* ]]; then
     MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm"
     KERNEL_OPTION="nvidia_drm.modeset=1"
 
-    arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings mesa --noconfirm
+    arch-chroot "${MOUNT_POINT}" pacman -S nvidia mesa --noconfirm
+    # xf86-video-nouveau
+    modprobe $MODULES
 
     sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && mkdir -p ${MOUNT_POINT}/etc/pacman.d/hooks
@@ -531,7 +533,8 @@ elif [[ "$GPU_VENDOR" == *"amd"* || "$GPU_VENDOR" == *"radeon"* ]]; then
     KERNEL_OPTION="amdgpu.dc=1"
 
     arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu xf86-video-ati mesa --noconfirm 
-    
+    modprobe $MODULES
+
     sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
@@ -540,8 +543,31 @@ elif [[ "$GPU_VENDOR" == *"intel"* ]]; then
     MODULES="i915"
     KERNEL_OPTION="i915.enable_psr=1"
 
-    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools mesa --noconfirm 
-    
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-intel mesa --noconfirm 
+    modprobe $MODULES
+
+    sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+
+elif [[ "$GPU_VENDOR" == *"virtualbox"* ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration pour VirtualBox" && echo ""
+    MODULES="vboxvideo"
+    KERNEL_OPTION="video=virtualbox"
+
+    arch-chroot "${MOUNT_POINT}" pacman -S virtualbox-guest-utils mesa --noconfirm 
+    modprobe $MODULES
+
+    sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+
+elif [[ "$GPU_VENDOR" == *"vmware"* ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration pour VMware" && echo ""
+    MODULES="vmwgfx"
+    KERNEL_OPTION="video=vmwgfx"
+
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vmware mesa --noconfirm 
+    modprobe $MODULES
+
     sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
