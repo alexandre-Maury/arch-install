@@ -538,18 +538,21 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
         arch-chroot ${MOUNT_POINT} bootctl install
+
+        log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf" && echo ""
         echo "title   Arch Linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
 
-        # Configuration de systemd-boot
+        log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf" && echo ""
         echo "default arch" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "timeout 4" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
 
+        log_prompt "INFO" && echo "arch-chroot - Mise a jours de systemd-boot"
         arch-chroot ${MOUNT_POINT} bootctl update
 
     else
@@ -568,6 +571,7 @@ log_prompt "SUCCESS" && echo "Installation terminée." && echo ""
 ##############################################################################
 ## arch-chroot Création d'un nouvel initramfs                                             
 ##############################################################################
+log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
 arch-chroot ${MOUNT_POINT} mkinitcpio -p linux
 
 ##############################################################################
