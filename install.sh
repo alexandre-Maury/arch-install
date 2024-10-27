@@ -414,8 +414,8 @@ mkdir -p ${MOUNT_POINT}/etc/systemd/network
 log_prompt "INFO" && echo "Configuration de /etc/systemd/network/20-wired.network" && echo ""
 cat <<EOF | sudo tee ${MOUNT_POINT}/etc/systemd/network/20-wired.network > /dev/null
 [Match]
-Name="${INTERFACE}"
-MACAddress="${MAC_ADDRESS}"
+Name=${INTERFACE}
+MACAddress=${MAC_ADDRESS}
 
 [Network]
 DHCP=yes
