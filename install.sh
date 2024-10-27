@@ -318,7 +318,7 @@ if [[ "${MODE}" == "UEFI" ]]; then
     mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
 
     log_prompt "INFO" && echo "Création du point de montage de la partition EFI" && echo ""
-    mkdir -p "${MOUNT_POINT}/efi" && mount /dev/${DISK}1 "${MOUNT_POINT}/efi" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+    mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
 else
     log_prompt "INFO" && echo "Formatage de la partition BOOT" && echo ""
     mkfs.ext4 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition boot en ext4"; exit 1; }
@@ -518,7 +518,7 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
 
     if [[ "$MODE" == "UEFI" ]]; then
         arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
-        arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=GRUB
+        arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
     elif [[ "$MODE" == "BIOS" ]]; then
         arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
     else
@@ -539,20 +539,20 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
 
         arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
-        arch-chroot ${MOUNT_POINT} bootctl install
+        arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
 
         log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf" && echo ""
-        echo "title   Arch Linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
-        echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
-        echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
-        echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
-        echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
 
         log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf" && echo ""
-        echo "default arch-*" >> ${MOUNT_POINT}/efi/loader/loader.conf
-        echo "timeout 4" >> ${MOUNT_POINT}/efi/loader/loader.conf
-        echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
-        echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
+        echo "default arch.conf" >> ${MOUNT_POINT}/boot/loader/loader.conf
+        echo "timeout 4" >> ${MOUNT_POINT}/boot/loader/loader.conf
+        echo "console-mode max" >> ${MOUNT_POINT}/boot/loader/loader.conf
+        echo "editor no" >> ${MOUNT_POINT}/boot/loader/loader.conf
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
     fi
