@@ -537,7 +537,7 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
 
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
-        arch-chroot ${MOUNT_POINT} bootctl --path=/efi install
+        arch-chroot ${MOUNT_POINT} bootctl install
         echo "title   Arch Linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
@@ -550,7 +550,7 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
 
-        arch-chroot ${MOUNT_POINT} bootctl --path=/efi update
+        arch-chroot ${MOUNT_POINT} bootctl update
 
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
