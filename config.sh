@@ -41,6 +41,9 @@ LOCALE="fr_FR"
 LANG="fr_FR.UTF-8"
 HOSTNAME="archlinux-alexandre"
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
+MAC_ADDRESS=$(ip link | awk '/ether/ {print $2; exit}')
+DNS_SERVERS="1.1.1.1 9.9.9.9"
+FALLBACK_DNS="8.8.8.8"
 KEYMAP="fr"
 
 PASSWDQC_CONF="/etc/security/passwdqc.conf"

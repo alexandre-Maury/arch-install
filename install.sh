@@ -408,6 +408,33 @@ echo "${HOSTNAME}" > ${MOUNT_POINT}/etc/hostname
 echo "127.0.0.1 localhost" >> ${MOUNT_POINT}/etc/hosts
 echo "::1 localhost" >> ${MOUNT_POINT}/etc/hosts
 echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> ${MOUNT_POINT}/etc/hosts
+
+mkdir -p ${MOUNT_POINT}/etc/systemd/network
+
+log_prompt "INFO" && echo "Configuration de /etc/systemd/network/20-wired.network" && echo ""
+cat <<EOF | sudo tee ${MOUNT_POINT}/etc/systemd/network/20-wired.network > /dev/null
+[Match]
+Name="${INTERFACE}"
+MACAddress="${MAC_ADDRESS}"
+
+[Network]
+DHCP=yes
+
+[DHCPv4]
+RouteMetric=10
+UseDNS=false
+EOF
+
+log_prompt "INFO" && echo "Configuration de /etc/resolv.conf pour utiliser systemd-resolved" && echo ""
+ln -sf /run/systemd/resolve/stub-resolv.conf ${MOUNT_POINT}/etc/resolv.conf
+
+log_prompt "INFO" && echo "Écrire la configuration DNS dans /etc/systemd/resolved.conf" && echo ""
+tee ${MOUNT_POINT}/etc/systemd/resolved.conf > /dev/null <<EOF
+[Resolve]
+DNS="${DNS_SERVERS}"
+FallbackDNS="${FALLBACK_DNS}" 
+EOF
+
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
@@ -415,15 +442,9 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
 arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S git openssh networkmanager dhcpcd man-db man-pages pambase --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S git openssh man-db man-pages pambase --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S vim nano --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
-
-
-arch-chroot ${MOUNT_POINT} systemctl enable dhcpcd.service
-arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
-arch-chroot ${MOUNT_POINT} systemctl enable NetworkManager.service
-arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 
 ##############################################################################
 ## Installation des pilotes CPU et GPU                                          
@@ -682,6 +703,15 @@ if [[ "$USER" =~ ^[yY]$ ]]; then
         fi
     done
 fi
+
+
+##############################################################################
+## Activation des services                                        
+##############################################################################
+arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
+arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
+arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd 
+arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
 
 
 ##############################################################################
