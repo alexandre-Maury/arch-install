@@ -537,6 +537,8 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
 
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot" && echo ""
+
+        arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
         arch-chroot ${MOUNT_POINT} bootctl install
 
         log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf" && echo ""
@@ -544,17 +546,13 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
         echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
-        echo "options root=PARTUUID=$(blkid -s PARTUUID -o value /dev/${DISK}${PART_ROOT}) rw" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
+        echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/efi/loader/entries/arch.conf
 
         log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf" && echo ""
-        echo "default arch" >> ${MOUNT_POINT}/efi/loader/loader.conf
+        echo "default arch-*" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "timeout 4" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
-
-        # log_prompt "INFO" && echo "arch-chroot - Mise a jours de systemd-boot"
-        # arch-chroot ${MOUNT_POINT} bootctl update
-
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
     fi
