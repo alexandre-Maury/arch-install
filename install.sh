@@ -9,6 +9,13 @@ source functions.sh  # Charge les fonctions définies dans le fichier fonction.s
 
 chmod +x *.sh # Rendre les scripts exécutables.
 
+
+# Vérifier les privilèges root
+if [ "$EUID" -ne 0 ]; then
+  echo "Veuillez exécuter ce script en tant qu'utilisateur root."
+  exit 1
+fi
+
 ##############################################################################
 ## Valide la connexion internet                                                          
 ##############################################################################
@@ -491,16 +498,20 @@ else
     esac
 fi
 
-# Détection et installation des pilotes graphiques
-if lspci | grep -E "NVIDIA|GeForce"; then
-    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes NVIDIA" && echo ""
+# Détection du GPU
+GPU_VENDOR=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
+log_prompt "INFO" && echo "GPU détecté : $GPU_VENDOR" && echo ""
+
+# Choix des modules et options en fonction du GPU
+if [[ "$GPU_VENDOR" == *"nvidia"* ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU NVIDIA" && echo ""
+    MODULES="nvidia nvidia_modeset nvidia_uvm nvidia_drm"
+    KERNEL_OPTION="nvidia_drm.modeset=1"
+
     arch-chroot "${MOUNT_POINT}" pacman -S nvidia-dkms nvidia-utils opencl-nvidia libglvnd lib32-libglvnd lib32-nvidia-utils lib32-opencl-nvidia nvidia-settings mesa --noconfirm
 
-    # Configuration de mkinitcpio.conf pour NVIDIA
-    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour NVIDIA" && echo ""
-    sed -i "s/^MODULES=.*/MODULES=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && mkdir -p ${MOUNT_POINT}/etc/pacman.d/hooks
-
     echo "[Trigger]" > ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
     echo "Operation=Install" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
     echo "Operation=Upgrade" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
@@ -512,23 +523,26 @@ if lspci | grep -E "NVIDIA|GeForce"; then
     echo "Depends=mkinitcpio" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
     echo "When=PostTransaction" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
     echo "Exec=/usr/bin/mkinitcpio -P" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-
-elif lspci | grep -E "Radeon"; then
-    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes AMD Radeon" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu mesa --noconfirm 
-
-    # Configuration de mkinitcpio.conf pour AMD Radeon
-    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour AMD Radeon" && echo ""
-    sed -i "s/^MODULES=.*/MODULES=(amdgpu radeon)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
-elif lspci | grep -E "Integrated Graphics Controller"; then
-    log_prompt "INFO" && echo "arch-chroot - Installation des pilotes Intel pour GPU intégré" && echo ""
-    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools mesa --noconfirm 
+elif [[ "$GPU_VENDOR" == *"amd"* || "$GPU_VENDOR" == *"radeon"* ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU AMD/Radeon" && echo ""
+    MODULES="amdgpu"
+    KERNEL_OPTION="amdgpu.dc=1"
 
-    # Configuration de mkinitcpio.conf pour GPU Intel intégré
-    log_prompt "INFO" && echo "Configuration de mkinitcpio.conf pour Intel intégré" && echo ""
-    sed -i "s/^MODULES=.*/MODULES=(i915)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu xf86-video-ati mesa --noconfirm 
+    
+    sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+
+elif [[ "$GPU_VENDOR" == *"intel"* ]]; then
+    log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU Intel" && echo ""
+    MODULES="i915"
+    KERNEL_OPTION="i915.enable_psr=1"
+
+    arch-chroot "${MOUNT_POINT}" pacman -S libva-intel-driver libvdpau-va-gl lib32-vulkan-intel vulkan-intel libva-utils intel-gpu-tools mesa --noconfirm 
+    
+    sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
     arch-chroot "${MOUNT_POINT}" mkinitcpio -P
 
 else
@@ -546,6 +560,7 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
         arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
     elif [[ "$MODE" == "BIOS" ]]; then
         arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${DISK}"
     else
@@ -553,6 +568,10 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
     fi
 
     log_prompt "INFO" && echo "arch-chroot - configuration de grub" && echo ""
+
+    if [[ -n "${KERNEL_OPTION}" ]]; then
+        sed -i "s/^GRUB_CMDLINE_LINUX_DEFAULT=\"/&$KERNEL_OPTION /" /etc/default/grub
+    fi
 
     arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -573,7 +592,13 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
         echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
         echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-        echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        # echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+
+        if [[ -n "${KERNEL_OPTION}" ]]; then
+            echo "options root=/dev/${DISK}${PART_ROOT} rw $KERNEL_OPTION" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        else
+            echo "options root=/dev/${DISK}${PART_ROOT} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+        fi
 
         log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf" && echo ""
         echo "default arch.conf" >> ${MOUNT_POINT}/boot/loader/loader.conf
