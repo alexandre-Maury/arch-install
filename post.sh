@@ -21,19 +21,14 @@ hwclock --systohc --utc
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
-## Installation de YAY                                                 
-##############################################################################
-pacman -S --needed git base-devel
-git clone https://aur.archlinux.org/yay.git
-cd yay && makepkg -si
-
-
-##############################################################################
-## Installation de PARU                                                 
+## Installation de YAY && PARU                                                 
 ##############################################################################
 cd /tmp
+
+git clone https://aur.archlinux.org/yay.git
 git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si
-cd ~
+
+cd /tmp/paru && makepkg -si
+cd /tmp/yay && makepkg -si
+
 paru -Syu
