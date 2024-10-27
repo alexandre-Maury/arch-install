@@ -134,6 +134,7 @@ echo "Longueur maximale pour un mot de passe : $MAX"
 echo "Longueur minimale pour une phrase de passe (en mots) : $PASSPHRASE"
 echo "Politique de similarité : $SIMILAR"
 echo "Nombre de tentatives autorisées : $RETRY"
+echo "GPU : $GPU_VENDOR"
 echo ""
 echo "=============================================="
 echo ""
@@ -499,7 +500,7 @@ else
 fi
 
 # Détection du GPU
-GPU_VENDOR=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
+
 log_prompt "INFO" && echo "GPU détecté : $GPU_VENDOR" && echo ""
 
 # Choix des modules et options en fonction du GPU

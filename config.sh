@@ -46,6 +46,8 @@ DNS_SERVERS="1.1.1.1 9.9.9.9"
 FALLBACK_DNS="8.8.8.8"
 KEYMAP="fr"
 
+GPU_VENDOR=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
+
 PASSWDQC_CONF="/etc/security/passwdqc.conf"
 MIN_SIMPLE="4" # Valeurs : disabled : Longueur minimale pour un mot de passe simple, c'est-à-dire uniquement des lettres minuscules (ex. : "abcdef").
 MIN_2CLASSES="4" # Longueur minimale pour un mot de passe avec deux classes de caractères, par exemple minuscules + majuscules ou minuscules + chiffres (ex. : "Abcdef" ou "abc123").
