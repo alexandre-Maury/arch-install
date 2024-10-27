@@ -552,8 +552,8 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
 
-        log_prompt "INFO" && echo "arch-chroot - Mise a jours de systemd-boot"
-        arch-chroot ${MOUNT_POINT} bootctl update
+        # log_prompt "INFO" && echo "arch-chroot - Mise a jours de systemd-boot"
+        # arch-chroot ${MOUNT_POINT} bootctl update
 
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
