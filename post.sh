@@ -14,10 +14,10 @@ chmod +x *.sh # Rendre les scripts exécutables.
 ## arch-chroot Définir le fuseau horaire + local                                                  
 ##############################################################################
 log_prompt "INFO" && echo "Configuration du fuseau horaire" && echo ""
-timedatectl set-ntp true
-timedatectl set-timezone ${REGION}/${CITY}
-localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
-hwclock --systohc --utc
+sudo timedatectl set-ntp true
+sudo timedatectl set-timezone ${REGION}/${CITY}
+sudo localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
+sudo hwclock --systohc --utc
 
 timedatectl status
 
@@ -31,7 +31,36 @@ cd /tmp
 git clone https://aur.archlinux.org/yay.git
 git clone https://aur.archlinux.org/paru.git
 
-cd /tmp/paru && makepkg -si
+cd /tmp/paru && makepkg -si && paru -Syu
 cd /tmp/yay && makepkg -si
 
-paru -Syu
+##############################################################################
+## Install packages                                                
+##############################################################################
+
+# Guest tools ==> SPICE support on guest (for UTM)
+sudo pacman -S spice-vdagent xf86-video-qxl
+
+# Guest tools ==> for VirtualBox
+sudo pacman -S virtualbox-guest-utils
+
+# Guest tools ==> for Fonts
+sudo pacman -S noto-fonts ttf-opensans ttf-firacode-nerd
+sudo pacman -S noto-fonts-emoji
+
+
+##############################################################################
+## Install Hyprland                                               
+##############################################################################
+yay -S gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git
+
+cd /tmp
+
+git clone --recursive https://github.com/hyprwm/Hyprland
+cd /tmp/Hyprland && make all && sudo make install
+
+##############################################################################
+## Clean                                                
+##############################################################################
+
+sudo rm -rf /tmp/*

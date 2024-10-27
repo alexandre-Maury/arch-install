@@ -431,8 +431,8 @@ ln -sf /run/systemd/resolve/stub-resolv.conf ${MOUNT_POINT}/etc/resolv.conf
 log_prompt "INFO" && echo "Écrire la configuration DNS dans /etc/systemd/resolved.conf" && echo ""
 tee ${MOUNT_POINT}/etc/systemd/resolved.conf > /dev/null <<EOF
 [Resolve]
-DNS="${DNS_SERVERS}"
-FallbackDNS="${FALLBACK_DNS}" 
+DNS=${DNS_SERVERS}
+FallbackDNS=${FALLBACK_DNS} 
 EOF
 
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
@@ -442,9 +442,15 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
 arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S git openssh man-db man-pages pambase --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S git man-db man-pages pambase --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S vim nano --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S xdg-user-dirs --noconfirm && xdg-user-dirs-update
+arch-chroot ${MOUNT_POINT} pacman -S iw wpa_supplicant openssh --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S bluez bluez-utils blueman --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S alsa-utils alsa-plugins --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S pipewire pipewire-alsa pipewire-pulse wireplumber --noconfirm
+
 
 ##############################################################################
 ## Installation des pilotes CPU et GPU                                          
@@ -685,7 +691,7 @@ done
 if [[ "$USER" =~ ^[yY]$ ]]; then
 
     log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user && echo ""
-    arch-chroot ${MOUNT_POINT} useradd -m -G wheel,audio,video,optical,storage,power "$sudo_user"
+    arch-chroot ${MOUNT_POINT} useradd -m -G wheel,audio,video,optical,storage,power,input "$sudo_user"
 
     # Demande de changer le mot de passe $USER
     while true; do
@@ -708,10 +714,14 @@ fi
 ##############################################################################
 ## Activation des services                                        
 ##############################################################################
-arch-chroot ${MOUNT_POINT} systemctl enable sshd.service
+arch-chroot ${MOUNT_POINT} systemctl enable sshd
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd 
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
+arch-chroot ${MOUNT_POINT} systemctl enable dhcpcd 
+arch-chroot ${MOUNT_POINT} systemctl enable bluetooth 
+arch-chroot ${MOUNT_POINT} systemctl enable fstrim.timer 
+arch-chroot ${MOUNT_POINT} systemctl enable ntpd 
 
 umount -R ${MOUNT_POINT}
 
