@@ -533,8 +533,6 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
         echo "initrd /boot/$proc_ucode" >> ${MOUNT_POINT}/boot/grub/grub.cfg
     fi
 
-    
-
 elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
 
     if [[ "$MODE" == "UEFI" ]]; then
@@ -552,7 +550,7 @@ elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
         echo "console-mode max" >> ${MOUNT_POINT}/efi/loader/loader.conf
         echo "editor no" >> ${MOUNT_POINT}/efi/loader/loader.conf
 
-        arch-chroot ${MOUNT_POINT} bootctl --path=/boot update
+        arch-chroot ${MOUNT_POINT} bootctl --path=/efi update
 
     else
         log_prompt "ERROR" && echo "systemd-boot ne peut être utilisé qu'en mode UEFI." && exit 1
