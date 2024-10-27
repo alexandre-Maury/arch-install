@@ -770,7 +770,6 @@ arch-chroot ${MOUNT_POINT} systemctl enable sshd
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd 
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
-arch-chroot ${MOUNT_POINT} systemctl enable dhcpcd 
 arch-chroot ${MOUNT_POINT} systemctl enable bluetooth 
 arch-chroot ${MOUNT_POINT} systemctl enable fstrim.timer 
 arch-chroot ${MOUNT_POINT} systemctl enable ntpd 
