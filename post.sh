@@ -39,24 +39,22 @@ cd /tmp/yay && makepkg -si
 ##############################################################################
 
 # Guest tools ==> SPICE support on guest (for UTM)
-sudo pacman -S spice-vdagent xf86-video-qxl
+sudo pacman -S spice-vdagent xf86-video-qxl --noconfirm
 
 # Guest tools ==> for VirtualBox
-sudo pacman -S virtualbox-guest-utils
+sudo pacman -S virtualbox-guest-utils --noconfirm
 
 # Guest tools ==> for Fonts
-sudo pacman -S noto-fonts ttf-opensans ttf-firacode-nerd
-sudo pacman -S noto-fonts-emoji
+sudo pacman -S noto-fonts ttf-opensans ttf-firacode-nerd --noconfirm
+sudo pacman -S noto-fonts-emoji --noconfirm
 
 
 ##############################################################################
 ## Install Hyprland                                               
 ##############################################################################
-yay -S gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git
+yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
 
-cd /tmp
-
-git clone --recursive https://github.com/hyprwm/Hyprland
+cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
 cd /tmp/Hyprland && make all && sudo make install
 
 ##############################################################################
