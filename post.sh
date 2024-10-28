@@ -9,6 +9,17 @@ source functions.sh  # Charge les fonctions définies dans le fichier fonction.s
 
 chmod +x *.sh # Rendre les scripts exécutables.
 
+##############################################################################
+## Information Utilisateur                                              
+##############################################################################
+log_prompt "INFO" && read -p "Quel est votre nom d'utilisateur : " USER && echo ""
+
+##############################################################################
+## Mise à jour du système                                                 
+##############################################################################
+log_prompt "INFO" && echo "Mise à jour du système " && echo ""
+pacman -Syu --noconfirm
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
 ## arch-chroot Définir le fuseau horaire + local                                                  
@@ -18,7 +29,6 @@ sudo timedatectl set-ntp true
 sudo timedatectl set-timezone ${REGION}/${CITY}
 sudo localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
 sudo hwclock --systohc --utc
-
 timedatectl status
 
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
@@ -34,39 +44,39 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 # cd /tmp/paru && makepkg -si && paru -Syu
 # cd /tmp/yay && makepkg -si
 
-
-
-
-
 ##############################################################################
 ## Install SDDM                                            
 ##############################################################################
-# sudo pacman -S sddm sddm-sugar-dark --noconfirm
-# sudo systemctl enable sddm
+log_prompt "INFO" && echo "Installation de SDDM" && echo ""
+sudo pacman -S sddm sddm-sugar-dark --noconfirm
 
-# sudo mkdir /etc/sddm.conf.d
+THEME="sugar-dark"
+
+mkdir -p /etc/sddm.conf.d
 # sudo cp /usr/lib/sddm/sddm.conf.d/default.conf /etc/sddm.conf.d/sddm.conf
-# sudo nvim /etc/sddm.conf.d/sddm.conf
+cat <<EOF > /etc/sddm.conf.d/sddm.conf
+[Theme]
+Current=${THEME}
+
+[Users]
+# Définir l'utilisateur par défaut, si souhaité
+DefaultUser=${USER}
+
+# Activation de l'auto-login (optionnel)
+# AutoLogin=votre_utilisateur
+# AutoLoginSession=your_desktop_environment
+EOF
+
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 
 ##############################################################################
 ## Install Hyprland                                               
 ##############################################################################
 # yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
-
-# cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
-# cd /tmp/Hyprland && make all && sudo make install
 # yay -S hyprland-git
 
-##############################################################################
-## Clean                                                
-##############################################################################
-
-
-
-# Mettre à jour le système et installer les dépendances requises
-echo "Mise à jour du système et installation des dépendances..."
-sudo pacman -Syu --noconfirm
+log_prompt "INFO" && echo "installation des dépendances" && echo ""
 sudo pacman -S --needed --noconfirm \
   base-devel \
   cmake \
@@ -84,35 +94,30 @@ sudo pacman -S --needed --noconfirm \
   hyprwayland-scanner \
   hyprcursor \
   hyprlang \
-  xorg-server-devel
+  xorg-server-devel \
+  kitty
 
-# Cloner le dépôt Hyprland
-echo "Clonage du dépôt Hyprland..."
+# Installation des polices pour une compatibilité étendue
+sudo pacman -S --noconfirm noto-fonts noto-fonts-emoji
+
+log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
 cd ~/Hyprland || exit
 
-# Compiler et installer Hyprland
-echo "Compilation et installation de Hyprland..."
+log_prompt "INFO" && echo "Compilation et installation de Hyprland" && echo ""
 meson setup build
 ninja -C build
 sudo ninja -C build install
 
-# Ajouter Hyprland à l'option de session pour les gestionnaires de sessions (optionnel)
-echo "Hyprland est maintenant installé !"
-echo "Pour démarrer Hyprland, choisissez-le dans votre gestionnaire de sessions ou lancez 'Hyprland' depuis un terminal."
 
-# Nettoyage des fichiers de compilation
-echo "Nettoyage des fichiers temporaires..."
-cd ..
-rm -rf ~/Hyprland
-
-echo "Installation terminée avec succès."
+log_prompt "INFO" && echo "Nettoyage des fichiers temporaires" && echo ""
+cd .. && rm -rf ~/Hyprland
 
 
-# Création du dossier de configuration pour Hyprland
+log_prompt "INFO" && echo "Configuration de Hyprland" && echo ""
+
 mkdir -p ~/.config/hypr
 
-# Génération du fichier de configuration Hyprland
 cat <<EOL > ~/.config/hypr/hyprland.conf
 # Configuration Hyprland - ~/.config/hypr/hyprland.conf
 
@@ -122,16 +127,7 @@ monitor=,1920x1080@60,0x0,1  # Configurer l'affichage selon vos besoins
 # Fond d'écran
 # wallpaper=~/Images/wallpapers/default.jpg  # Chemin vers l'image de fond
 
-# Curseur
-cursor_size=24
-cursor=default
-
-# Application par défaut
-default-term=alacritty
-
 # Effets et bordures
-shadow=on
-blur_size=5
 border_size=2
 
 # Thèmes
@@ -157,6 +153,7 @@ EOL
 
 # Configuration de Waybar
 mkdir -p ~/.config/waybar
+
 cat <<EOL > ~/.config/waybar/config
 // ~/.config/waybar/config
 {
@@ -177,7 +174,8 @@ EOL
 # Lancement automatique de Hyprland via SDDM
 echo 'exec Hyprland' > ~/.xprofile
 
-# Installation des polices pour une compatibilité étendue
-sudo pacman -S --noconfirm noto-fonts noto-fonts-emoji
 
-echo "Configuration de Hyprland terminée."
+##############################################################################
+## Activation des services                                                
+##############################################################################
+sudo systemctl enable sddm
