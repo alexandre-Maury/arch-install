@@ -36,13 +36,30 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 ## Installation de YAY && PARU                                                 
 ##############################################################################
-# cd /tmp
+if ! command -v yay &> /dev/null; then
+    log_prompt "INFO" && echo "Installation de YAY" && echo ""
+    git clone https://aur.archlinux.org/yay-bin.git
+    cd yay-bin || exit
+    makepkg -si --noconfirm
+    cd .. && rm -rf yay-bin
+    log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
-# git clone https://aur.archlinux.org/yay.git
-# git clone https://aur.archlinux.org/paru.git
+else
+    log_prompt "INFO" && echo "YAY est déja installé" && echo ""
+fi
 
-# cd /tmp/paru && makepkg -si && paru -Syu
-# cd /tmp/yay && makepkg -si
+if ! command -v paru &> /dev/null; then
+        log_prompt "INFO" && echo "Installation de PARU" && echo ""
+    git clone https://aur.archlinux.org/paru.git
+    cd paru || exit
+    makepkg -si --noconfirm
+    cd .. && rm -rf paru
+    log_prompt "SUCCESS" && echo "Terminée" && echo ""
+
+else
+    log_prompt "INFO" && echo "PARU est déja installé" && echo ""
+fi
+
 
 ##############################################################################
 ## Install SDDM                                            
@@ -179,3 +196,4 @@ echo 'exec Hyprland' > ~/.xprofile
 ## Activation des services                                                
 ##############################################################################
 sudo systemctl enable sddm
+# export PATH="$PATH:$HOME/.local/bin"
