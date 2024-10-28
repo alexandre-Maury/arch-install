@@ -81,6 +81,9 @@ sudo pacman -S --needed --noconfirm \
   vulkan-headers \
   vulkan-icd-loader \
   aquamarine \
+  hyprwayland-scanner \
+  hyprcursor \
+  hyprlang \
   xorg-server-devel
 
 # Cloner le dépôt Hyprland
