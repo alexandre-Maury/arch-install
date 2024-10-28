@@ -74,3 +74,77 @@ cd /tmp/Hyprland && make all && sudo make install
 ##############################################################################
 
 sudo rm -rf /tmp/*
+
+
+# Création du dossier de configuration pour Hyprland
+mkdir -p ~/.config/hypr
+
+# Génération du fichier de configuration Hyprland
+cat <<EOL > ~/.config/hypr/hyprland.conf
+# Configuration Hyprland - ~/.config/hypr/hyprland.conf
+
+# Moniteur
+monitor=,1920x1080@60,0x0,1  # Configurer l'affichage selon vos besoins
+
+# Fond d'écran
+wallpaper=~/Images/wallpapers/default.jpg  # Chemin vers l'image de fond
+
+# Curseur
+cursor_size=24
+cursor=default
+
+# Application par défaut
+default-term=alacritty
+
+# Effets et bordures
+shadow=on
+blur_size=5
+border_size=2
+
+# Thèmes
+border_color=0xffa1a1a1
+bg_color=0xff2e3440
+text_color=0xffffffff
+
+# Raccourcis
+bind=SUPER+Return,exec,alacritty  # SUPER+Entrée pour ouvrir Alacritty
+bind=SUPER+D,exec,rofi -show drun # SUPER+D pour ouvrir Rofi
+bind=SUPER+Q,close                 # SUPER+Q pour fermer une fenêtre
+
+# Gestion des fenêtres
+bind=SUPER+F,fullscreen            # Mode plein écran
+bind=SUPER+Left,moveleft 10        # Déplacer une fenêtre à gauche
+bind=SUPER+Right,moveright 10      # Déplacer une fenêtre à droite
+bind=SUPER+Up,moveup 10            # Déplacer une fenêtre en haut
+bind=SUPER+Down,movedown 10        # Déplacer une fenêtre en bas
+
+# Barre de tâches (si Waybar est installé)
+exec-once=waybar &
+EOL
+
+# Configuration de Waybar
+mkdir -p ~/.config/waybar
+cat <<EOL > ~/.config/waybar/config
+// ~/.config/waybar/config
+{
+  "layer": "top",
+  "position": "top",
+  "modules-left": ["sway/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "battery", "memory", "cpu", "temperature"],
+  "clock": {
+    "format": "{:%H:%M:%S}"
+  },
+  "battery": {
+    "format": "{capacity}% {icon}"
+  }
+}
+EOL
+
+# Lancement automatique de Hyprland via SDDM
+echo 'exec Hyprland' > ~/.xprofile
+
+# Installation des polices pour une compatibilité étendue
+sudo pacman -S --noconfirm noto-fonts noto-fonts-emoji
+
+echo "Configuration de Hyprland terminée."
