@@ -80,6 +80,7 @@ sudo pacman -S --needed --noconfirm \
   pixman \
   vulkan-headers \
   vulkan-icd-loader \
+  aquamarine \
   xorg-server-devel
 
 # Cloner le dépôt Hyprland
@@ -116,7 +117,7 @@ cat <<EOL > ~/.config/hypr/hyprland.conf
 monitor=,1920x1080@60,0x0,1  # Configurer l'affichage selon vos besoins
 
 # Fond d'écran
-wallpaper=~/Images/wallpapers/default.jpg  # Chemin vers l'image de fond
+# wallpaper=~/Images/wallpapers/default.jpg  # Chemin vers l'image de fond
 
 # Curseur
 cursor_size=24
