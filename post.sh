@@ -26,27 +26,16 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 ## Installation de YAY && PARU                                                 
 ##############################################################################
-cd /tmp
+# cd /tmp
 
-git clone https://aur.archlinux.org/yay.git
-git clone https://aur.archlinux.org/paru.git
+# git clone https://aur.archlinux.org/yay.git
+# git clone https://aur.archlinux.org/paru.git
 
-cd /tmp/paru && makepkg -si && paru -Syu
-cd /tmp/yay && makepkg -si
+# cd /tmp/paru && makepkg -si && paru -Syu
+# cd /tmp/yay && makepkg -si
 
-##############################################################################
-## Install packages                                                
-##############################################################################
 
-# Guest tools ==> SPICE support on guest (for UTM)
-sudo pacman -S spice-vdagent xf86-video-qxl --noconfirm
 
-# Guest tools ==> for VirtualBox
-sudo pacman -S virtualbox-guest-utils --noconfirm
-
-# Guest tools ==> for Fonts
-sudo pacman -S noto-fonts ttf-opensans ttf-firacode-nerd --noconfirm
-sudo pacman -S noto-fonts-emoji --noconfirm
 
 
 ##############################################################################
@@ -63,17 +52,57 @@ sudo pacman -S noto-fonts-emoji --noconfirm
 ##############################################################################
 ## Install Hyprland                                               
 ##############################################################################
-yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
+# yay -S --noconfirm gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner xcb-util-errors hyprutils-git aquamarine
 
-cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
-cd /tmp/Hyprland && make all && sudo make install
+# cd /tmp && git clone --recursive https://github.com/hyprwm/Hyprland
+# cd /tmp/Hyprland && make all && sudo make install
 # yay -S hyprland-git
 
 ##############################################################################
 ## Clean                                                
 ##############################################################################
 
-sudo rm -rf /tmp/*
+
+
+# Mettre à jour le système et installer les dépendances requises
+echo "Mise à jour du système et installation des dépendances..."
+sudo pacman -Syu --noconfirm
+sudo pacman -S --needed --noconfirm \
+  base-devel \
+  cmake \
+  meson \
+  ninja \
+  wayland \
+  wlroots \
+  libx11 \
+  libxkbcommon \
+  libdrm \
+  pixman \
+  vulkan-headers \
+  vulkan-icd-loader \
+  xorg-server-devel
+
+# Cloner le dépôt Hyprland
+echo "Clonage du dépôt Hyprland..."
+git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
+cd ~/Hyprland || exit
+
+# Compiler et installer Hyprland
+echo "Compilation et installation de Hyprland..."
+meson setup build
+ninja -C build
+sudo ninja -C build install
+
+# Ajouter Hyprland à l'option de session pour les gestionnaires de sessions (optionnel)
+echo "Hyprland est maintenant installé !"
+echo "Pour démarrer Hyprland, choisissez-le dans votre gestionnaire de sessions ou lancez 'Hyprland' depuis un terminal."
+
+# Nettoyage des fichiers de compilation
+echo "Nettoyage des fichiers temporaires..."
+cd ..
+rm -rf ~/Hyprland
+
+echo "Installation terminée avec succès."
 
 
 # Création du dossier de configuration pour Hyprland
