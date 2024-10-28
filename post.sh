@@ -18,7 +18,7 @@ log_prompt "INFO" && read -p "Quel est votre nom d'utilisateur : " USER && echo 
 ## Mise à jour du système                                                 
 ##############################################################################
 log_prompt "INFO" && echo "Mise à jour du système " && echo ""
-pacman -Syu --noconfirm
+sudo pacman -Syu --noconfirm
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
@@ -65,7 +65,7 @@ fi
 ## Install SDDM                                            
 ##############################################################################
 log_prompt "INFO" && echo "Installation de SDDM" && echo ""
-sudo pacman -S sddm sddm-sugar-dark --noconfirm
+sudo paru -S sddm sddm-sugar-dark --noconfirm
 
 THEME="sugar-dark"
 
@@ -94,7 +94,7 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 # yay -S hyprland-git
 
 log_prompt "INFO" && echo "installation des dépendances" && echo ""
-sudo pacman -S --needed --noconfirm \
+sudo paru -S --needed --noconfirm \
   base-devel \
   cmake \
   meson \
@@ -115,7 +115,7 @@ sudo pacman -S --needed --noconfirm \
   kitty
 
 # Installation des polices pour une compatibilité étendue
-sudo pacman -S --noconfirm noto-fonts noto-fonts-emoji
+sudo paru -S --noconfirm noto-fonts noto-fonts-emoji
 
 log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
