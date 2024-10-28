@@ -153,7 +153,7 @@ bg_color=0xff2e3440
 text_color=0xffffffff
 
 # Raccourcis
-bind=SUPER+Return,exec,alacritty  # SUPER+Entrée pour ouvrir Alacritty
+bind=SUPER+Return,exec,kitty  # SUPER+Entrée pour ouvrir kitty
 bind=SUPER+D,exec,rofi -show drun # SUPER+D pour ouvrir Rofi
 bind=SUPER+Q,close                 # SUPER+Q pour fermer une fenêtre
 
