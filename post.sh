@@ -64,27 +64,27 @@ fi
 ##############################################################################
 ## Install SDDM                                            
 ##############################################################################
-log_prompt "INFO" && echo "Installation de SDDM" && echo ""
-sudo paru -S sddm sddm-sugar-dark --noconfirm
+# log_prompt "INFO" && echo "Installation de SDDM" && echo ""
+# sudo paru -S sddm sddm-sugar-dark --noconfirm
 
-THEME="sugar-dark"
+# THEME="sugar-dark"
 
-mkdir -p /etc/sddm.conf.d
-# sudo cp /usr/lib/sddm/sddm.conf.d/default.conf /etc/sddm.conf.d/sddm.conf
-cat <<EOF > /etc/sddm.conf.d/sddm.conf
-[Theme]
-Current=${THEME}
+# mkdir -p /etc/sddm.conf.d
+# # sudo cp /usr/lib/sddm/sddm.conf.d/default.conf /etc/sddm.conf.d/sddm.conf
+# cat <<EOF > /etc/sddm.conf.d/sddm.conf
+# [Theme]
+# Current=${THEME}
 
-[Users]
-# Définir l'utilisateur par défaut, si souhaité
-DefaultUser=${USER}
+# [Users]
+# # Définir l'utilisateur par défaut, si souhaité
+# DefaultUser=${USER}
 
-# Activation de l'auto-login (optionnel)
-# AutoLogin=votre_utilisateur
-# AutoLoginSession=your_desktop_environment
-EOF
+# # Activation de l'auto-login (optionnel)
+# # AutoLogin=votre_utilisateur
+# # AutoLoginSession=your_desktop_environment
+# EOF
 
-log_prompt "SUCCESS" && echo "Terminée" && echo ""
+# log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 
 ##############################################################################
@@ -205,5 +205,5 @@ echo 'exec Hyprland' > ~/.xprofile
 ##############################################################################
 ## Activation des services                                                
 ##############################################################################
-sudo systemctl enable sddm
+# sudo systemctl enable sddm
 # export PATH="$PATH:$HOME/.local/bin"
