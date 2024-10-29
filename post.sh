@@ -136,36 +136,46 @@ log_prompt "INFO" && echo "Configuration de Hyprland" && echo ""
 mkdir -p ~/.config/hypr
 
 cat <<EOL > ~/.config/hypr/hyprland.conf
-# Configuration Hyprland - ~/.config/hypr/hyprland.conf
+# dracula/hyprland
+general {
+    col.active_border = rgb(44475a) rgb(bd93f9) 90deg
+    col.inactive_border = rgba(44475aaa)
+    col.nogroup_border = rgba(282a36dd)
+    col.nogroup_border_active = rgb(bd93f9) rgb(44475a) 90deg
+    no_border_on_floating = false
+    border_size = 2
 
-# Moniteur
-monitor=,1920x1080@60,0x0,1  # Configurer l'affichage selon vos besoins
+    # non-gradient alternative
+    #col.active_border = rgb(bd93f9)
+    #col.inactive_border = rgba(44475aaa)
+    #col.group_border = rgba(282a36dd)
+    #col.group_border_active = rgb(bd93f9)
 
-# Fond d'écran
-# wallpaper=~/Images/wallpapers/default.jpg  # Chemin vers l'image de fond
+    # darker alternative
+    #col.active_border = rgb(44475a) # or rgb(6272a4)
+    #col.inactive_border = rgb(282a36)
+    #col.group_border = rgb(282a36)
+    #col.group_border_active = rgb(44475a) # or rgb(6272a4)
 
-# Effets et bordures
-border_size=2
+}
+decoration {
+    col.shadow = rgba(1E202966)
 
-# Thèmes
-border_color=0xffa1a1a1
-bg_color=0xff2e3440
-text_color=0xffffffff
+    # suggested shadow setting
+    #drop_shadow = yes
+    #shadow_range = 60
+    #shadow_offset = 1 2
+    #shadow_render_power = 3
+    #shadow_scale = 0.97
+}
 
-# Raccourcis
-bind=SUPER+Return,exec,kitty  # SUPER+Entrée pour ouvrir kitty
-bind=SUPER+D,exec,rofi -show drun # SUPER+D pour ouvrir Rofi
-bind=SUPER+Q,close                 # SUPER+Q pour fermer une fenêtre
-
-# Gestion des fenêtres
-bind=SUPER+F,fullscreen            # Mode plein écran
-bind=SUPER+Left,moveleft 10        # Déplacer une fenêtre à gauche
-bind=SUPER+Right,moveright 10      # Déplacer une fenêtre à droite
-bind=SUPER+Up,moveup 10            # Déplacer une fenêtre en haut
-bind=SUPER+Down,movedown 10        # Déplacer une fenêtre en bas
-
-# Barre de tâches (si Waybar est installé)
-exec-once=waybar &
+group {
+    groupbar {
+        col.active = rgb(bd93f9) rgb(44475a) 90deg
+        col.inactive = rgba(282a36dd)
+    }
+}
+windowrulev2 = bordercolor rgb(ff5555),xwayland:1 # check if window is xwayland
 EOL
 
 # Configuration de Waybar
