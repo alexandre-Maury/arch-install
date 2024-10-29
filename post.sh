@@ -133,73 +133,216 @@ cd .. && rm -rf ~/Hyprland
 
 log_prompt "INFO" && echo "Configuration de Hyprland" && echo ""
 
+# Création des répertoires de configuration
+echo "Création des répertoires de configuration..."
 mkdir -p ~/.config/hypr
+mkdir -p ~/.config/waybar
+mkdir -p ~/.config/dunst
 
-cat <<EOL > ~/.config/hypr/hyprland.conf
-# dracula/hyprland
-general {
-    col.active_border = rgb(44475a) rgb(bd93f9) 90deg
-    col.inactive_border = rgba(44475aaa)
-    col.nogroup_border = rgba(282a36dd)
-    col.nogroup_border_active = rgb(bd93f9) rgb(44475a) 90deg
-    no_border_on_floating = false
-    border_size = 2
+# Création du fichier de configuration Hyprland
+echo "Création de la configuration Hyprland..."
+cat > ~/.config/hypr/hyprland.conf << 'EOL'
+# Configuration moniteur
+monitor=,preferred,auto,auto
 
-    # non-gradient alternative
-    #col.active_border = rgb(bd93f9)
-    #col.inactive_border = rgba(44475aaa)
-    #col.group_border = rgba(282a36dd)
-    #col.group_border_active = rgb(bd93f9)
+# Variables d'environnement
+env = XCURSOR_SIZE,24
+env = QT_QPA_PLATFORMTHEME,qt5ct
+env = LIBVA_DRIVER_NAME,nvidia
+env = XDG_SESSION_TYPE,wayland
+env = GBM_BACKEND,nvidia-drm
+env = __GLX_VENDOR_LIBRARY_NAME,nvidia
+env = WLR_NO_HARDWARE_CURSORS,1
 
-    # darker alternative
-    #col.active_border = rgb(44475a) # or rgb(6272a4)
-    #col.inactive_border = rgb(282a36)
-    #col.group_border = rgb(282a36)
-    #col.group_border_active = rgb(44475a) # or rgb(6272a4)
+# Démarrage automatique
+exec-once = waybar
+exec-once = dunst
+exec-once = hyprpaper
+exec-once = /usr/lib/polkit-kde-authentication-agent-1
 
-}
-decoration {
-    col.shadow = rgba(1E202966)
-
-    # suggested shadow setting
-    #drop_shadow = yes
-    #shadow_range = 60
-    #shadow_offset = 1 2
-    #shadow_render_power = 3
-    #shadow_scale = 0.97
-}
-
-group {
-    groupbar {
-        col.active = rgb(bd93f9) rgb(44475a) 90deg
-        col.inactive = rgba(282a36dd)
+# Input configuration
+input {
+    kb_layout = fr
+    follow_mouse = 1
+    touchpad {
+        natural_scroll = true
+        tap-to-click = true
     }
 }
-windowrulev2 = bordercolor rgb(ff5555),xwayland:1 # check if window is xwayland
+
+# Apparence générale
+general {
+    gaps_in = 5
+    gaps_out = 10
+    border_size = 2
+    col.active_border = rgba(33ccffee)
+    col.inactive_border = rgba(595959aa)
+    layout = dwindle
+}
+
+# Décoration des fenêtres
+decoration {
+    rounding = 10
+    blur = true
+    blur_size = 3
+    blur_passes = 1
+    drop_shadow = true
+    shadow_range = 4
+    shadow_render_power = 3
+}
+
+# Animations
+animations {
+    enabled = true
+    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
+    animation = windows, 1, 7, myBezier
+    animation = windowsOut, 1, 7, default, popin 80%
+    animation = border, 1, 10, default
+    animation = fade, 1, 7, default
+    animation = workspaces, 1, 6, default
+}
+
+# Disposition
+dwindle {
+    pseudotile = true
+    preserve_split = true
+}
+
+# Raccourcis clavier
+bind = SUPER, Return, exec, kitty
+bind = SUPER, Q, killactive,
+bind = SUPER, M, exit,
+bind = SUPER, E, exec, dolphin
+bind = SUPER, V, togglefloating,
+bind = SUPER, R, exec, rofi -show drun
+bind = SUPER, P, pseudo,
+bind = SUPER, J, togglesplit,
+
+# Gestion des espaces de travail
+bind = SUPER, 1, workspace, 1
+bind = SUPER, 2, workspace, 2
+bind = SUPER, 3, workspace, 3
+bind = SUPER, 4, workspace, 4
+bind = SUPER, 5, workspace, 5
+bind = SUPER, 6, workspace, 6
+bind = SUPER, 7, workspace, 7
+bind = SUPER, 8, workspace, 8
+bind = SUPER, 9, workspace, 9
+bind = SUPER, 0, workspace, 10
+
+# Déplacement des fenêtres
+bind = SUPER SHIFT, 1, movetoworkspace, 1
+bind = SUPER SHIFT, 2, movetoworkspace, 2
+bind = SUPER SHIFT, 3, movetoworkspace, 3
+bind = SUPER SHIFT, 4, movetoworkspace, 4
+bind = SUPER SHIFT, 5, movetoworkspace, 5
+bind = SUPER SHIFT, 6, movetoworkspace, 6
+bind = SUPER SHIFT, 7, movetoworkspace, 7
+bind = SUPER SHIFT, 8, movetoworkspace, 8
+bind = SUPER SHIFT, 9, movetoworkspace, 9
+bind = SUPER SHIFT, 0, movetoworkspace, 10
+
+# Capture d'écran
+bind = SUPER SHIFT, S, exec, grim -g "$(slurp)" - | wl-copy
 EOL
 
 # Configuration de Waybar
-mkdir -p ~/.config/waybar
-
-cat <<EOL > ~/.config/waybar/config
-// ~/.config/waybar/config
+cat > ~/.config/waybar/config << 'EOL'
 {
-  "layer": "top",
-  "position": "top",
-  "modules-left": ["sway/workspaces"],
-  "modules-center": ["clock"],
-  "modules-right": ["network", "battery", "memory", "cpu", "temperature"],
-  "clock": {
-    "format": "{:%H:%M:%S}"
-  },
-  "battery": {
-    "format": "{capacity}% {icon}"
-  }
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": ["pulseaudio", "network", "cpu", "memory", "battery", "tray"],
+    
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "format": "{icon}",
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "urgent": "",
+            "focused": "",
+            "default": ""
+        }
+    },
+    "clock": {
+        "format": "{:%H:%M}",
+        "format-alt": "{:%Y-%m-%d}"
+    },
+    "cpu": {
+        "format": "CPU {usage}%"
+    },
+    "memory": {
+        "format": "RAM {}%"
+    },
+    "battery": {
+        "format": "BAT {capacity}%"
+    },
+    "network": {
+        "format-wifi": "WiFi ({signalStrength}%)",
+        "format-ethernet": "ETH",
+        "format-disconnected": "Disconnected"
+    },
+    "pulseaudio": {
+        "format": "VOL {volume}%",
+        "format-muted": "MUTED"
+    },
+    "tray": {
+        "spacing": 10
+    }
 }
 EOL
 
+# Style pour Waybar
+cat > ~/.config/waybar/style.css << 'EOL'
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: rgba(21, 18, 27, 0.9);
+    color: #cdd6f4;
+}
+
+#workspaces button {
+    padding: 0 5px;
+    background: transparent;
+    color: #cdd6f4;
+    border-bottom: 3px solid transparent;
+}
+
+#workspaces button.active {
+    border-bottom: 3px solid #89b4fa;
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#network,
+#pulseaudio,
+#tray {
+    padding: 0 10px;
+    margin: 0 5px;
+}
+EOL
+
+echo "Installation terminée ! Déconnectez-vous et sélectionnez Hyprland dans votre gestionnaire de session."
+
 # Lancement automatique de Hyprland via SDDM
-echo 'exec Hyprland' > ~/.xprofile
+# echo 'exec Hyprland' > ~/.xprofile
+
+log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 
 ##############################################################################
