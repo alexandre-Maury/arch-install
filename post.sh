@@ -99,12 +99,6 @@ sudo paru -S --needed --noconfirm \
   ninja \
   wayland \
   wlroots \
-  libx11 \
-  libxkbcommon \
-  libdrm \
-  pixman \
-  vulkan-headers \
-  vulkan-icd-loader \
   aquamarine \
   hyprwayland-scanner \
   hyprcursor \
