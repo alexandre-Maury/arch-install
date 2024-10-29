@@ -72,16 +72,14 @@ fi
 # mkdir -p /etc/sddm.conf.d
 # # sudo cp /usr/lib/sddm/sddm.conf.d/default.conf /etc/sddm.conf.d/sddm.conf
 # cat <<EOF > /etc/sddm.conf.d/sddm.conf
+# [Users]
+# DefaultUser=${USER}
+# Session=hyprland.desktop
 # [Theme]
 # Current=${THEME}
-
-# [Users]
-# # Définir l'utilisateur par défaut, si souhaité
-# DefaultUser=${USER}
-
-# # Activation de l'auto-login (optionnel)
-# # AutoLogin=votre_utilisateur
-# # AutoLoginSession=your_desktop_environment
+# [General]
+# # Activer le support Wayland
+# DisplayServer=wayland
 # EOF
 
 # log_prompt "SUCCESS" && echo "Terminée" && echo ""
@@ -133,65 +131,42 @@ cd .. && rm -rf ~/Hyprland
 
 log_prompt "INFO" && echo "Configuration de Hyprland" && echo ""
 
-# Création des répertoires de configuration
-echo "Création des répertoires de configuration..."
 mkdir -p ~/.config/hypr
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/dunst
 
-# Création du fichier de configuration Hyprland
-echo "Création de la configuration Hyprland..."
-cat > ~/.config/hypr/hyprland.conf << 'EOL'
-# Configuration moniteur
-monitor=,preferred,auto,auto
+cat << EOF > ~/.config/hypr/hyprland.conf
+# Configuration Hyprland inspirée de Kali Linux Purple
 
-# Variables d'environnement
-env = XCURSOR_SIZE,24
-env = QT_QPA_PLATFORMTHEME,qt5ct
-env = LIBVA_DRIVER_NAME,nvidia
-env = XDG_SESSION_TYPE,wayland
-env = GBM_BACKEND,nvidia-drm
-env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-env = WLR_NO_HARDWARE_CURSORS,1
+# Définition des couleurs
+\$purple = rgb(8A2BE2)
+\$darkpurple = rgb(4B0082)
+\$black = rgb(000000)
+\$white = rgb(FFFFFF)
 
-# Démarrage automatique
-exec-once = waybar
-exec-once = dunst
-exec-once = hyprpaper
-exec-once = /usr/lib/polkit-kde-authentication-agent-1
-
-# Input configuration
-input {
-    kb_layout = fr
-    follow_mouse = 1
-    touchpad {
-        natural_scroll = true
-        tap-to-click = true
-    }
-}
-
-# Apparence générale
+# Configuration générale
 general {
+    border_size = 2
     gaps_in = 5
     gaps_out = 10
-    border_size = 2
-    col.active_border = rgba(33ccffee)
-    col.inactive_border = rgba(595959aa)
+    col.active_border = \$purple
+    col.inactive_border = \$darkpurple
     layout = dwindle
 }
 
 # Décoration des fenêtres
 decoration {
-    rounding = 10
+    rounding = 5
     blur = true
-    blur_size = 3
-    blur_passes = 1
+    blur_size = 5
+    blur_passes = 2
     drop_shadow = true
-    shadow_range = 4
+    shadow_range = 15
     shadow_render_power = 3
+    col.shadow = \$purple
 }
 
-# Animations
+# Animation
 animations {
     enabled = true
     bezier = myBezier, 0.05, 0.9, 0.1, 1.05
@@ -202,23 +177,34 @@ animations {
     animation = workspaces, 1, 6, default
 }
 
-# Disposition
-dwindle {
-    pseudotile = true
-    preserve_split = true
+# Configuration du clavier
+input {
+    kb_layout = fr
+    kb_variant =
+    kb_model =
+    kb_options =
+    kb_rules =
+    follow_mouse = 1
+    touchpad {
+        natural_scroll = true
+    }
 }
 
+# Règles pour les fenêtres
+windowrule = float, ^(pavucontrol)$
+windowrule = float, ^(nm-connection-editor)$
+
 # Raccourcis clavier
-bind = SUPER, Return, exec, kitty
+bind = SUPER, Return, exec, foot
 bind = SUPER, Q, killactive,
 bind = SUPER, M, exit,
-bind = SUPER, E, exec, dolphin
+bind = SUPER, E, exec, thunar
 bind = SUPER, V, togglefloating,
-bind = SUPER, R, exec, rofi -show drun
+bind = SUPER, R, exec, wofi --show drun
 bind = SUPER, P, pseudo,
 bind = SUPER, J, togglesplit,
 
-# Gestion des espaces de travail
+# Déplacement entre les espaces de travail
 bind = SUPER, 1, workspace, 1
 bind = SUPER, 2, workspace, 2
 bind = SUPER, 3, workspace, 3
@@ -230,7 +216,7 @@ bind = SUPER, 8, workspace, 8
 bind = SUPER, 9, workspace, 9
 bind = SUPER, 0, workspace, 10
 
-# Déplacement des fenêtres
+# Déplacement des fenêtres entre les espaces de travail
 bind = SUPER SHIFT, 1, movetoworkspace, 1
 bind = SUPER SHIFT, 2, movetoworkspace, 2
 bind = SUPER SHIFT, 3, movetoworkspace, 3
@@ -242,11 +228,18 @@ bind = SUPER SHIFT, 8, movetoworkspace, 8
 bind = SUPER SHIFT, 9, movetoworkspace, 9
 bind = SUPER SHIFT, 0, movetoworkspace, 10
 
-# Capture d'écran
-bind = SUPER SHIFT, S, exec, grim -g "$(slurp)" - | wl-copy
-EOL
+# Exécution au démarrage
+exec-once = waybar
+exec-once = dunst
+exec-once = /usr/lib/polkit-kde-authentication-agent-1
+exec-once = hyprpaper
 
-# Configuration de Waybar
+exec-once = systemctl --user start pipewire.service
+exec-once = systemctl --user start pipewire-pulse.service
+exec-once = systemctl --user start wireplumber.service
+EOF
+
+log_prompt "INFO" && echo "Configuration de waybar" && echo ""
 cat > ~/.config/waybar/config << 'EOL'
 {
     "layer": "top",
@@ -259,17 +252,7 @@ cat > ~/.config/waybar/config << 'EOL'
     "hyprland/workspaces": {
         "disable-scroll": true,
         "all-outputs": true,
-        "format": "{icon}",
-        "format-icons": {
-            "1": "1",
-            "2": "2",
-            "3": "3",
-            "4": "4",
-            "5": "5",
-            "urgent": "",
-            "focused": "",
-            "default": ""
-        }
+        "format": "{name}"
     },
     "clock": {
         "format": "{:%H:%M}",
@@ -299,45 +282,50 @@ cat > ~/.config/waybar/config << 'EOL'
 }
 EOL
 
-# Style pour Waybar
-cat > ~/.config/waybar/style.css << 'EOL'
-* {
-    border: none;
-    border-radius: 0;
-    font-family: "JetBrainsMono Nerd Font";
-    font-size: 13px;
-    min-height: 0;
-}
+# log_prompt "INFO" && echo "Configuration de la session Hyprland pour SDDM" && echo ""
+# sudo tee /usr/share/wayland-sessions/hyprland.desktop << 'EOL'
+# [Desktop Entry]
+# Name=Hyprland
+# Comment=A highly customizable dynamic tiling Wayland compositor
+# Exec=Hyprland
+# Type=Application
+# EOL
 
-window#waybar {
-    background: rgba(21, 18, 27, 0.9);
-    color: #cdd6f4;
-}
+# log_prompt "INFO" && echo "Configuration de SDDM" && echo ""
+# sudo tee /etc/sddm.conf << 'EOL'
+# [Autologin]
+# # Activer l'auto-login
+# User=$USER
+# Session=hyprland.desktop
 
-#workspaces button {
-    padding: 0 5px;
-    background: transparent;
-    color: #cdd6f4;
-    border-bottom: 3px solid transparent;
-}
+# [Theme]
+# # Utiliser le thème Catppuccin
+# Current=catppuccin
 
-#workspaces button.active {
-    border-bottom: 3px solid #89b4fa;
-}
+# [General]
+# # Activer le support Wayland
+# DisplayServer=wayland
+# EOL
 
-#clock,
-#battery,
-#cpu,
-#memory,
-#network,
-#pulseaudio,
-#tray {
-    padding: 0 10px;
-    margin: 0 5px;
-}
-EOL
 
-echo "Installation terminée ! Déconnectez-vous et sélectionnez Hyprland dans votre gestionnaire de session."
+# sudo systemctl enable sddm
+
+# Ajout des variables d'environnement
+echo '
+# Hyprland environment variables
+export XDG_CURRENT_DESKTOP=Hyprland
+export XDG_SESSION_TYPE=wayland
+export XDG_SESSION_DESKTOP=Hyprland
+' >> ~/.bashrc
+
+log_prompt "INFO" && echo "Installation terminée ! Redémarrez votre système et SDDM démarrera automatiquement avec Hyprland." && echo ""
+
+# Demander si l'utilisateur veut redémarrer maintenant
+read -p "Voulez-vous redémarrer maintenant ? (o/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Oo]$ ]]; then
+    sudo reboot
+fi
 
 # Lancement automatique de Hyprland via SDDM
 # echo 'exec Hyprland' > ~/.xprofile
