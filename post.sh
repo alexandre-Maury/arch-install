@@ -104,7 +104,8 @@ sudo paru -S --needed --noconfirm \
   hyprcursor \
   hyprlang \
   xorg-server-devel \
-  kitty
+  kitty \
+  alacritty
 
 # Installation des polices pour une compatibilité étendue
 sudo paru -S --noconfirm noto-fonts noto-fonts-emoji
@@ -130,107 +131,71 @@ mkdir -p ~/.config/waybar
 mkdir -p ~/.config/dunst
 
 cat << EOF > ~/.config/hypr/hyprland.conf
-# Configuration Hyprland inspirée de Kali Linux Purple
+# ---- Fichiers de base ----
+monitor=,preferred,auto,1
+layout=master
 
-# Définition des couleurs
-\$purple = rgb(8A2BE2)
-\$darkpurple = rgb(4B0082)
-\$black = rgb(000000)
-\$white = rgb(FFFFFF)
-
-# Configuration générale
+# ---- Paramètres généraux ----
+# Définit le modificateur de touche pour Hyprland (ici, la touche super)
 general {
-    border_size = 2
-    gaps_in = 5
-    gaps_out = 10
-    col.active_border = \$purple
-    col.inactive_border = \$darkpurple
-    layout = dwindle
+    mod=SUPER
+    gaps_in=10         # Espacement entre les fenêtres
+    gaps_out=20        # Espacement par rapport aux bords de l'écran
+    border_size=2      # Taille de la bordure des fenêtres
+    col.active_border=0xffa54242  # Couleur de la bordure des fenêtres actives
+    col.inactive_border=0xff2e3440  # Couleur des bordures inactives (sombre)
+    animations=1       # Active les animations de base
 }
 
-# Décoration des fenêtres
+# ---- Apparence ----
 decoration {
-    rounding = 5
-    blur = true
-    blur_size = 5
-    blur_passes = 2
-    drop_shadow = true
-    shadow_range = 15
-    shadow_render_power = 3
-    col.shadow = \$purple
+    rounding=8                # Arrondis des fenêtres
+    active_opacity=0.95       # Opacité pour les fenêtres actives
+    inactive_opacity=0.85     # Opacité pour les fenêtres inactives
+    blur_size=4               # Taille du flou pour les effets de transparence
+    blur_passes=3             # Passes de flou pour plus de profondeur
+    shadow=1                  # Active les ombres pour un effet de profondeur
 }
 
-# Animation
-animations {
-    enabled = true
-    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
-    animation = windows, 1, 7, myBezier
-    animation = windowsOut, 1, 7, default, popin 80%
-    animation = border, 1, 10, default
-    animation = fade, 1, 7, default
-    animation = workspaces, 1, 6, default
+# ---- Gestion des fenêtres ----
+master {
+    orientation=horizontal     # Disposition horizontale pour le travail en terminal
+    msize=0.65                 # Taille du maître (fenêtre principale)
 }
 
-# Configuration du clavier
-input {
-    kb_layout = fr
-    kb_variant =
-    kb_model =
-    kb_options =
-    kb_rules =
-    follow_mouse = 1
-    touchpad {
-        natural_scroll = true
-    }
+# ---- Barre d’état et Polybar ----
+bar {
+    # Remplace ceci par une configuration Polybar si tu préfères.
+    status_command=~/.config/hypr/scripts/polybar.sh
+    font=JetBrainsMono Nerd Font:size=10
+    bar_position=top
+    padding=10
 }
 
-# Règles pour les fenêtres
-windowrule = float, ^(pavucontrol)$
-windowrule = float, ^(nm-connection-editor)$
+# ---- Raccourcis Clavier ----
+bind=SUPER,RETURN,exec,alacritty  # Lancer Alacritty avec SUPER+Return
+bind=SUPER,d,exec,dmenu_run       # Lancer dmenu avec SUPER+d
+bind=SUPER+SHIFT,q,closewindow     # Fermer la fenêtre active
+bind=SUPER+SHIFT+R,reload,         # Recharger Hyprland avec SUPER+SHIFT+R
 
-# Raccourcis clavier
-bind = SUPER, Return, exec, foot
-bind = SUPER, Q, killactive,
-bind = SUPER, M, exit,
-bind = SUPER, E, exec, thunar
-bind = SUPER, V, togglefloating,
-bind = SUPER, R, exec, wofi --show drun
-bind = SUPER, P, pseudo,
-bind = SUPER, J, togglesplit,
+# ---- Définitions des couleurs ----
+col {
+    active_border=0xff5b3b79   # Violet pour les bordures inactives
+    inactive_border=0xff2e3440  # Couleur sombre pour les bordures inactives
+    background=0xff1c1f26        # Gris anthracite pour le fond
+    text=0xffeceff4              # Gris clair pour le texte
+    accent=0xff5294e2            # Bleu clair pour les éléments d'accentuation
+}
 
-# Déplacement entre les espaces de travail
-bind = SUPER, 1, workspace, 1
-bind = SUPER, 2, workspace, 2
-bind = SUPER, 3, workspace, 3
-bind = SUPER, 4, workspace, 4
-bind = SUPER, 5, workspace, 5
-bind = SUPER, 6, workspace, 6
-bind = SUPER, 7, workspace, 7
-bind = SUPER, 8, workspace, 8
-bind = SUPER, 9, workspace, 9
-bind = SUPER, 0, workspace, 10
+# ---- Multi-écrans ----
+monitor=eDP-1,preferred,0x0,1       # Définir l’écran principal avec des valeurs par défaut
 
-# Déplacement des fenêtres entre les espaces de travail
-bind = SUPER SHIFT, 1, movetoworkspace, 1
-bind = SUPER SHIFT, 2, movetoworkspace, 2
-bind = SUPER SHIFT, 3, movetoworkspace, 3
-bind = SUPER SHIFT, 4, movetoworkspace, 4
-bind = SUPER SHIFT, 5, movetoworkspace, 5
-bind = SUPER SHIFT, 6, movetoworkspace, 6
-bind = SUPER SHIFT, 7, movetoworkspace, 7
-bind = SUPER SHIFT, 8, movetoworkspace, 8
-bind = SUPER SHIFT, 9, movetoworkspace, 9
-bind = SUPER SHIFT, 0, movetoworkspace, 10
-
-# Exécution au démarrage
-exec-once = waybar
-exec-once = dunst
-exec-once = /usr/lib/polkit-kde-authentication-agent-1
-exec-once = hyprpaper
-
-exec-once = systemctl --user start pipewire.service
-exec-once = systemctl --user start pipewire-pulse.service
-exec-once = systemctl --user start wireplumber.service
+# ---- Répartition des fenêtres ----
+# Place des applications fréquemment utilisées pour Kali Purple
+rule=alacritty,float               # Alacritty sera flottant pour analyse rapide
+rule=firefox,tag=2                 # Firefox ouvert sur le tag (bureau) 2 pour navigation
+rule=burpsuite,workspace=3         # Burp Suite, un outil d’analyse, ouvert sur le tag 3
+rule=wireshark,workspace=4         # Wireshark pour analyse réseau, sur le tag 4
 EOF
 
 log_prompt "INFO" && echo "Configuration de waybar" && echo ""
