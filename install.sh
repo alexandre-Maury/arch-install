@@ -4,10 +4,10 @@
 
 set -e  # Quitte immédiatement en cas d'erreur.
 
-source config.sh # Inclure le fichier de configuration.
-source functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-chmod +x *.sh # Rendre les scripts exécutables.
+source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
 
 
 # Vérifier les privilèges root
@@ -156,7 +156,7 @@ if [[ "$CONFIGURATION" =~ ^[yY]$ ]]; then
     log_prompt "INFO" && echo "Suite de l'installation" && echo ""
 else
     # Si l'utilisateur répond N ou n
-    log_prompt "WARNING" && echo "Annulation de l'installation, modifier le fichier config.sh."
+    log_prompt "WARNING" && echo "Annulation de l'installation, modifier le fichier config/config.sh."
     exit 0
 fi
 
