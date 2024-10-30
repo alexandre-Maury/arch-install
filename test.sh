@@ -9,7 +9,8 @@ set -e  # Quitte immédiatement en cas d'erreur.
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-source $SCRIPT_DIR/config.sh # Inclure le fichier de configuration.
-source $SCRIPT_DIR/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/misc/script/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
 
 echo "le resultat de la manipe : $LANG"
+log_prompt "SUCCESS" && echo "Terminée" && echo "" && sleep 3
