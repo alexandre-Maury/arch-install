@@ -101,10 +101,10 @@ URL_FONTS=(
 for url in "${URL_FONTS[@]}"; do
   file_name=$(basename "$url")
   if [ ! -f "$file_name" ]; then
-    echo "Téléchargement de $file_name..."
+    log_prompt "INFO" && echo "Téléchargement de $file_name" && echo ""
     curl -fLO "$url"
   else
-    echo "$file_name existe déjà, téléchargement ignoré."
+    log_prompt "WARNING" && echo "$file_name existe déjà, fonts ignoré" && echo ""
   fi
 done
 
