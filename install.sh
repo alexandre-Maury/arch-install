@@ -450,9 +450,9 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
 arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S git man-db man-pages pambase --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S vim nano --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S sudo bash-completion sshpass --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S man-db man-pages cmake meson ninja --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S vim nano git tar wget--noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S sudo pambase bash-completion sshpass --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S xdg-user-dirs --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S iw wpa_supplicant openssh --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S bluez bluez-utils blueman --noconfirm
