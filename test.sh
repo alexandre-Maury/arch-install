@@ -133,7 +133,7 @@ yay -S --sudoloop --needed --noconfirm \
 
 
 log_prompt "INFO" && echo "Nettoyage des fichiers temporaires" && echo ""
-cd .. && rm -rf ~/Hyprland
+# cd .. && rm -rf ~/Hyprland
 
 # run_command "mkdir -p /home/$SUDO_USER/.config/hypr/ && cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hyprland.conf /home/$SUDO_USER/.config/hypr/" "Copy hyprland config (Must)" "yes" "no" 
 # run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/dunst /home/$SUDO_USER/.config/" "Copy dunst config" "yes" "no"
