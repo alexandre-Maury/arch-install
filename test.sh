@@ -41,10 +41,10 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 ##############################################################################
 if ! command -v yay &> /dev/null; then
     log_prompt "INFO" && echo "Installation de YAY" && echo ""
-    git clone https://aur.archlinux.org/yay-bin.git
-    cd yay-bin || exit
+    git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
+    cd /tmp/yay-bin || exit
     makepkg -si --noconfirm
-    cd .. && rm -rf yay-bin
+    cd .. && rm -rf /tmp/yay-bin
     log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 else
