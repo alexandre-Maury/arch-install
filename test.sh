@@ -74,7 +74,7 @@ fi
 # sudo cp -R $HOME/Downloads/nerdfonts/ ~/.local/share/fonts
 # fc-cache -rv  
 
-sudo yay -S --noconfirm --needed \
+sudo pacman -S --noconfirm --needed \
     ttf-cascadia-code-nerd \ 
     ttf-cascadia-mono-nerd \ 
     ttf-fira-code \ 
