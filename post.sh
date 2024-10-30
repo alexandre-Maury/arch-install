@@ -104,6 +104,7 @@ sudo paru -S --needed --noconfirm \
   hyprcursor \
   hyprlang \
   xorg-server-devel \
+  swaybg \
   kitty \
   alacritty
 
@@ -130,12 +131,17 @@ mkdir -p ~/.config/hypr
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/dunst
 
+cp -rf bg.jpg ~/.config/hypr/bg.jpg
+
 cat << EOF > ~/.config/hypr/hyprland.conf
-# ---- Fichiers de base ----
-monitor=,preferred,auto,1
+
+# ---- Multi-écrans ----
+monitor = , preferred, auto, 1
 layout=master
 
-# ---- Paramètres généraux ----
+exec-once=swaybg -i ~/.config/hypr/bg.jpg -m fill
+
+
 # Définit le modificateur de touche pour Hyprland (ici, la touche super)
 general {
     mod=SUPER
@@ -147,55 +153,42 @@ general {
     animations=1       # Active les animations de base
 }
 
-# ---- Apparence ----
-decoration {
-    rounding=8                # Arrondis des fenêtres
-    active_opacity=0.95       # Opacité pour les fenêtres actives
-    inactive_opacity=0.85     # Opacité pour les fenêtres inactives
-    blur_size=4               # Taille du flou pour les effets de transparence
-    blur_passes=3             # Passes de flou pour plus de profondeur
-    shadow=1                  # Active les ombres pour un effet de profondeur
-}
+# # ---- Apparence ----
+# decoration {
+#     rounding=8                # Arrondis des fenêtres
+#     active_opacity=0.95       # Opacité pour les fenêtres actives
+#     inactive_opacity=0.85     # Opacité pour les fenêtres inactives
+#     shadow=1                  # Active les ombres pour un effet de profondeur
+# }
 
-# ---- Gestion des fenêtres ----
-master {
-    orientation=horizontal     # Disposition horizontale pour le travail en terminal
-    msize=0.65                 # Taille du maître (fenêtre principale)
-}
+# # ---- Gestion des fenêtres ----
+# master {
+#     orientation=horizontal     # Disposition horizontale pour le travail en terminal
+#     msize=0.65                 # Taille du maître (fenêtre principale)
+# }
 
-# ---- Barre d’état et Polybar ----
-bar {
-    # Remplace ceci par une configuration Polybar si tu préfères.
-    status_command=~/.config/hypr/scripts/polybar.sh
-    font=JetBrainsMono Nerd Font:size=10
-    bar_position=top
-    padding=10
-}
+# # ---- Barre d’état et Polybar ----
+# bar {
+#     # Remplace ceci par une configuration Polybar si tu préfères.
+#     status_command=~/.config/hypr/scripts/polybar.sh
+#     font=JetBrainsMono Nerd Font:size=10
+#     bar_position=top
+#     padding=10
+# }
+
+# # ---- Définitions des couleurs ----
+# col {
+#     active_border=0xff5b3b79   # Violet pour les bordures inactives
+#     inactive_border=0xff2e3440  # Couleur sombre pour les bordures inactives
+#     background=0xff1c1f26        # Gris anthracite pour le fond
+#     text=0xffeceff4              # Gris clair pour le texte
+#     accent=0xff5294e2            # Bleu clair pour les éléments d'accentuation
+# }
 
 # ---- Raccourcis Clavier ----
-bind=SUPER,RETURN,exec,alacritty  # Lancer Alacritty avec SUPER+Return
-bind=SUPER,d,exec,dmenu_run       # Lancer dmenu avec SUPER+d
-bind=SUPER+SHIFT,q,closewindow     # Fermer la fenêtre active
-bind=SUPER+SHIFT+R,reload,         # Recharger Hyprland avec SUPER+SHIFT+R
+bind=SUPER, RETURN, Ouvrir le terminal, exec, alacritty   # Lancer Alacritty avec SUPER+Return
 
-# ---- Définitions des couleurs ----
-col {
-    active_border=0xff5b3b79   # Violet pour les bordures inactives
-    inactive_border=0xff2e3440  # Couleur sombre pour les bordures inactives
-    background=0xff1c1f26        # Gris anthracite pour le fond
-    text=0xffeceff4              # Gris clair pour le texte
-    accent=0xff5294e2            # Bleu clair pour les éléments d'accentuation
-}
 
-# ---- Multi-écrans ----
-monitor=eDP-1,preferred,0x0,1       # Définir l’écran principal avec des valeurs par défaut
-
-# ---- Répartition des fenêtres ----
-# Place des applications fréquemment utilisées pour Kali Purple
-rule=alacritty,float               # Alacritty sera flottant pour analyse rapide
-rule=firefox,tag=2                 # Firefox ouvert sur le tag (bureau) 2 pour navigation
-rule=burpsuite,workspace=3         # Burp Suite, un outil d’analyse, ouvert sur le tag 3
-rule=wireshark,workspace=4         # Wireshark pour analyse réseau, sur le tag 4
 EOF
 
 log_prompt "INFO" && echo "Configuration de waybar" && echo ""
