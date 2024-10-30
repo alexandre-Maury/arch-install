@@ -33,39 +33,41 @@ sudo timedatectl set-timezone ${REGION}/${CITY}
 sudo localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
 sudo hwclock --systohc --utc
 timedatectl status
-
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
 ## Installation de YAY && PARU                                                 
 ##############################################################################
-if ! command -v yay &> /dev/null; then
-    log_prompt "INFO" && echo "Installation de YAY" && echo ""
-    git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
-    cd /tmp/yay-bin || exit
-    makepkg -si --noconfirm
-    cd .. && rm -rf /tmp/yay-bin
-    log_prompt "SUCCESS" && echo "Terminée" && echo ""
+if [[ "$YAY" == "On" ]]; then
+    if ! command -v yay &> /dev/null; then
+        log_prompt "INFO" && echo "Installation de YAY" && echo ""
+        git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
+        cd /tmp/yay-bin || exit
+        makepkg -si --noconfirm
+        cd .. && rm -rf /tmp/yay-bin
+        log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
-else
-    log_prompt "INFO" && echo "YAY est déja installé" && echo ""
+    else
+        log_prompt "WARNING" && echo "YAY est déja installé" && echo ""
+    fi
 fi
 
-# if ! command -v paru &> /dev/null; then
-#         log_prompt "INFO" && echo "Installation de PARU" && echo ""
-#     git clone https://aur.archlinux.org/paru.git
-#     cd paru || exit
-#     makepkg -si --noconfirm
-#     cd .. && rm -rf paru
-#     log_prompt "SUCCESS" && echo "Terminée" && echo ""
+if [[ "$PARU" == "On" ]]; then
+    if ! command -v paru &> /dev/null; then
+            log_prompt "INFO" && echo "Installation de PARU" && echo ""
+        git clone https://aur.archlinux.org/paru.git
+        cd paru || exit
+        makepkg -si --noconfirm
+        cd .. && rm -rf paru
+        log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
-# else
-#     log_prompt "INFO" && echo "PARU est déja installé" && echo ""
-# fi
-
+    else
+        log_prompt "WARNING" && echo "PARU est déja installé" && echo ""
+    fi
+fi
 
 ##############################################################################
-## Fonts (a tester)                                              
+## Fonts Installation                                            
 ##############################################################################
 mkdir -p ~/.local/share/fonts && cd ~/.local/share/fonts
 
@@ -80,7 +82,41 @@ for url in "${URL_FONTS[@]}"; do
   fi
 done
 
-
-
 fc-cache -rv  
 
+
+log_prompt "INFO" && echo "installation des dépendances" && echo ""
+sudo yay -S --needed --noconfirm \
+  base-devel \
+  cmake \
+  meson \
+  ninja \
+  wayland \
+  wlroots \
+  xdg-desktop-portal-hyprland \
+  aquamarine \
+  hyprwayland-scanner \
+  hyprcursor \
+  hyprlang \
+  xorg-server-devel \
+  swaybg \
+  kitty \
+  alacritty \
+  polkit-kde-agent \
+  dunst \
+  rofi \
+  qt5-wayland \
+  qt6-wayland
+
+log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
+git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
+cd ~/Hyprland || exit
+
+log_prompt "INFO" && echo "Compilation et installation de Hyprland" && echo ""
+meson setup build
+ninja -C build
+sudo ninja -C build install
+
+
+log_prompt "INFO" && echo "Nettoyage des fichiers temporaires" && echo ""
+cd .. && rm -rf ~/Hyprland

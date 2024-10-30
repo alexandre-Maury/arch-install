@@ -102,6 +102,7 @@ sudo yay -S --needed --noconfirm \
   ninja \
   wayland \
   wlroots \
+  xdg-desktop-portal-hyprland \
   aquamarine \
   hyprwayland-scanner \
   hyprcursor \
