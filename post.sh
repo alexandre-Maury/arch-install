@@ -7,11 +7,10 @@
 
 set -e  # Quitte immédiatement en cas d'erreur.
 
-source config.sh # Inclure le fichier de configuration.
-source functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# chmod +x *.sh # Rendre les scripts exécutables.
-# SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
 
 ##############################################################################
 ## Information Utilisateur                                              
@@ -52,17 +51,17 @@ else
     log_prompt "INFO" && echo "YAY est déja installé" && echo ""
 fi
 
-if ! command -v paru &> /dev/null; then
-        log_prompt "INFO" && echo "Installation de PARU" && echo ""
-    git clone https://aur.archlinux.org/paru.git
-    cd paru || exit
-    makepkg -si --noconfirm
-    cd .. && rm -rf paru
-    log_prompt "SUCCESS" && echo "Terminée" && echo ""
+# if ! command -v paru &> /dev/null; then
+#         log_prompt "INFO" && echo "Installation de PARU" && echo ""
+#     git clone https://aur.archlinux.org/paru.git
+#     cd paru || exit
+#     makepkg -si --noconfirm
+#     cd .. && rm -rf paru
+#     log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
-else
-    log_prompt "INFO" && echo "PARU est déja installé" && echo ""
-fi
+# else
+#     log_prompt "INFO" && echo "PARU est déja installé" && echo ""
+# fi
 
 
 ##############################################################################
@@ -96,7 +95,7 @@ fi
 # yay -S hyprland-git
 
 log_prompt "INFO" && echo "installation des dépendances" && echo ""
-sudo paru -S --needed --noconfirm \
+sudo yay -S --needed --noconfirm \
   base-devel \
   cmake \
   meson \
@@ -113,7 +112,7 @@ sudo paru -S --needed --noconfirm \
   alacritty
 
 # Installation des polices pour une compatibilité étendue
-sudo paru -S --noconfirm noto-fonts noto-fonts-emoji
+sudo yay -S --noconfirm noto-fonts noto-fonts-emoji
 
 log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
@@ -135,7 +134,7 @@ mkdir -p ~/.config/hypr
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/dunst
 
-cp -rf bg.jpg ~/.config/hypr/bg.jpg
+cp -rf $SCRIPT_DIR/misc/background/bg.jpg ~/.config/hypr/bg.jpg
 
 cat << EOF > ~/.config/hypr/hyprland.conf
 
