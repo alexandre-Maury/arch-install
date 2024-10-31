@@ -97,7 +97,6 @@ yay -S --sudoloop --needed --noconfirm \
   wayland \
   xdg-desktop-portal-hyprland \
   aquamarine \
-  swaybg \
   kitty \
   alacritty \
   polkit-kde-agent \
@@ -110,6 +109,7 @@ yay -S --sudoloop --needed --noconfirm \
   swww \
   hyprpicker \
   hyprlock \
+  hyprpaper \
   wlogout \
   grimblast \
   hypridle \
