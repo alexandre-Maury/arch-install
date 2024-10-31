@@ -163,37 +163,27 @@ fi
 ##############################################################################
 ## Netoyage disque dur                                                 
 ##############################################################################
-while true; do
-    # Afficher la table des partitions
-    if ! parted "/dev/${DISK}" print; then
-        log_prompt "ERROR" && echo "Affichage des partitions impossible" && echo ""
+# Programme principal
+if [[ -z "${DISK}" ]]; then
+    log_prompt "ERROR" && echo "Variable DISK non définie" && echo ""
+    exit 1
+fi
+
+log_prompt "WARNING" && echo "ATTENTION : Vous êtes sur le point d'effacer toutes les données sur /dev/${DISK}"
+log_prompt "WARNING" && echo "Cette opération est IRRÉVERSIBLE" &&
+log_prompt "WARNING" && echo "Le système sera inutilisable après cette opération jusqu'à la réinstallation compléte"
+log_prompt "INFO" && read -p "Êtes-vous sûr de vouloir continuer ? (Y/y|N/n) : : " confirm && echo ""
+
+if [[ "${confirm}" =~ ^[yY]$ ]]; then
+    if clean_disk "${DISK}" "${SHRED_PASS}" ; then
+        log_prompt "SUCCESS" && echo "Opération terminée avec succès" && echo ""
+    else
+        log_prompt "ERROR" && echo "L'opération a échoué" && echo ""
         exit 1
     fi
-
-    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n)? : " response && echo ""
-        
-    case "${response}" in
-        [Yy]*)
-            if validate_disk "${DISK}"; then
-                if clean_disk "${DISK}"; then
-                    log_prompt "SUCCESS" && echo "Opération terminée avec succès" && echo ""
-                else
-                    log_prompt "ERROR" && echo "Échec de l'opération de nettoyage" && echo ""
-                    exit 1
-                fi
-            fi
-            break
-            ;;
-        [Nn]*)
-            log_prompt "INFO" && echo "Suite de l'installation" && echo ""
-            break
-            ;;
-        *)
-            log_prompt "WARNING" && echo "Veuillez répondre par Y/y (oui) ou N/n (non)" && echo ""
-            ;;
-    esac
-done
-
+else
+    log_prompt "INFO" && echo "Opération annulée" && echo ""
+fi
 
 
 

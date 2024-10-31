@@ -67,88 +67,25 @@ log_prompt() {
 
 }
 
-# Fonction pour valider le nom du disque
-validate_disk() {
-    local disk=$1
-    if [[ ! $disk =~ $VALID_DISK_PATTERN ]]; then
-        log_prompt "ERROR" && echo "Nom de disque invalide : ${disk}" && echo ""
-        return 1
-    fi
-    if [[ ! -b "/dev/$disk" ]]; then
-        log_prompt "ERROR" && echo "Le disque spécifié (/dev/${disk}) n'existe pas" && echo ""
-        return 1
-    fi
-    return 0
-}
-
-# Fonction pour démonter une partition
-unmount_partition() {
-    local part_path=$1
-    
-    # Vérifier si c'est une partition swap
-    if swapon --show=NAME | grep -q "${part_path}"; then
-        log_prompt "INFO" && echo "Désactivation du swap sur ${part_path}..." && echo ""
-        if ! swapoff "${part_path}"; then
-            log_prompt "ERROR" && echo "Échec de la désactivation du swap sur ${part_path}" && echo ""
-            return 1
-        fi
-    fi
-    
-    # Vérifier si la partition est montée
-    if mount | grep -q "${part_path}"; then
-        log_prompt "INFO" && echo "Démontage de ${part_path}..." && echo ""
-        if ! umount --force --recursive "${part_path}"; then
-            log_prompt "ERROR" && echo "Impossible de démonter ${part_path}" && echo ""
-            return 1
-        fi
-    fi
-    return 0
-}
-
-# Fonction principale pour nettoyer le disque
+# Fonction pour nettoyer le disque
 clean_disk() {
     local disk=$1
-
-    # Afficher la table des partitions actuelle
-    log_prompt "INFO" && echo "Table des partitions actuelle pour /dev/${disk}:" && echo ""
-    parted "/dev/${disk}" print || return 1
+    local shred=$2 
     
-    # Obtenir la liste des partitions
-    local partitions
-    partitions=$(lsblk -ln -o NAME "/dev/${disk}" | grep -E "${disk}[0-9]+")
-    
-    if [[ -n $partitions ]]; then
-        log_prompt "INFO" && echo "Suppression des partitions existantes..." && echo ""
-        
-        # Traiter chaque partition
-        while read -r part; do
-            local part_path="/dev/${part}"
-            unmount_partition "${part_path}" || return 1
-            
-            local part_num=${part##*[^0-9]}
-            log_prompt "INFO" && echo "Suppression de la partition ${disk}${part_num}..." && echo ""
-            if ! parted "/dev/${disk}" --script rm "${part_num}"; then
-                log_prompt "ERROR" && echo "Échec de la suppression de ${disk}${part_num}" && echo ""
-                return 1
-            fi
-        done <<< "$partitions"
-    else
-        log_prompt "INFO" && echo "Aucune partition trouvée sur ${disk}" && echo ""
-    fi
-    
-    # Effacement sécurisé du disque
-    log_prompt "INFO" "Effacement des signatures du disque..." && echo ""
-    if ! wipefs --force --all "/dev/${disk}"; then
-        log_prompt "ERROR" && echo "Échec de l'effacement des signatures du disque" && echo ""
+    # Vérification que le disque existe
+    if [[ ! -b "/dev/$disk" ]]; then
+        log_prompt "ERROR" && echo "Le disque /dev/${disk} n'existe pas" && echo ""
         return 1
     fi
     
-    log_prompt "INFO" "Début de l'effacement sécurisé (${SHRED_PASS} passes)..." && echo ""
-    if ! shred -n "${SHRED_PASS}" -v "/dev/${disk}"; then
-        log_prompt "ERROR" && echo "Échec de l'effacement sécurisé" && echo ""
-        return 1
-    fi
+    # Afficher l'état actuel
+    log_prompt "INFO" && echo "État actuel du disque :" && echo ""
+    parted "/dev/${disk}" print || true
     
-    log_prompt "SUCCESS" && echo "Nettoyage du disque ${disk} terminé avec succès" && echo ""
+    # Effacement des signatures
+    log_prompt "INFO" && echo "Effacement des signatures du disque" && echo ""
+    wipefs --force --all "/dev/${disk}" || log_prompt "ERROR" && echo "Le disque /dev/${disk} n'a pas été nétoyer" && echo "" && return 1
+    shred -v -n $shred -z /dev/sdX
+    log_prompt "SUCCESS" && echo "Nettoyage du disque terminé" && echo ""
     return 0
 }
