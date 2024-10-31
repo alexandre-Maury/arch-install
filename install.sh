@@ -182,7 +182,7 @@ if [[ "${confirm}" =~ ^[yY]$ ]]; then
         exit 1
     fi
 else
-    log_prompt "INFO" && echo "Opération annulée" && echo ""
+    log_prompt "INFO" && echo "Opération annulée, suite du script" && echo ""
 fi
 
 
