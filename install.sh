@@ -114,7 +114,6 @@ else
     echo "Bootloader : $BOOTLOADER"
 fi
 
-
 echo "Pays : $PAYS"
 echo "Region : $REGION"
 echo "City : $CITY"
@@ -162,85 +161,47 @@ fi
 
 
 ##############################################################################
-## Création des partitions + formatage et montage                                                      
+## Netoyage disque dur                                                 
 ##############################################################################
-
-
 while true; do
-
-    # Affichage de la table des partitions pour vérification
-    parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
-    echo ""
-    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n) [ Attention pas encore testé ]: " DISKCLEAN && echo ""
-    
-    # Vérifie la validité de l'entrée
-    if [[ "$DISKCLEAN" =~ ^[yYnN]$ ]]; then
-        break
-    else
-        log_prompt "WARNING" && echo "Veuillez répondre par Y/y (oui) ou N/n (non)." && echo ""
-    fi
-done
-
-# Si l'utilisateur répond Y ou y
-if [[ "$DISKCLEAN" =~ ^[yY]$ ]]; then
-    # Effacement du disque
-    log_prompt "INFO" && echo "Préparation du disque dur /dev/${DISK}" && echo ""
-
-    # Vérification que le disque existe
-    if [[ ! -b "/dev/$DISK" ]]; then
-        log_prompt "ERROR" && echo "le disque spécifié (${DISK}) n'existe pas." && echo ""
+    # Afficher la table des partitions
+    if ! parted "/dev/${DISK}" print; then
+        log_prompt "ERROR" && echo "Affichage des partitions impossible" && echo ""
         exit 1
     fi
 
-    # Liste les partitions du disque
-    PARTITIONS=$(lsblk -ln -o NAME "/dev/${DISK}" | grep -E "${DISK}[0-9]+")
-    if [[ -z $PARTITIONS ]]; then
-        log_prompt "INFO" && echo "Aucune partition trouvée sur ${DISK}." && echo ""
-    else
-        log_prompt "INFO" && echo "Partitions trouvées sur ${DISK} :" && echo ""
-        echo "$PARTITIONS" && echo ""
+    log_prompt "INFO" && read -p "Voulez-vous nettoyer le disque ${DISK} (Y/n)? : " response && echo ""
         
-        # Boucle pour supprimer chaque partition
-        for PART in $PARTITIONS; do
-
-            PART_PATH="/dev/${PART}"
-
-            # Désactiver le swap si la partition est configurée comme swap
-            if swapon --show=NAME | grep -q "${PART_PATH}"; then
-                echo "Désactivation du swap sur ${PART_PATH}..."
-                swapoff "${PART_PATH}" || { echo "Erreur lors de la désactivation du swap sur ${PART_PATH}"; exit 1; }
+    case "${response}" in
+        [Yy]*)
+            if validate_disk "${DISK}"; then
+                if clean_disk "${DISK}"; then
+                    log_prompt "SUCCESS" && echo "Opération terminée avec succès" && echo ""
+                else
+                    log_prompt "ERROR" && echo "Échec de l'opération de nettoyage" && echo ""
+                    exit 1
+                fi
             fi
-
-            # Vérifie si la partition est montée
-            if mount | grep -q "${PART_PATH}"; then
-                echo "Démontage de ${PART_PATH}..."
-                umount --force --recursive "${PART_PATH}" || { log_prompt "INFO" && echo "Impossible de démonter ${PART_PATH}."; }
-            fi
-
-            PART_NUM=${PART##*[^0-9]}  # Récupère le numéro de la partition
-            log_prompt "INFO" && echo "Suppression de la partition ${DISK}${PART_NUM}..." && echo ""
-            parted "/dev/${DISK}" --script rm "${PART_NUM}" || { log_prompt "ERROR" && echo "Erreur lors de la suppression de ${DISK}${PART_NUM}"; exit 1; }
-        done
-    fi
-
-    log_prompt "SUCCESS" && echo "Toutes les partitions ont été supprimées du disque ${DISK}." && echo ""
-
-    wipefs --force --all /dev/${DISK} || { echo "Erreur lors de l'effacement du disque"; exit 1; }
-    shred -n "${SHRED_PASS}" -v "/dev/${DISK}" || { echo "Erreur lors de l'effacement sécurisé"; exit 1; }
-
-else
-    log_prompt "INFO" && echo "Suite de l'installation" && echo ""
-fi
+            break
+            ;;
+        [Nn]*)
+            log_prompt "INFO" && echo "Suite de l'installation" && echo ""
+            break
+            ;;
+        *)
+            log_prompt "WARNING" && echo "Veuillez répondre par Y/y (oui) ou N/n (non)" && echo ""
+            ;;
+    esac
+done
 
 
-# Détermination du mode (UEFI ou MBR)
-if [ -d /sys/firmware/efi ]; then
-    MODE="UEFI"
-else
-    MODE="MBR"
-fi
 
-# Réinitialisation de la table de partitions
+
+
+
+##############################################################################
+## Création des partitions + formatage et montage                                                      
+##############################################################################
 if [[ "${MODE}" == "UEFI" ]]; then
     log_prompt "INFO" && echo "Création de la table GPT" && echo ""
     parted --script -a optimal /dev/${DISK} mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
@@ -451,7 +412,7 @@ log_prompt "SUCCESS" && echo "Terminée" && echo ""
 log_prompt "INFO" && echo "arch-chroot - Installation des paquages de bases" && echo ""
 arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S man-db man-pages cmake meson ninja gcc gdb wlroots --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S vim nano git tar wget--noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S vim nano git tar wget --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S sudo pambase bash-completion sshpass --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S xdg-user-dirs --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S iw wpa_supplicant openssh --noconfirm
