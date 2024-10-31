@@ -85,21 +85,18 @@ done
 fc-cache -rv  
 
 
-log_prompt "INFO" && echo "installation des dépendances [deja dans l'autres script]" && echo ""
-yay -S --sudoloop --needed --noconfirm cmake meson ninja 
-
+log_prompt "INFO" && echo "installation des dépendances [deja dans l'autres script - a supp]" && echo ""
+yay -S --sudoloop --needed --noconfirm cmake meson ninja gcc gdb wlroots
 
 log_prompt "INFO" && echo "installation des dépendances" && echo ""
+yay -S --sudoloop --needed --noconfirm libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite libxrender libxkbcommon xcb-util-wm libinput libliftoff libdisplay-info 
+
+
+log_prompt "INFO" && echo "installation des utilitaires" && echo ""
 yay -S --sudoloop --needed --noconfirm \
   wayland \
-  hyprland-git \
-  wlroots \
   xdg-desktop-portal-hyprland \
   aquamarine \
-  hyprwayland-scanner \
-  hyprcursor \
-  hyprlang \
-  xorg-server-devel \
   swaybg \
   kitty \
   alacritty \
@@ -120,7 +117,22 @@ yay -S --sudoloop --needed --noconfirm \
   qt5ct \
   qt6ct \
   kvantum \
-  kvantum-theme-catppuccin-git
+  kvantum-theme-catppuccin-git \
+  pixman \
+  wayland-protocols \
+  cairo \
+  pango \
+  seatd \
+  cpio \
+  tomlplusplus \
+  hyprlang \
+  hyprcursor \
+  hyprwayland-scanner \
+  xcb-util-errors \
+  hyprutils-git \
+  xorg-xinput \
+  xorg-xwayland \
+  xorg-server-devel 
 
 # log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 # git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
