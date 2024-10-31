@@ -4,6 +4,19 @@
 
 # https://github.com/Senshi111/debian-hyprland-hyprdots
 # https://github.com/nawfalmrouyan/hyprland
+# https://forum.linuxos.ovh/d/200-installer-et-configurer-hyprland-avec-waybar
+
+# run_command "mkdir -p /home/$SUDO_USER/.config/hypr/ && cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hyprland.conf /home/$SUDO_USER/.config/hypr/" "Copy hyprland config (Must)" "yes" "no" 
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/dunst /home/$SUDO_USER/.config/" "Copy dunst config" "yes" "no"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/waybar /home/$SUDO_USER/.config/" "Copy Waybar config" "yes" "no"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/tofi /home/$SUDO_USER/.config/" "Copy Tofi config(s)" "yes" "no"
+# run_command "mkdir -p /home/$SUDO_USER/.config/assets/backgrounds && cp -r /home/$SUDO_USER/simple-hyprland/assets/backgrounds /home/$SUDO_USER/.config/assets/" "Copy sample wallpapers to assets directory (Recommended)" "yes" "no"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hyprlock.conf /home/$SUDO_USER/.config/hypr/" "Copy Hyprlock config" "yes" "no"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/wlogout /home/$SUDO_USER/.config/ && cp -r /home/$SUDO_USER/simple-hyprland/assets/wlogout /home/$SUDO_USER/.config/assets/" "Copy Wlogout config and assets" "yes" "no"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hypridle.conf /home/$SUDO_USER/.config/hypr/" "Copy Hypridle config" "yes" "no"
+# run_command "tar -xvf /home/$SUDO_USER/simple-hyprland/assets/themes/Catppuccin-Mocha.tar.xz -C /usr/share/themes/" "Install Catppuccin Mocha GTK theme" "yes" 
+# run_command "tar -xvf /home/$SUDO_USER/simple-hyprland/assets/icons/Tela-circle-dracula.tar.xz -C /usr/share/icons/" "Install Tela Circle Dracula icon theme" "yes"
+# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/kitty /home/$SUDO_USER/.config/" "Copy Catppuccin theme configuration for Kitty terminal" "yes" "no"
 
 set -e  # Quitte immédiatement en cas d'erreur.
 
@@ -88,74 +101,104 @@ fc-cache -rv
 log_prompt "INFO" && echo "installation des dépendances [deja dans l'autres script - a supp]" && echo ""
 yay -S --sudoloop --needed --noconfirm cmake meson ninja gcc gdb wlroots
 
-log_prompt "INFO" && echo "installation des dépendances" && echo ""
-yay -S --sudoloop --needed --noconfirm libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite libxrender libxkbcommon xcb-util-wm libinput libliftoff libdisplay-info 
-
-
-log_prompt "INFO" && echo "installation des utilitaires" && echo ""
+log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles)" && echo ""
 yay -S --sudoloop --needed --noconfirm \
-  wayland \
-  xdg-desktop-portal-hyprland \
-  aquamarine \
-  kitty \
-  alacritty \
-  polkit-kde-agent \
-  dunst \
-  qt5-wayland \
-  qt6-wayland \
-  waybar \
-  tofi \
-  cliphist \
-  swww \
-  hyprpicker \
-  hyprlock \
-  hyprpaper \
-  wlogout \
-  grimblast \
-  hypridle \
-  nwg-look \
-  qt5ct \
-  qt6ct \
-  kvantum \
-  kvantum-theme-catppuccin-git \
-  pixman \
-  wayland-protocols \
-  cairo \
-  pango \
-  seatd \
-  cpio \
-  tomlplusplus \
-  hyprlang \
-  hyprcursor \
-  hyprwayland-scanner \
-  xcb-util-errors \
-  hyprutils-git \
-  xorg-xinput \
-  xorg-xwayland \
-  xorg-server-devel 
+    libxcb \
+    xcb-proto \
+    xcb-util \
+    xcb-util-keysyms \
+    libxfixes \
+    libx11 \
+    libxcomposite \
+    libxrender \
+    libxkbcommon \
+    xcb-util-wm \
+    libinput \
+    libliftoff \
+    libdisplay-info
 
-# log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
-# git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
-# cd ~/Hyprland || exit
+log_prompt "INFO" && echo "installation des applications et outils" && echo ""
+yay -S --sudoloop --needed --noconfirm \
+    wayland \
+    xdg-desktop-portal-hyprland \
+    aquamarine \
+    kitty \
+    alacritty \
+    polkit-kde-agent \
+    dunst \
+    qt5-wayland \
+    qt6-wayland \
+    waybar \
+    tofi \
+    cliphist \
+    swww \
+    hyprpicker \
+    hyprlock \
+    hyprpaper \
+    wlogout \
+    grimblast \
+    hypridle \
+    nwg-look \
+    qt5ct \
+    qt6ct \
+    kvantum \
+    kvantum-theme-catppuccin-git \
+    pixman \
+    wayland-protocols \
+    cairo \
+    pango \
+    seatd \
+    cpio \
+    tomlplusplus \
+    hyprlang \
+    hyprcursor \
+    hyprwayland-scanner \
+    xcb-util-errors \
+    hyprutils-git \
+    xorg-xinput \
+    xorg-xwayland \
+    xorg-server-devel \
+    xwaylandvideobridge \
+    wl-clip-persist \
+    hyprland-per-window-layout
 
-# log_prompt "INFO" && echo "Compilation et installation de Hyprland" && echo ""
-# meson setup build
-# ninja -C build
-# sudo ninja -C build install
+log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
+git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
+cd ~/Hyprland || exit
 
+log_prompt "INFO" && echo "Compilation et installation de Hyprland" && echo ""
+meson setup build
+ninja -C build
+sudo ninja -C build install
 
 log_prompt "INFO" && echo "Nettoyage des fichiers temporaires" && echo ""
-# cd .. && rm -rf ~/Hyprland
+cd .. && rm -rf ~/Hyprland
 
-# run_command "mkdir -p /home/$SUDO_USER/.config/hypr/ && cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hyprland.conf /home/$SUDO_USER/.config/hypr/" "Copy hyprland config (Must)" "yes" "no" 
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/dunst /home/$SUDO_USER/.config/" "Copy dunst config" "yes" "no"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/waybar /home/$SUDO_USER/.config/" "Copy Waybar config" "yes" "no"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/tofi /home/$SUDO_USER/.config/" "Copy Tofi config(s)" "yes" "no"
-# run_command "mkdir -p /home/$SUDO_USER/.config/assets/backgrounds && cp -r /home/$SUDO_USER/simple-hyprland/assets/backgrounds /home/$SUDO_USER/.config/assets/" "Copy sample wallpapers to assets directory (Recommended)" "yes" "no"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hyprlock.conf /home/$SUDO_USER/.config/hypr/" "Copy Hyprlock config" "yes" "no"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/wlogout /home/$SUDO_USER/.config/ && cp -r /home/$SUDO_USER/simple-hyprland/assets/wlogout /home/$SUDO_USER/.config/assets/" "Copy Wlogout config and assets" "yes" "no"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/hypr/hypridle.conf /home/$SUDO_USER/.config/hypr/" "Copy Hypridle config" "yes" "no"
-# run_command "tar -xvf /home/$SUDO_USER/simple-hyprland/assets/themes/Catppuccin-Mocha.tar.xz -C /usr/share/themes/" "Install Catppuccin Mocha GTK theme" "yes" 
-# run_command "tar -xvf /home/$SUDO_USER/simple-hyprland/assets/icons/Tela-circle-dracula.tar.xz -C /usr/share/icons/" "Install Tela Circle Dracula icon theme" "yes"
-# run_command "cp -r /home/$SUDO_USER/simple-hyprland/configs/kitty /home/$SUDO_USER/.config/" "Copy Catppuccin theme configuration for Kitty terminal" "yes" "no"
-# 
+log_prompt "INFO" && echo "Création des dossiers de configuration" && echo ""
+
+mkdir -p ~/.config/hypr
+mkdir -p ~/.config/waybar
+mkdir -p ~/.config/dunst
+mkdir -p ~/.config/hyprpaper
+
+log_prompt "INFO" && echo "Copie de l'image d'arrière plan" && echo ""
+cp -rf $SCRIPT_DIR/misc/background/bg.jpg ~/.config/hyprpaper/background/bg.jpg
+
+log_prompt "INFO" && echo "Configuration hyprpaper" && echo ""
+cp -rf $SCRIPT_DIR/misc/dots/hyprpaper/hyprpaper.conf ~/.config/hyprpaper/hyprpaper.conf
+
+log_prompt "INFO" && echo "Configuration hyprland" && echo ""
+cp -rf $SCRIPT_DIR/misc/dots/hyprland/hyprland.conf ~/.config/hyprland/hyprland.conf
+
+log_prompt "INFO" && echo "Configuration swaybar" && echo ""
+cp -rf $SCRIPT_DIR/misc/dots/swaybar/config ~/.config/waybar/config
+cp -rf $SCRIPT_DIR/misc/dots/swaybar/style.css ~/.config/waybar/style.css
+
+
+
+
+
+
+
+echo "exec-once = waybar --config ~/.config/waybar/config-taskbar" >> ~/.config/hypr/hyprland.conf
+echo "exec hyprpaper" >> ~/.config/hypr/hyprland.conf
