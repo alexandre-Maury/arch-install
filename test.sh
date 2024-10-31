@@ -194,11 +194,4 @@ log_prompt "INFO" && echo "Configuration swaybar" && echo ""
 cp -rf $SCRIPT_DIR/misc/dots/swaybar/config ~/.config/waybar/config
 cp -rf $SCRIPT_DIR/misc/dots/swaybar/style.css ~/.config/waybar/style.css
 
-
-
-
-
-
-
-echo "exec-once = waybar --config ~/.config/waybar/config-taskbar" >> ~/.config/hypr/hyprland.conf
-echo "exec hyprpaper" >> ~/.config/hypr/hyprland.conf
+log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""
