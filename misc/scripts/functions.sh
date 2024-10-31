@@ -84,8 +84,6 @@ clean_disk() {
     
     # Effacement des signatures
     log_prompt "INFO" && echo "Effacement des signatures du disque" && echo ""
-    wipefs --force --all "/dev/${disk}" || log_prompt "ERROR" && echo "Le disque /dev/${disk} n'a pas été nétoyer" && echo "" && return 1
-    shred -v -n $shred -z "/dev/${disk}"
-    log_prompt "SUCCESS" && echo "Nettoyage du disque terminé" && echo ""
+    wipefs --force --all "/dev/${disk}" && shred -v -n $shred -z "/dev/${disk}"
     return 0
 }
