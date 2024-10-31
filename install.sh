@@ -177,6 +177,10 @@ log_prompt "INFO" && read -p "Êtes-vous sûr de vouloir continuer ? (Y/y|N/n) :
 if [[ "${confirm}" =~ ^[yY]$ ]]; then
     if clean_disk "${DISK}" "${SHRED_PASS}" ; then
         log_prompt "SUCCESS" && echo "Opération terminée avec succès" && echo ""
+
+        # Afficher l'état actuel
+        log_prompt "INFO" && echo "Nouvelle état du disque :" && echo ""
+        parted "/dev/${disk}" print || true
     else
         log_prompt "ERROR" && echo "L'opération a échoué" && echo ""
         exit 1
