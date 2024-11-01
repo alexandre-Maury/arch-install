@@ -107,6 +107,9 @@ yay -S cmake gcc make glibc cairo libzip librsvg tomlplusplus gdb pugixml gbm li
     libxfixes libx11 libxcomposite xorg-xinput libxrender pixman libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info \
     cpio xcb-util-errors otf-font-awesome ttf-jetbrains-mono --noconfirm
 
+# https://github.com/Jannomag/Yaru-Colors/tree/master
+# yay -S humanity-icon-theme yaru-icon-theme hicolor-icon-theme
+
 
 ##############################################################################
 ## hyprutils                                              
