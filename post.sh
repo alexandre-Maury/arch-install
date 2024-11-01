@@ -102,12 +102,17 @@ yay -S alacritty nautilus rofi-wayland dunst grim slurp \
     lib32-pipewire lib32-pipewire-jack wireplumber \
     lxappearance --noconfirm
 
+yay -S cmake gcc make glibc cairo libzip librsvg tomlplusplus gdb pugixml gbm libdrm libpipewire sdbus-cpp wayland wayland-protocols scdoc \
+    qt5-wayland qt6-wayland libjpeg-turbo libwebp pango pkgconf libglvnd pam udis-86 libxcb xcb-proto xcb-util xcb-util-keysyms \
+    libxfixes libx11 libxcomposite xorg-xinput libxrender pixman libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info \
+    cpio xcb-util-errors otf-font-awesome ttf-jetbrains-mono --noconfirm
+
 
 ##############################################################################
 ## hyprutils                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprutils" && echo ""
-yay -S cmake gcc make --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprutils.git $workDirName/hyprutils
 cd $workDirName/hyprutils
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -120,7 +125,7 @@ cd ..
 ## hyprlang                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprlang" && echo ""
-yay -S gcc-libs glibc --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprlang.git $workDirName/hyprlang
 cd $workDirName/hyprlang
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -133,7 +138,7 @@ cd ..
 ## hyprcursor                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprcursor" && echo ""
-yay -S cairo libzip librsvg tomlplusplus gdb --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprcursor.git $workDirName/hyprcursor
 cd $workDirName/hyprcursor
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -145,7 +150,7 @@ cd ..
 ## hyprwayland-scanner                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprwayland-scanner" && echo ""
-yay -S pugixml --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprwayland-scanner.git $workDirName/hyprwayland-scanner
 cd $workDirName/hyprwayland-scanner
 cmake -DCMAKE_INSTALL_PREFIX=/usr -B build
@@ -157,6 +162,7 @@ cd ..
 ## hyprland-protocols                                          
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprland-protocols" && echo ""
+
 git clone --recursive https://github.com/hyprwm/hyprland-protocols.git $workDirName/hyprland-protocols
 cd $workDirName/hyprland-protocols
 meson setup build
@@ -167,8 +173,8 @@ sudo ninja -C build install
 ## xdg-desktop-portal-hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de xdg-desktop-portal-hyprland" && echo ""
-# libpipewire-0.3 libspa-0.2 qt5-wayland qt6-wayland
-yay -S gbm libdrm libpipewire sdbus-cpp wayland wayland-protocols scdoc --noconfirm
+# libpipewire-0.3 libspa-0.2 
+
 git clone --recursive https://github.com/hyprwm/xdg-desktop-portal-hyprland $workDirName/xdg-desktop-portal-hyprland
 cd $workDirName/xdg-desktop-portal-hyprland
 cmake -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib -DCMAKE_INSTALL_PREFIX=/usr -B build
@@ -182,6 +188,7 @@ cd ..
 ##############################################################################
 log_prompt "INFO" && echo "Installation de aquamarine" && echo ""
 yay -S hwdata --noconfirm
+
 git clone --recursive https://github.com/hyprwm/aquamarine.git $workDirName/aquamarine
 cd $workDirName/aquamarine
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -193,7 +200,7 @@ cd ..
 ## hyprpaper                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprpaper" && echo ""
-yay -S gcc libjpeg-turbo libwebp pango cairo pkgconf cmake libglvnd --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprpaper.git $workDirName/hyprpaper
 cd $workDirName/hyprpaper
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -206,7 +213,7 @@ cd ..
 ## hyprlock                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprlock" && echo ""
-yay -S pam --noconfirm
+
 git clone --recursive https://github.com/hyprwm/hyprlock.git $workDirName/hyprlock
 cd $workDirName/hyprlock
 cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
@@ -219,7 +226,7 @@ cd ..
 ## Hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de Hyprland" && echo ""
-yay -S udis-86 libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
+
 git clone --recursive https://github.com/hyprwm/Hyprland $workDirName/Hyprland
 cd $workDirName/Hyprland
 make all && sudo make install
@@ -229,7 +236,6 @@ cd ..
 ## Waybar                                                
 ##############################################################################
 log_prompt "INFO" && echo "Installation de Waybar" && echo ""
-yay -S otf-font-awesome ttf-jetbrains-mono --noconfirm
 
 git clone --recursive https://github.com/Alexays/Waybar $workDirName/Waybar
 cd $workDirName/Waybar
