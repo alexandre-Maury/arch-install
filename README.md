@@ -1,10 +1,8 @@
 # `arch-install`
 
 ## Description
-Le projet est un ensemble de configurations et de scripts pour installer et configurer Hyprland sur une base arch linux.
+Le projet vise à installer et configurer Hyprland sur une base arch linux.
 L'objectif est de mettre en place un environnement de développement ainsi qu'un environnement de pentesting.
-
-
 
 ## Visuels
 À venir
