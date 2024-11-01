@@ -31,43 +31,30 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 
     loadkeys fr
 
-3- Effacer toutes les signatures de systèmes de fichiers sur le disque spécifié :
-⚠️ Attention : Assurez-vous de bien sélectionner le disque cible.
+3- ⚠️ Effacer toutes les signatures de systèmes de fichiers sur le disque spécifié : Assurez-vous de bien sélectionner le disque cible.
 
     wipefs --force --all /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
     
-4- Écraser les données du disque :
-⚠️ Attention : Cette opération est irréversible et écrase tout le contenu du disque.
+4- ⚠️ Écraser les données du disque : Cette opération est irréversible et écrase tout le contenu du disque.
 
     shred -v -n 3 -z /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
 
-Installer Git
-Mettez à jour la liste des paquets et installez Git :
+5- Mettez à jour la liste des paquets et installez Git :
 
-bash
+    pacman -Sy git
 
-pacman -Sy git
 
-Cloner le dépôt
-Clonez le dépôt contenant le script d'installation :
+6- Clonez le dépôt contenant le script d'installation :
 
-bash
+    git clone https://github.com/alexandre-Maury/arch-install.git
 
-git clone https://github.com/alexandre-Maury/arch-install.git
+7- Accédez au répertoire cloné et modifiez le fichier config.sh pour ajuster les options d'installation selon vos préférences :
 
-Configurer les options d'installation
-Accédez au répertoire cloné et modifiez le fichier config.sh pour ajuster les options d'installation selon vos préférences :
+    cd arch-install && nano config.sh
 
-bash
+8- Rendez le script exécutable et lancez-le pour commencer l'installation :
 
-cd arch-install && nano config.sh
-
-Exécuter le script d'installation
-Rendez le script exécutable et lancez-le pour commencer l'installation :
-
-bash
-
-chmod +x install.sh && ./install.sh
+    chmod +x install.sh && ./install.sh
 
 
 ## Feuille de route
