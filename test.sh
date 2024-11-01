@@ -107,7 +107,12 @@ done
 fc-cache -rv  
 
 log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles)" && echo ""
-# Install Hyprland dependencies and additional packages
+
+yay -S man-db man-pages cmake meson ninja gcc gdb wlroots \
+    vim nano git tar wget bash-completion sshpass iw wpa_supplicant \
+    bluez bluez-utils blueman alsa-utils alsa-plugins seatd \
+    pipewire pipewire-alsa pipewire-pulse pipewire-jack pipewire-zeroconf lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
+
 yay -S libxcb xcb-proto xcb-util xcb-util-keysyms \
     libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols \
     cairo pango libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff \
@@ -147,5 +152,12 @@ cp -rf $SCRIPT_DIR/misc/dots/hyprland/hyprland.conf ~/.config/hypr
 log_prompt "INFO" && echo "Configuration waybar" && echo ""
 cp -rf $SCRIPT_DIR/misc/dots/waybar/config ~/.config/waybar
 cp -rf $SCRIPT_DIR/misc/dots/waybar/style.css ~/.config/waybar
+
+sudo systemctl enable bluetooth 
+sudo systemctl enable fstrim
+sudo systemctl enable pipewire
+sudo systemctl enable pipewire-pulse
+sudo systemctl enable wireplumber
+sudo systemctl enable seatd
 
 log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""
