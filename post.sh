@@ -105,7 +105,7 @@ yay -S alacritty nautilus rofi-wayland dunst grim slurp \
 yay -S cmake gcc make glibc cairo libzip librsvg tomlplusplus gdb pugixml gbm libdrm libpipewire sdbus-cpp wayland wayland-protocols scdoc \
     qt5-wayland qt6-wayland libjpeg-turbo libwebp pango pkgconf libglvnd pam udis-86 libxcb xcb-proto xcb-util xcb-util-keysyms \
     libxfixes libx11 libxcomposite xorg-xinput libxrender pixman libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info \
-    cpio xcb-util-errors otf-font-awesome ttf-jetbrains-mono gtkmm --noconfirm
+    cpio xcb-util-errors otf-font-awesome ttf-jetbrains-mono gtkmm3 --noconfirm
 
 # https://github.com/Jannomag/Yaru-Colors/tree/master
 # yay -S humanity-icon-theme yaru-icon-theme hicolor-icon-theme
@@ -260,6 +260,9 @@ cp -rf $SCRIPT_DIR/misc/dots/config/waybar ~/.config
 cp -rf $SCRIPT_DIR/misc/dots/config/alacritty ~/.config
 
 cp -rf $SCRIPT_DIR/misc/dots/wallpaper $HOME
+
+cp -rf $SCRIPT_DIR/misc/dots/icons $HOME/.local/share
+cp -rf $SCRIPT_DIR/misc/dots/themes $HOME/.local/share
 
 ##############################################################################
 ## Activation des services                                              
