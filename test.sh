@@ -106,7 +106,7 @@ done
 
 fc-cache -rv  
 
-log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles)" && echo ""
+log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles, utilitaires)" && echo ""
 
 yay -S man-db man-pages cmake meson ninja gcc gdb wlroots \
     vim nano git tar wget bash-completion sshpass iw wpa_supplicant \
