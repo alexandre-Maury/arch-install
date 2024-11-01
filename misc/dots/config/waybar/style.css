@@ -1,0 +1,52 @@
+window#waybar {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 32px;
+}
+
+#language,
+#network,
+#clock,
+#pulseaudio,
+#tray,
+#window,
+#cpu,
+#workspaces {
+    background-color: rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    margin: 2px 0px;
+    padding: 0px 8px;
+}
+
+#clock {
+    margin-right: 2px;
+}
+
+#workspaces {
+    margin-left: 2px;
+    padding: 0px 0px;
+}
+
+#workspaces button {
+    margin: 2px 1px;
+    padding: 0px 0px;
+    border-radius: 16px;
+    border-width: 0px;
+    min-width: 32px;
+    background-color: transparent;
+}
+
+#workspaces button:hover,
+#workspaces button.active {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+window#waybar.empty #window {
+    background-color:transparent;
+}
+
+* {
+    transition: all 0.4s ease-in-out;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: "JetBrainsMono";
+}

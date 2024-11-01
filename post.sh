@@ -45,15 +45,14 @@ timedatectl status
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
 ##############################################################################
-## Installation de YAY && PARU                                                 
+## Installation de YAY                                               
 ##############################################################################
 if [[ "$YAY" == "On" ]]; then
     if ! command -v yay &> /dev/null; then
         log_prompt "INFO" && echo "Installation de YAY" && echo ""
-        git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
-        cd /tmp/yay-bin || exit
-        makepkg -si --noconfirm
-        cd .. && rm -rf /tmp/yay-bin
+        git clone https://aur.archlinux.org/yay-bin.git $workDirName/yay-bin
+        cd $workDirName/yay-bin || exit
+        makepkg -si --noconfirm && cd .. 
         log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
         # Generate yay database
@@ -70,13 +69,15 @@ if [[ "$YAY" == "On" ]]; then
     fi
 fi
 
+##############################################################################
+## Installation de PARU                                                 
+##############################################################################
 if [[ "$PARU" == "On" ]]; then
     if ! command -v paru &> /dev/null; then
-            log_prompt "INFO" && echo "Installation de PARU" && echo ""
-        git clone https://aur.archlinux.org/paru.git
-        cd paru || exit
-        makepkg -si --noconfirm
-        cd .. && rm -rf paru
+        log_prompt "INFO" && echo "Installation de PARU" && echo ""
+        git clone https://aur.archlinux.org/paru.git $workDirName/paru
+        cd $workDirName/paru || exit
+        makepkg -si --noconfirm && cd .. 
         log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
     else
@@ -86,61 +87,112 @@ fi
 
 yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp --noconfirm
 
-# INSTALL HYPRLAND
-# - hyprutils
+
+##############################################################################
+## hyprutils                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprutils" && echo ""
 yay -S cmake gcc make --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprutils.git
-cd hyprutils && hyprBuildInstall all && cd ..
+git clone --recursive https://github.com/hyprwm/hyprutils.git $workDirName/hyprutils
+cd $workDirName/hyprutils && hyprBuildInstall all && cd ..
 
-# - hyprlang
+
+##############################################################################
+## hyprlang                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprlang" && echo ""
 yay -S gcc-libs glibc --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprlang.git
-cd hyprlang && hyprBuildInstall hyprlang && cd ..
+git clone --recursive https://github.com/hyprwm/hyprlang.git $workDirName/hyprlang
+cd $workDirName/hyprlang && hyprBuildInstall hyprlang && cd ..
 
-# - hyprcursor
+
+##############################################################################
+## hyprcursor                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprcursor" && echo ""
 yay -S cairo libzip librsvg tomlplusplus gdb --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprutils.git
-cd hyprcursor && hyprBuildInstall all && cd ..
+git clone --recursive https://github.com/hyprwm/hyprutils.git $workDirName/hyprcursor
+cd $workDirName/hyprcursor && hyprBuildInstall all && cd ..
 
-# - hyprwayland-scanner
+
+##############################################################################
+## hyprwayland-scanner                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprwayland-scanner" && echo ""
 yay -S pugixml --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprwayland-scanner.git
-cd hyprwayland-scanner
+git clone --recursive https://github.com/hyprwm/hyprwayland-scanner.git $workDirName/hyprwayland-scanner
+cd $workDirName/hyprwayland-scanner
 cmake -DCMAKE_INSTALL_PREFIX=/usr -B build
 cmake --build build -j `nproc`
 sudo cmake --install build
 cd ..
 
-# - xdg-desktop-portal-hyprland
+
+##############################################################################
+## xdg-desktop-portal-hyprland                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de xdg-desktop-portal-hyprland" && echo ""
 yay -S libdrm libpipewire sdbus-cpp wayland qt6-base qt6-wayland xdg-desktop-portal wayland-protocols scdoc --noconfirm
-git clone --recursive https://github.com/hyprwm/xdg-desktop-portal-hyprland
-cd xdg-desktop-portal-hyprland
+git clone --recursive https://github.com/hyprwm/xdg-desktop-portal-hyprland $workDirName/xdg-desktop-portal-hyprland
+cd $workDirName/xdg-desktop-portal-hyprland
 cmake -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib -DCMAKE_INSTALL_PREFIX=/usr -B build
 cmake --build build
 sudo cmake --install build
 cd ..
 
-# - aquamarine
-yay -S hwdata --noconfirm
-git clone --recursive https://github.com/hyprwm/aquamarine.git
-cd aquamarine && hyprBuildInstall all && cd ..
 
-# - Hyprland
+##############################################################################
+## aquamarine                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de aquamarine" && echo ""
+yay -S hwdata --noconfirm
+git clone --recursive https://github.com/hyprwm/aquamarine.git $workDirName/aquamarine
+cd $workDirName/aquamarine && hyprBuildInstall all && cd ..
+
+##############################################################################
+## hyprpaper                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprpaper" && echo ""
+yay -S pango libjpeg-turbo libglvnd libwebp --noconfirm
+git clone --recursive https://github.com/hyprwm/hyprpaper.git $workDirName/hyprpaper
+cd $workDirName/hyprpaper && hyprBuildInstall hyprpaper && cd ..
+
+
+##############################################################################
+## hyprlock                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprlock" && echo ""
+yay -S pam --noconfirm
+git clone --recursive https://github.com/hyprwm/hyprlock.git $workDirName/hyprlock
+cd $workDirName/hyprlock && hyprBuildInstall hyprlock && cd ..
+
+
+##############################################################################
+## Hyprland                                              
+##############################################################################
+log_prompt "INFO" && echo "Installation de Hyprland" && echo ""
 yay -S gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
-git clone --recursive https://github.com/hyprwm/Hyprland
-cd Hyprland
+git clone --recursive https://github.com/hyprwm/Hyprland $workDirName/Hyprland
+cd $workDirName/Hyprland
 make all && sudo make install
 cd ..
 
-# - hyprpaper
-yay -S pango libjpeg-turbo libglvnd libwebp --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprpaper.git
-cd hyprpaper && hyprBuildInstall hyprpaper && cd ..
+##############################################################################
+## Configuration                                              
+##############################################################################
+cp -rf $SCRIPT_DIR/misc/dots/config/alacritty ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/dunst ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/fastfetch ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/hypr ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/rofi ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/waybar ~/.config
+cp -rf $SCRIPT_DIR/misc/dots/config/alacritty ~/.config
 
-# - hyprlock
-yay -S pam --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprlock.git
-cd hyprlock && hyprBuildInstall hyprlock && cd ..
+cp -rf $SCRIPT_DIR/misc/dots/wallpaper $HOME
 
+
+##############################################################################
+## clean                                              
+##############################################################################
 cd ..
 rm -rf $workDirName
