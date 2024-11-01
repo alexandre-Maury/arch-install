@@ -659,11 +659,11 @@ fi
 ##############################################################################
 ## Modifier le fichier de configuration pour renforcer la sécurité                                     
 ##############################################################################
-sed -i "s/#Port 22/Port $SSH_PORT/" "$SSH_CONFIG_FILE"
-sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' "$SSH_CONFIG_FILE"
-sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' "$SSH_CONFIG_FILE"
-sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$SSH_CONFIG_FILE"
-sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/' "$SSH_CONFIG_FILE"
+sed -i "s/#Port 22/Port $SSH_PORT/" "${MOUNT_POINT}$SSH_CONFIG_FILE"
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' "${MOUNT_POINT}$SSH_CONFIG_FILE"
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' "${MOUNT_POINT}$SSH_CONFIG_FILE"
+sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' "${MOUNT_POINT}$SSH_CONFIG_FILE"
+sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/' "${MOUNT_POINT}$SSH_CONFIG_FILE"
 
 ##############################################################################
 ## Activation des services                                        
