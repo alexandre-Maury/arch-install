@@ -84,15 +84,6 @@ if [[ "$PARU" == "On" ]]; then
     fi
 fi
 
-# INSTALL YAY
-if !command -v yay &> /dev/null; then
-	echo "yay not found, installing!"
-	git clone --recursive https://aur.archlinux.org/yay.git
-	cd yay && makepkg -si && cd ..
-fi
-
-yay -Syu
-
 yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp --noconfirm
 
 # INSTALL HYPRLAND
