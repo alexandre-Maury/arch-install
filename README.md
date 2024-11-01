@@ -18,8 +18,8 @@ Procédez aux étapes suivantes :
 3. Attention : efface toutes les signatures de système de fichiers : `wipefs --force --all "ex. /dev/sda"`
 4. Attention : écrase les données sur le disque : `shred -v -n "ex. 3" -z "ex. /dev/sda"`
 5. Installation du paquet git : `pacman -Sy git`
-6. Clone du rep : `git clone https://github.com/alexandre-Maury/arch-install.git`
-7. Configuration des options : `cd arch-install && config.sh`
+6. Clone du repo : `git clone https://github.com/alexandre-Maury/arch-install.git`
+7. Configuration des options : `cd arch-install && nano config.sh`
 8. Exécution du script : `chmod +x install.sh && ./install.sh`
 
 
