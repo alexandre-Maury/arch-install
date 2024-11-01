@@ -13,10 +13,16 @@ Il utilise principalement Ansible pour l'automatisation, avec des rôles et des 
 
 Procédez aux étapes suivantes :
 
-1. `Télécharger le support d'installation : https://archlinux.org/download/`
-2. `loadkeys fr`
-3. `wipefs --force --all "ex. /dev/sda" [Attention : efface toutes les signatures de système de fichiers]`
-4. `shred -v -n "ex. 3" -z "ex. /dev/sda" [Attention : écraser les données sur le disque]`
+1. Télécharger le support d'installation :
+`https://archlinux.org/download/`
+
+2. Changer la disposition du clavier :
+`loadkeys fr`
+
+3. Attention : efface toutes les signatures de système de fichiers
+`wipefs --force --all "ex. /dev/sda"`
+
+4. `shred -v -n "ex. 3" -z "ex. /dev/sda" [Attention : écrase les données sur le disque]`
 5. `pacman -Sy git`
 6. `git clone https://github.com/alexandre-Maury/arch-install.git`
 7. `cd arch-install`
