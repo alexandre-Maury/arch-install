@@ -13,21 +13,14 @@ Il utilise principalement Ansible pour l'automatisation, avec des rôles et des 
 
 Procédez aux étapes suivantes :
 
-1. Télécharger le support d'installation :
-`https://archlinux.org/download/`
-
-2. Changer la disposition du clavier :
-`loadkeys fr`
-
-3. Attention : efface toutes les signatures de système de fichiers
-`wipefs --force --all "ex. /dev/sda"`
-
-4. `shred -v -n "ex. 3" -z "ex. /dev/sda" [Attention : écrase les données sur le disque]`
-5. `pacman -Sy git`
-6. `git clone https://github.com/alexandre-Maury/arch-install.git`
-7. `cd arch-install`
-8. `configure config.sh`
-9. `chmod +x install.sh && ./install.sh`
+1. Télécharger le support d'installation : `https://archlinux.org/download/`
+2. Changer la disposition du clavier : `loadkeys fr`
+3. Attention : efface toutes les signatures de système de fichiers : `wipefs --force --all "ex. /dev/sda"`
+4. Attention : écrase les données sur le disque : `shred -v -n "ex. 3" -z "ex. /dev/sda"`
+5. Installation du paquet git : `pacman -Sy git`
+6. Clone du rep : `git clone https://github.com/alexandre-Maury/arch-install.git`
+7. Configuration des options : `cd arch-install && config.sh`
+8. Exécution du script : `chmod +x install.sh && ./install.sh`
 
 
 ## Feuille de route
