@@ -11,15 +11,12 @@ source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies d
 workDirName="${HOME}/buildHypr";
 rm -rf $workDirName
 mkdir -p $workDirName
-cd $workDirName
 
 hyprBuildInstall() {
 	cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
 	cmake --build ./build --config Release --target $1 -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
 	sudo cmake --install ./build
 }
-
-
 
 ##############################################################################
 ## Information Utilisateur                                              
@@ -85,7 +82,14 @@ if [[ "$PARU" == "On" ]]; then
     fi
 fi
 
-yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp --noconfirm
+##############################################################################
+## Installation des utilitaires                                                 
+##############################################################################
+yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp \
+    iw wpa_supplicant bluez bluez-utils blueman seatd \
+    alsa-utils alsa-plugins pipewire pipewire-alsa \
+    pipewire-pulse pipewire-jack pipewire-zeroconf \
+    lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
 
 
 ##############################################################################
@@ -189,6 +193,16 @@ cp -rf $SCRIPT_DIR/misc/dots/config/waybar ~/.config
 cp -rf $SCRIPT_DIR/misc/dots/config/alacritty ~/.config
 
 cp -rf $SCRIPT_DIR/misc/dots/wallpaper $HOME
+
+##############################################################################
+## Activation des services                                              
+##############################################################################
+sudo systemctl enable bluetooth 
+sudo systemctl enable fstrim
+sudo systemctl enable pipewire
+sudo systemctl enable pipewire-pulse
+sudo systemctl enable wireplumber
+sudo systemctl enable seatd
 
 
 ##############################################################################

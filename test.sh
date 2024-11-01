@@ -108,10 +108,11 @@ fc-cache -rv
 
 log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles, utilitaires)" && echo ""
 
-yay -S man-db man-pages cmake meson ninja gcc gdb wlroots \
-    vim nano git tar wget bash-completion sshpass iw wpa_supplicant \
+yay -S gcc gdb wlroots \
+    vim git tar wget bash-completion iw wpa_supplicant \
     bluez bluez-utils blueman alsa-utils alsa-plugins seatd \
-    pipewire pipewire-alsa pipewire-pulse pipewire-jack pipewire-zeroconf lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
+    pipewire pipewire-alsa pipewire-pulse pipewire-jack pipewire-zeroconf \
+    kitty alacritty lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
 
 yay -S libxcb xcb-proto xcb-util xcb-util-keysyms \
     libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols \
