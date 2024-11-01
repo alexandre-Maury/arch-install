@@ -358,8 +358,8 @@ arch-chroot ${MOUNT_POINT} pacman -S sudo pambase bash-completion sshpass --noco
 arch-chroot ${MOUNT_POINT} pacman -S xdg-user-dirs --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S iw wpa_supplicant openssh --noconfirm
 arch-chroot ${MOUNT_POINT} pacman -S bluez bluez-utils blueman --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S alsa-utils alsa-plugins --noconfirm
-arch-chroot ${MOUNT_POINT} pacman -S pipewire pipewire-alsa pipewire-pulse wireplumber --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S alsa-utils alsa-plugins seatd --noconfirm
+arch-chroot ${MOUNT_POINT} pacman -S pipewire pipewire-alsa pipewire-pulse pipewire-jack pipewire-zeroconf lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
 
 
 ##############################################################################
@@ -674,7 +674,10 @@ arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
 arch-chroot ${MOUNT_POINT} systemctl enable bluetooth 
 arch-chroot ${MOUNT_POINT} systemctl enable fstrim.timer 
-# arch-chroot ${MOUNT_POINT} systemctl enable ntpd 
+arch-chroot ${MOUNT_POINT} systemctl enable pipewire.service
+arch-chroot ${MOUNT_POINT} systemctl enable pipewire-pulse.service
+arch-chroot ${MOUNT_POINT} systemctl enable wireplumber.service
+arch-chroot ${MOUNT_POINT} systemctl enable seatd.service
 
 umount -R ${MOUNT_POINT}
 

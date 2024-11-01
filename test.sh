@@ -60,6 +60,15 @@ if [[ "$YAY" == "On" ]]; then
         cd .. && rm -rf /tmp/yay-bin
         log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
+        # Generate yay database
+        yay -Y --gendb
+
+        # Update the system and AUR packages, including development packages
+        yay -Syu --devel --noconfirm
+
+        # Save the current development packages
+        yay -Y --devel --save
+
     else
         log_prompt "WARNING" && echo "YAY est déja installé" && echo ""
     fi
@@ -97,66 +106,15 @@ done
 
 fc-cache -rv  
 
-
-log_prompt "INFO" && echo "installation des dépendances [deja dans l'autres script - a supp]" && echo ""
-yay -S --sudoloop --needed --noconfirm cmake meson ninja gcc gdb wlroots
-
 log_prompt "INFO" && echo "installation des dépendances système (librairies, protocoles)" && echo ""
-yay -S --sudoloop --needed --noconfirm \
-    libxcb \
-    xcb-proto \
-    xcb-util \
-    xcb-util-keysyms \
-    libxfixes \
-    libx11 \
-    libxcomposite \
-    libxrender \
-    libxkbcommon \
-    xcb-util-wm \
-    libinput \
-    libliftoff \
-    libdisplay-info
-
-log_prompt "INFO" && echo "installation des applications et outils" && echo ""
-yay -S --sudoloop --needed --noconfirm \
-    wayland \
-    xdg-desktop-portal-hyprland \
-    aquamarine \
-    kitty \
-    alacritty \
-    polkit-kde-agent \
-    dunst \
-    qt5-wayland \
-    qt6-wayland \
-    waybar \
-    cliphist \
-    swww \
-    hyprpicker \
-    hyprlock \
-    hyprpaper \
-    wlogout \
-    grimblast \
-    hypridle \
-    nwg-look \
-    qt5ct \
-    qt6ct \
-    pixman \
-    wayland-protocols \
-    cairo \
-    pango \
-    seatd \
-    cpio \
-    tomlplusplus \
-    hyprlang \
-    hyprcursor \
-    hyprwayland-scanner \
-    xcb-util-errors \
-    xorg-xinput \
-    xorg-xwayland \
-    xorg-server-devel \
-    xwaylandvideobridge \
-    wl-clip-persist \
-    hyprland-per-window-layout
+# Install Hyprland dependencies and additional packages
+yay -S libxcb xcb-proto xcb-util xcb-util-keysyms \
+    libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols \
+    cairo pango libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff \
+    libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner \
+    xcb-util-errors hyprutils hyprpaper hyprlock hypridle qt5-wayland \
+    qt6-wayland xdg-desktop-portal-hyprland polkit-kde-agent \
+    waybar swaync rofi-wayland udiskie hyprnome  --noconfirm
 
 log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
