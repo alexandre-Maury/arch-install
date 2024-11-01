@@ -136,7 +136,7 @@ cd ..
 ## xdg-desktop-portal-hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de xdg-desktop-portal-hyprland" && echo ""
-yay -S libdrm libpipewire sdbus-cpp wayland qt6-base qt6-wayland xdg-desktop-portal wayland-protocols scdoc --noconfirm
+yay -S libdrm libpipewire sdbus-cpp wayland qt5-wayland qt6-wayland xdg-desktop-portal wayland-protocols scdoc --noconfirm
 git clone --recursive https://github.com/hyprwm/xdg-desktop-portal-hyprland $workDirName/xdg-desktop-portal-hyprland
 cd $workDirName/xdg-desktop-portal-hyprland
 cmake -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib -DCMAKE_INSTALL_PREFIX=/usr -B build
