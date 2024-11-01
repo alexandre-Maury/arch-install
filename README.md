@@ -10,7 +10,7 @@ L'objectif est de mettre en place un système optimisé pour deux usages princip
 
 ## Installation
 
-Procédez aux étapes suivantes :
+<!-- Procédez aux étapes suivantes :
 
 1. Télécharger le support d'installation : `https://archlinux.org/download/`
 2. Changer la disposition du clavier : `loadkeys fr`
@@ -19,7 +19,64 @@ Procédez aux étapes suivantes :
 5. Installation du paquet git : `pacman -Sy git`
 6. Clone du repo : `git clone https://github.com/alexandre-Maury/arch-install.git`
 7. Configuration des options : `cd arch-install && nano config.sh`
-8. Exécution du script : `chmod +x install.sh && ./install.sh`
+8. Exécution du script : `chmod +x install.sh && ./install.sh` -->
+
+Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprland :
+
+    Télécharger le support d'installation
+    Téléchargez l'image d'installation d'Arch Linux depuis le site officiel :
+    https://archlinux.org/download/
+
+    Changer la disposition du clavier
+    Configurez la disposition du clavier en français pour la session d'installation :
+
+    bash
+
+loadkeys fr
+
+Effacer les signatures de système de fichiers
+
+    ⚠️ Attention : Cette commande efface toutes les signatures de systèmes de fichiers sur le disque spécifié. Assurez-vous de bien sélectionner le disque cible.
+
+bash
+
+sudo wipefs --force --all /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
+
+Écraser les données du disque
+
+    ⚠️ Attention : Cette opération est irréversible et écrase tout le contenu du disque.
+
+bash
+
+sudo shred -v -n 3 -z /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
+
+Installer Git
+Mettez à jour la liste des paquets et installez Git :
+
+bash
+
+pacman -Sy git
+
+Cloner le dépôt
+Clonez le dépôt contenant le script d'installation :
+
+bash
+
+git clone https://github.com/alexandre-Maury/arch-install.git
+
+Configurer les options d'installation
+Accédez au répertoire cloné et modifiez le fichier config.sh pour ajuster les options d'installation selon vos préférences :
+
+bash
+
+cd arch-install && nano config.sh
+
+Exécuter le script d'installation
+Rendez le script exécutable et lancez-le pour commencer l'installation :
+
+bash
+
+chmod +x install.sh && ./install.sh
 
 
 ## Feuille de route
