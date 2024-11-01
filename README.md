@@ -11,12 +11,12 @@ Il utilise principalement Ansible pour l'automatisation, avec des rôles et des 
 
 ## Installation
 
-Tout d'abord, démarrez dans l'environnement réel de votre choix. Je recommande d'utiliser un live ISO d'Arch Linux, car l'installateur sera alors en mesure de télécharger automatiquement les programmes nécessaires. Ensuite, procédez aux étapes suivantes :
+Procédez aux étapes suivantes :
 
 1. `Télécharger le support d'installation : https://archlinux.org/download/`
 2. `loadkeys fr`
-3. `wipefs --force --all "ex. /dev/sda"`
-4. `shred -v -n "ex. 3" -z "ex. /dev/sda"`
+3. `wipefs --force --all "ex. /dev/sda" [Attention : efface toutes les signatures de système de fichiers]`
+4. `shred -v -n "ex. 3" -z "ex. /dev/sda" [Attention : écraser les données sur le disque]`
 5. `pacman -Sy git`
 6. `git clone https://github.com/alexandre-Maury/arch-install.git`
 7. `cd arch-install`
