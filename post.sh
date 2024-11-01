@@ -84,8 +84,6 @@ if [[ "$PARU" == "On" ]]; then
     fi
 fi
 
-sudo pacman -S git curl
-
 # INSTALL YAY
 if !command -v yay &> /dev/null; then
 	echo "yay not found, installing!"
