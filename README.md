@@ -3,6 +3,8 @@
 ## Description
 Ce projet vise à automatiser l'installation de base d'Arch Linux sans interface graphique. Il est conçu pour les utilisateurs qui souhaitent une installation minimale, offrant une fondation légère et personnalisable pour des environnements spécifiques comme le développement, le pentesting, ou les serveurs.
 
+Projet 2 : Suite de l'installation avec Hyprland : https://github.com/alexandre-Maury/arch-hyprland.git
+
 ## Visuels
 À venir
 
