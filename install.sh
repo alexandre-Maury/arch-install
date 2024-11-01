@@ -81,10 +81,8 @@ fi
 
 if [[ "${ENABLE_SWAP}" == "On" ]]; then
     if [[ "${FILE_SWAP}" == "On" ]]; then
-        echo "Utilisation d'un fichier swap : $FILE_SWAP"
-        echo "Taille de la partition swap : $SIZE_SWAP"
+        echo "Taille du fichier swap : $SIZE_SWAP"
     else
-        echo "Utilisation d'une partition swap"
         echo "Taille de la partition swap : $SIZE_SWAP"
     fi
 fi
