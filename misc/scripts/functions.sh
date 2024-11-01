@@ -67,23 +67,3 @@ log_prompt() {
 
 }
 
-# Fonction pour nettoyer le disque
-clean_disk() {
-    local disk=$1
-    local shred=$2 
-    
-    # Vérification que le disque existe
-    if [[ ! -b "/dev/$disk" ]]; then
-        log_prompt "ERROR" && echo "Le disque /dev/${disk} n'existe pas" && echo ""
-        return 1
-    fi
-    
-    # Afficher l'état actuel
-    log_prompt "INFO" && echo "État actuel du disque :" && echo ""
-    parted "/dev/${disk}" print || true
-    
-    # Effacement des signatures
-    log_prompt "INFO" && echo "Effacement des signatures du disque" && echo ""
-    wipefs --force --all "/dev/${disk}" && shred -v -n $shred -z "/dev/${disk}"
-    return 0
-}

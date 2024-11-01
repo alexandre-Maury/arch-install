@@ -129,7 +129,6 @@ yay -S --sudoloop --needed --noconfirm \
     qt5-wayland \
     qt6-wayland \
     waybar \
-    tofi \
     cliphist \
     swww \
     hyprpicker \

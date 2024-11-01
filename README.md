@@ -15,11 +15,13 @@ Tout d'abord, démarrez dans l'environnement réel de votre choix. Je recommande
 
 1. `Télécharger le support d'installation : https://archlinux.org/download/`
 2. `loadkeys fr`
-3. `pacman -Sy git`
-4. `git clone https://github.com/alexandre-Maury/arch-install.git`
-5. `cd arch-install`
-6. `configure config.sh`
-7. `chmod +x install.sh && ./install.sh`
+3. `wipefs --force --all "ex. /dev/sda"`
+4. `shred -v -n "ex. 3" -z "ex. /dev/sda"`
+5. `pacman -Sy git`
+6. `git clone https://github.com/alexandre-Maury/arch-install.git`
+7. `cd arch-install`
+8. `configure config.sh`
+9. `chmod +x install.sh && ./install.sh`
 
 
 ## Feuille de route

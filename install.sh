@@ -159,40 +159,6 @@ else
     exit 0
 fi
 
-
-##############################################################################
-## Netoyage disque dur                                                 
-##############################################################################
-# Programme principal
-if [[ -z "${DISK}" ]]; then
-    log_prompt "ERROR" && echo "Variable DISK non définie" && echo ""
-    exit 1
-fi
-
-log_prompt "WARNING" && echo "ATTENTION : Vous êtes sur le point d'effacer toutes les données sur /dev/${DISK}"
-log_prompt "WARNING" && echo "Cette opération est IRRÉVERSIBLE" &&
-log_prompt "WARNING" && echo "Le système sera inutilisable après cette opération jusqu'à la réinstallation compléte"
-log_prompt "INFO" && read -p "Êtes-vous sûr de vouloir continuer ? (Y/y|N/n) : : " confirm && echo ""
-
-if [[ "${confirm}" =~ ^[yY]$ ]]; then
-    if clean_disk "${DISK}" "${SHRED_PASS}" ; then
-        log_prompt "SUCCESS" && echo "Opération terminée avec succès" && echo ""
-
-        # Afficher l'état actuel
-        log_prompt "INFO" && echo "Nouvelle état du disque :" && echo ""
-        parted "/dev/${disk}" print || true
-    else
-        log_prompt "ERROR" && echo "L'opération a échoué" && echo ""
-        exit 1
-    fi
-else
-    log_prompt "INFO" && echo "Opération annulée, suite du script" && echo ""
-fi
-
-
-
-
-
 ##############################################################################
 ## Création des partitions + formatage et montage                                                      
 ##############################################################################
@@ -727,7 +693,7 @@ arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd
 arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
 arch-chroot ${MOUNT_POINT} systemctl enable bluetooth 
 arch-chroot ${MOUNT_POINT} systemctl enable fstrim.timer 
-arch-chroot ${MOUNT_POINT} systemctl enable ntpd 
+# arch-chroot ${MOUNT_POINT} systemctl enable ntpd 
 
 umount -R ${MOUNT_POINT}
 
