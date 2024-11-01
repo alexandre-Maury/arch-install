@@ -31,19 +31,15 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 
     loadkeys fr
 
-3- Effacer les signatures de système de fichiers :
-⚠️ Attention : Cette commande efface toutes les signatures de systèmes de fichiers sur le disque spécifié. Assurez-vous de bien sélectionner le disque cible.
+3- Effacer toutes les signatures de systèmes de fichiers sur le disque spécifié :
+⚠️ Attention : Assurez-vous de bien sélectionner le disque cible.
 
     wipefs --force --all /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
-    bash
+    
+4- Écraser les données du disque :
+⚠️ Attention : Cette opération est irréversible et écrase tout le contenu du disque.
 
-Écraser les données du disque
-
-    ⚠️ Attention : Cette opération est irréversible et écrase tout le contenu du disque.
-
-bash
-
-sudo shred -v -n 3 -z /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
+    shred -v -n 3 -z /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
 
 Installer Git
 Mettez à jour la liste des paquets et installez Git :
