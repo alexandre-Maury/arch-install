@@ -248,6 +248,7 @@ cp -rf $SCRIPT_DIR/misc/dots/config/waybar ~/.config
 cp -rf $SCRIPT_DIR/misc/dots/config/alacritty ~/.config
 
 cp -rf $SCRIPT_DIR/misc/dots/wallpaper $HOME
+cp -rf $SCRIPT_DIR/misc/dots/scripts $HOME
 
 cp -rf $SCRIPT_DIR/misc/dots/icons $HOME/.local/share
 cp -rf $SCRIPT_DIR/misc/dots/themes $HOME/.local/share
