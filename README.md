@@ -1,25 +1,12 @@
-# `arch-install`
+# `Projet 1 : Installation de Base Arch Linux (Sans Interface Graphique)`
 
 ## Description
-Ce projet a pour objectif d'installer et de configurer Hyprland, un compositeur Wayland dynamique et personnalisable, sur une base Arch Linux. Hyprland est conçu pour offrir un environnement de bureau léger et performant, avec un accent sur la fluidité et la modularité, idéal pour les utilisateurs avancés.
-
-L'objectif est de mettre en place un système optimisé pour deux usages principaux : un environnement de développement et un environnement de pentesting. Ce projet propose ainsi une configuration polyvalente, adaptée aux besoins spécifiques de chaque contexte d'utilisation.
+Ce projet vise à automatiser l'installation de base d'Arch Linux sans interface graphique. Il est conçu pour les utilisateurs qui souhaitent une installation minimale, offrant une fondation légère et personnalisable pour des environnements spécifiques comme le développement, le pentesting, ou les serveurs.
 
 ## Visuels
 À venir
 
 ## Installation
-
-<!-- Procédez aux étapes suivantes :
-
-1. Télécharger le support d'installation : `https://archlinux.org/download/`
-2. Changer la disposition du clavier : `loadkeys fr`
-3. Attention : efface toutes les signatures de système de fichiers : `wipefs --force --all "ex. /dev/sda"`
-4. Attention : écrase les données sur le disque : `shred -v -n "ex. 3" -z "ex. /dev/sda"`
-5. Installation du paquet git : `pacman -Sy git`
-6. Clone du repo : `git clone https://github.com/alexandre-Maury/arch-install.git`
-7. Configuration des options : `cd arch-install && nano config.sh`
-8. Exécution du script : `chmod +x install.sh && ./install.sh` -->
 
 Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprland :
 
@@ -59,17 +46,12 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 
 ## Feuille de route
 
-1. Mise en place du système [En cours]
+1. Mise en place du système [OK]
+Mise en place d'Arch Linux avec les configurations réseau et de base pour un environnement minimal.
 
-Installation et configuration initiale d'Arch Linux avec Hyprland, incluant la gestion des paquets et les configurations de base du système.
+2. Ajouts spécifiques [À venir]
+Instructions pour des ajouts personnalisés en fonction des besoins, comme les outils de développement ou d'administration.
 
-2. Mise en place d'un laboratoire de développement [À venir]
-
-Configuration d'un environnement de développement comprenant les outils et bibliothèques nécessaires pour le développement de logiciels, avec des langages et frameworks spécifiques selon les besoins.
-
-3. Mise en place d'un laboratoire de pentesting [À venir]
-
-Installation et configuration des outils de test de pénétration et de sécurité, permettant de simuler des attaques et d'évaluer la sécurité des systèmes.
 
 ## Auteurs
 `- Alexandre MAURY`
