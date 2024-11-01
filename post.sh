@@ -79,7 +79,7 @@ fi
 ##############################################################################
 ## Installation des utilitaires                                                 
 ##############################################################################
-yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp \
+yay -S alacritty nautilus rofi-wayland dunst grim slurp \
     iw wpa_supplicant bluez bluez-utils blueman seatd \
     alsa-utils alsa-plugins pipewire pipewire-alsa \
     pipewire-pulse pipewire-jack pipewire-zeroconf \
@@ -202,13 +202,23 @@ cd ..
 ## Hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de Hyprland" && echo ""
-yay -S libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
+yay -S udis-86 libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
 git clone --recursive https://github.com/hyprwm/Hyprland $workDirName/Hyprland
 cd $workDirName/Hyprland
+make all && sudo make install
+cd ..
+
+##############################################################################
+## Waybar                                                
+##############################################################################
+log_prompt "INFO" && echo "Installation de Waybar" && echo ""
+git clone --recursive https://github.com/Alexays/Waybar $workDirName/Waybar
+cd $workDirName/Waybar
 meson setup build
 ninja -C build
 sudo ninja -C build install
 cd ..
+
 
 ##############################################################################
 ## Configuration                                              
