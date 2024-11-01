@@ -47,9 +47,11 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 ## Feuille de route
 
 1. Mise en place du système [OK]
+
 Mise en place d'Arch Linux avec les configurations réseau et de base pour un environnement minimal.
 
 2. Ajouts spécifiques [À venir]
+
 Instructions pour des ajouts personnalisés en fonction des besoins, comme les outils de développement ou d'administration.
 
 
