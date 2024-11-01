@@ -92,8 +92,6 @@ for url in "${URL_FONTS[@]}"; do
   fi
 done
 
-fc-cache -rv 
-
 ##############################################################################
 ## Installation des utilitaires                                                 
 ##############################################################################
@@ -231,6 +229,8 @@ cd ..
 ## Waybar                                                
 ##############################################################################
 log_prompt "INFO" && echo "Installation de Waybar" && echo ""
+yay -S otf-font-awesome ttf-jetbrains-mono --noconfirm
+
 git clone --recursive https://github.com/Alexays/Waybar $workDirName/Waybar
 cd $workDirName/Waybar
 meson setup build
