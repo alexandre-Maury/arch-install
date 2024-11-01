@@ -26,11 +26,10 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 1- Télécharger le support d'installation d'Arch Linux depuis le site officiel :
 
     https://archlinux.org/download/
-    bash
 
 2- Configurez la disposition du clavier en français pour la session d'installation :
+
     loadkeys fr
-    bash
 
 3- Effacer les signatures de système de fichiers :
 ⚠️ Attention : Cette commande efface toutes les signatures de systèmes de fichiers sur le disque spécifié. Assurez-vous de bien sélectionner le disque cible.
