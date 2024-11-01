@@ -656,6 +656,14 @@ if [[ "$USER" =~ ^[yY]$ ]]; then
     done
 fi
 
+##############################################################################
+## Modifier le fichier de configuration pour renforcer la sécurité                                     
+##############################################################################
+sed -i "s/#Port 22/Port $SSH_PORT/" "$SSH_CONFIG_FILE"
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' "$SSH_CONFIG_FILE"
+sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' "$SSH_CONFIG_FILE"
+sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' "$SSH_CONFIG_FILE"
+sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/' "$SSH_CONFIG_FILE"
 
 ##############################################################################
 ## Activation des services                                        

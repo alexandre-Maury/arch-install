@@ -50,6 +50,8 @@ SIMILAR="permit" # Valeurs : permit ou deny : Définit la politique en matière 
 RANDOM="47"
 ENFORCE="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
 RETRY="3" # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé.
+SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
+SSH_CONFIG_FILE="/etc/ssh/sshd_config"
 
 
 ##############################################################################
