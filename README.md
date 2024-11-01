@@ -23,24 +23,20 @@ L'objectif est de mettre en place un système optimisé pour deux usages princip
 
 Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprland :
 
-    Télécharger le support d'installation
-    Téléchargez l'image d'installation d'Arch Linux depuis le site officiel :
+1- Télécharger le support d'installation d'Arch Linux depuis le site officiel :
+
     https://archlinux.org/download/
-
-    Changer la disposition du clavier
-    Configurez la disposition du clavier en français pour la session d'installation :
-
     bash
 
-loadkeys fr
+2- Configurez la disposition du clavier en français pour la session d'installation :
+    loadkeys fr
+    bash
 
-Effacer les signatures de système de fichiers
+3- Effacer les signatures de système de fichiers :
+⚠️ Attention : Cette commande efface toutes les signatures de systèmes de fichiers sur le disque spécifié. Assurez-vous de bien sélectionner le disque cible.
 
-    ⚠️ Attention : Cette commande efface toutes les signatures de systèmes de fichiers sur le disque spécifié. Assurez-vous de bien sélectionner le disque cible.
-
-bash
-
-sudo wipefs --force --all /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
+    wipefs --force --all /dev/sdX  # Remplacez /dev/sdX par le disque cible, ex. /dev/sda
+    bash
 
 Écraser les données du disque
 
