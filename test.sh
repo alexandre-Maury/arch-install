@@ -114,7 +114,7 @@ yay -S libxcb xcb-proto xcb-util xcb-util-keysyms \
     libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner \
     xcb-util-errors hyprutils hyprpaper hyprlock hypridle qt5-wayland \
     qt6-wayland xdg-desktop-portal-hyprland polkit-kde-agent \
-    waybar swaync rofi-wayland udiskie hyprnome aquamarine  --noconfirm
+    waybar swaync rofi-wayland udiskie hyprnome aquamarine wofi alacritty kitty dolphin --noconfirm
 
 log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
@@ -133,19 +133,19 @@ log_prompt "INFO" && echo "Création des dossiers de configuration" && echo ""
 mkdir -p ~/.config/hypr
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/dunst
-mkdir -p ~/.config/hyprpaper
+mkdir -p ~/.config/hyprpaper/background
 
 log_prompt "INFO" && echo "Copie de l'image d'arrière plan" && echo ""
-cp -rf $SCRIPT_DIR/misc/background/bg.jpg ~/.config/hyprpaper/background/bg.jpg
+cp -rf $SCRIPT_DIR/misc/background/bg.jpg ~/.config/hyprpaper/background
 
 log_prompt "INFO" && echo "Configuration hyprpaper" && echo ""
-cp -rf $SCRIPT_DIR/misc/dots/hyprpaper/hyprpaper.conf ~/.config/hyprpaper/hyprpaper.conf
+cp -rf $SCRIPT_DIR/misc/dots/hyprpaper/hyprpaper.conf ~/.config/hyprpaper
 
 log_prompt "INFO" && echo "Configuration hyprland" && echo ""
-cp -rf $SCRIPT_DIR/misc/dots/hyprland/hyprland.conf ~/.config/hyprland/hyprland.conf
+cp -rf $SCRIPT_DIR/misc/dots/hyprland/hyprland.conf ~/.config/hypr
 
-log_prompt "INFO" && echo "Configuration swaybar" && echo ""
-cp -rf $SCRIPT_DIR/misc/dots/swaybar/config ~/.config/waybar/config
-cp -rf $SCRIPT_DIR/misc/dots/swaybar/style.css ~/.config/waybar/style.css
+log_prompt "INFO" && echo "Configuration waybar" && echo ""
+cp -rf $SCRIPT_DIR/misc/dots/waybar/config ~/.config/waybar
+cp -rf $SCRIPT_DIR/misc/dots/waybar/style.css ~/.config/waybar
 
 log_prompt "SUCCESS" && echo "Installation Terminée" && echo ""

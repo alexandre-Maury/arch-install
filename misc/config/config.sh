@@ -6,30 +6,24 @@
 ## Config arch chroot-install                                                
 ##############################################################################
 
-# Détection du mode de démarrage (UEFI ou MBR)
+
 if [ -d /sys/firmware/efi ]; then
   MODE="UEFI"
 else
   MODE="MBR"
 fi
-# Comparaison entre Partition Swap et Fichier Swap :
-# Critère	    Partition Swap :	                                            Fichier Swap :
-# Performance	Généralement plus rapide en raison d'un accès direct.	        Moins rapide, mais souvent suffisant pour la plupart des usages.
-# Flexibilité	Taille fixe, nécessite un redimensionnement pour changer.	    Facile à redimensionner en ajoutant ou supprimant des fichiers.
-# Simplicité	Nécessite des opérations de partitionnement.	                Plus simple à configurer et à gérer.
-# Gestion	    Nécessite des outils de partitionnement pour la création.	    Peut être géré par des commandes simples.
-ENABLE_SWAP="On"   # Mettre sur "On" pour activer le swap [création part ou fichier swap] ou "Off" pour le désactiver
-FILE_SWAP="Off"   # "On" pour utiliser un fichier swap, "Off" pour une partition swap
-MERGE_ROOT_HOME="On"   # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
-SIZE_BOOT="512M"  # Taille de la partition de boot (UEFI | MBR)
-SIZE_SWAP="4G"    # Taille de la partition swap ou du fichier swap
-SIZE_ROOT="100G"  # Taille de la partition root
-SIZE_HOME="100%"  # Taille de la partition home (utilise tout l'espace restant)
-FS_TYPE="ext4"    # Système de fichiers : ext4, btrfs, xfs
+
+ENABLE_SWAP="On"              # Mettre sur "On" pour activer le swap [création part ou fichier swap] ou "Off" pour le désactiver
+FILE_SWAP="Off"               # "On" pour utiliser un fichier swap, "Off" pour une partition swap
+MERGE_ROOT_HOME="On"          # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
+SIZE_BOOT="512M" 
+SIZE_SWAP="4G"    
+SIZE_ROOT="100G"  
+SIZE_HOME="100%"  
+FS_TYPE="ext4"    
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
-# systemd-boot ne peut être utilisé qu'en mode UEFI.
-BOOTLOADER="systemd-boot" # grub ou systemd-boot
+BOOTLOADER="systemd-boot"    # grub ou systemd-boot : systemd-boot ne peut être utilisé qu'en mode UEFI.
 REGION="Europe"
 PAYS="France"
 CITY="Paris"
