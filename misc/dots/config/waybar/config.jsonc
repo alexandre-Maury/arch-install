@@ -3,11 +3,11 @@
     "margin-top": 6,
     "margin-left": 8,
     "margin-right": 8,
-    "output": ["DP-1", "DP-2"],
+    "output": ["eDP-1", "eDP-2", "VGA"],
     "modules-left": [
         "hyprland/workspaces",
         "cpu",
-        "tray",
+        "tray"
     ],
     "modules-center": [
         "hyprland/window"
@@ -16,10 +16,10 @@
         "pulseaudio",
         "network",
         "hyprland/language",
-        "clock",
+        "clock"
     ],
     "hyprland/language": {
-        "format": "<big>{short}</big>",
+        "format": "<big>{short}</big>"
     },
     "tray": {
         "spacing": 8
@@ -27,13 +27,13 @@
     "hyprland/window": {
         "max-length": 32,
         "separate-outputs": true,
-        "icon": true,
+        "icon": true
     },
     "clock": {
         "format": "{:%H:%M:%S}",
         "tooltip-format": "<tt><big>{calendar}</big></tt>",
         "format-alt": "{:%Y.%m.%d}",
-        "interval": 1,
+        "interval": 1
     },
     "cpu": {
         "format": "{usage}%  ",
@@ -41,7 +41,7 @@
     },
     "network": {
         "format-wifi": "{signalStrength}%  ",
-        "format-disconnected": "⚠",
+        "format-disconnected": "⚠"
     },
     "pulseaudio": {
         "format": "{volume}% {icon} {format_source}",
@@ -61,6 +61,6 @@
             "urgent": "",
             "active": "",
             "default": ""
-        },
-    },
+        }
+    }
 }

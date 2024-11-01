@@ -636,7 +636,7 @@ done
 # Si l'utilisateur répond Y ou y
 if [[ "$USER" =~ ^[yY]$ ]]; then
 
-    log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité :" sudo_user && echo ""
+    log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité : " sudo_user && echo ""
     arch-chroot ${MOUNT_POINT} useradd -m -G wheel,audio,video,optical,storage,power,input "$sudo_user"
 
     # Demande de changer le mot de passe $USER

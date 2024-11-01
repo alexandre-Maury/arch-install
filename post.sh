@@ -77,13 +77,32 @@ if [[ "$PARU" == "On" ]]; then
 fi
 
 ##############################################################################
+## Fonts Installation                                            
+##############################################################################
+mkdir -p ~/.local/share/fonts && cd ~/.local/share/fonts
+
+# Télécharger chaque fichier seulement s'il n'existe pas déjà
+for url in "${URL_FONTS[@]}"; do
+  file_name=$(basename "$url")
+  if [ ! -f "$file_name" ]; then
+    log_prompt "INFO" && echo "Téléchargement de $file_name" && echo ""
+    curl -fLO "$url"
+  else
+    log_prompt "WARNING" && echo "$file_name existe déjà, fonts ignoré" && echo ""
+  fi
+done
+
+fc-cache -rv 
+
+##############################################################################
 ## Installation des utilitaires                                                 
 ##############################################################################
 yay -S alacritty nautilus rofi-wayland dunst grim slurp \
     iw wpa_supplicant bluez bluez-utils blueman seatd \
     alsa-utils alsa-plugins pipewire pipewire-alsa \
     pipewire-pulse pipewire-jack pipewire-zeroconf \
-    lib32-pipewire lib32-pipewire-jack wireplumber --noconfirm
+    lib32-pipewire lib32-pipewire-jack wireplumber \
+    lxappearance --noconfirm
 
 
 ##############################################################################
