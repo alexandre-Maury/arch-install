@@ -23,6 +23,8 @@ fi
 
 yay -Syu
 
+yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp --noconfirm
+
 # INSTALL HYPRLAND
 # - hyprutils
 yay -S cmake gcc make
