@@ -114,7 +114,7 @@ yay -S libxcb xcb-proto xcb-util xcb-util-keysyms \
     libdisplay-info cpio tomlplusplus hyprlang hyprcursor hyprwayland-scanner \
     xcb-util-errors hyprutils hyprpaper hyprlock hypridle qt5-wayland \
     qt6-wayland xdg-desktop-portal-hyprland polkit-kde-agent \
-    waybar swaync rofi-wayland udiskie hyprnome  --noconfirm
+    waybar swaync rofi-wayland udiskie hyprnome aquamarine  --noconfirm
 
 log_prompt "INFO" && echo "Clonage du dépôt Hyprland" && echo ""
 git clone --recursive https://github.com/hyprwm/Hyprland.git ~/Hyprland
