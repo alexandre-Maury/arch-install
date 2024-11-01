@@ -80,8 +80,6 @@ else
 fi
 
 if [[ "${ENABLE_SWAP}" == "On" ]]; then
-    echo "Activation du swap : $ENABLE_SWAP"
-
     if [[ "${FILE_SWAP}" == "On" ]]; then
         echo "Utilisation d'un fichier swap : $FILE_SWAP"
         echo "Taille de la partition swap : $SIZE_SWAP"
@@ -89,22 +87,15 @@ if [[ "${ENABLE_SWAP}" == "On" ]]; then
         echo "Utilisation d'une partition swap"
         echo "Taille de la partition swap : $SIZE_SWAP"
     fi
-
-else
-    echo "Activation du swap : Off"
 fi
 
 # Afficher des informations sur la fusion root/home
 if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
-    echo "Fusion root/home : Activée"
     echo "Taille de la partition root : $SIZE_ROOT"
 else
     echo "Taille de la partition root : $SIZE_ROOT"
     echo "Taille de la partition home : $SIZE_HOME"
 fi
-
-echo "Système de fichiers : $FS_TYPE"
-echo "Point de montage : $MOUNT_POINT"
 
 if [[ "${MODE}" == "UEFI" ]]; then
     echo "Bootloader : $BOOTLOADER"
@@ -123,16 +114,6 @@ echo "Hostname : $HOSTNAME"
 echo "Interface : $INTERFACE"
 echo "Keymap : $KEYMAP"
 echo "Locale : $LOCALE"
-echo "Mot de passe de sécurité (passwdqc.conf) :"
-echo "  Longueur minimale pour un mot de passe simple : $MIN_SIMPLE"
-echo "  Longueur minimale pour un mot de passe avec deux classes : $MIN_2CLASSES"
-echo "  Longueur minimale pour un mot de passe avec trois classes : $MIN_3CLASSES"
-echo "  Longueur minimale pour un mot de passe avec quatre classes : $MIN_4CLASSES"
-echo "  Longueur minimale pour une phrase de passe : $MIN_PHRASE"
-echo "Longueur maximale pour un mot de passe : $MAX"
-echo "Longueur minimale pour une phrase de passe (en mots) : $PASSPHRASE"
-echo "Politique de similarité : $SIMILAR"
-echo "Nombre de tentatives autorisées : $RETRY"
 echo "GPU : $GPU_VENDOR"
 echo ""
 echo "=============================================="

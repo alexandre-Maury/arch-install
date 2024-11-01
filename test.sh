@@ -140,8 +140,6 @@ yay -S --sudoloop --needed --noconfirm \
     nwg-look \
     qt5ct \
     qt6ct \
-    kvantum \
-    kvantum-theme-catppuccin-git \
     pixman \
     wayland-protocols \
     cairo \
@@ -153,7 +151,6 @@ yay -S --sudoloop --needed --noconfirm \
     hyprcursor \
     hyprwayland-scanner \
     xcb-util-errors \
-    hyprutils-git \
     xorg-xinput \
     xorg-xwayland \
     xorg-server-devel \
