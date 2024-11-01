@@ -12,12 +12,6 @@ workDirName="${HOME}/buildHypr";
 rm -rf $workDirName
 mkdir -p $workDirName
 
-hyprBuildInstall() {
-	cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
-	cmake --build ./build --config Release --target $1 -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
-	sudo cmake --install ./build
-}
-
 ##############################################################################
 ## Information Utilisateur                                              
 ##############################################################################
@@ -98,7 +92,11 @@ yay -S alacritty waybar-git nautilus rofi-wayland dunst grim slurp \
 log_prompt "INFO" && echo "Installation de hyprutils" && echo ""
 yay -S cmake gcc make --noconfirm
 git clone --recursive https://github.com/hyprwm/hyprutils.git $workDirName/hyprutils
-cd $workDirName/hyprutils && hyprBuildInstall all && cd ..
+cd $workDirName/hyprutils
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target all -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 
 ##############################################################################
@@ -107,7 +105,11 @@ cd $workDirName/hyprutils && hyprBuildInstall all && cd ..
 log_prompt "INFO" && echo "Installation de hyprlang" && echo ""
 yay -S gcc-libs glibc --noconfirm
 git clone --recursive https://github.com/hyprwm/hyprlang.git $workDirName/hyprlang
-cd $workDirName/hyprlang && hyprBuildInstall hyprlang && cd ..
+cd $workDirName/hyprlang
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target hyprlang -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 
 ##############################################################################
@@ -115,9 +117,12 @@ cd $workDirName/hyprlang && hyprBuildInstall hyprlang && cd ..
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprcursor" && echo ""
 yay -S cairo libzip librsvg tomlplusplus gdb --noconfirm
-git clone --recursive https://github.com/hyprwm/hyprutils.git $workDirName/hyprcursor
-cd $workDirName/hyprcursor && hyprBuildInstall all && cd ..
-
+git clone --recursive https://github.com/hyprwm/hyprcursor.git $workDirName/hyprcursor
+cd $workDirName/hyprcursor
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target all -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 ##############################################################################
 ## hyprwayland-scanner                                              
@@ -131,12 +136,22 @@ cmake --build build -j `nproc`
 sudo cmake --install build
 cd ..
 
+##############################################################################
+## hyprland-protocols                                          
+##############################################################################
+log_prompt "INFO" && echo "Installation de hyprland-protocols" && echo ""
+git clone --recursive https://github.com/hyprwm/hyprland-protocols.git $workDirName/hyprland-protocols
+cd $workDirName/hyprland-protocols
+meson setup build
+ninja -C build
+sudo ninja -C build install
 
 ##############################################################################
 ## xdg-desktop-portal-hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de xdg-desktop-portal-hyprland" && echo ""
-yay -S libdrm libpipewire sdbus-cpp wayland qt5-wayland qt6-wayland xdg-desktop-portal wayland-protocols scdoc --noconfirm
+# libpipewire-0.3 libspa-0.2 qt5-wayland qt6-wayland
+yay -S gbm libdrm libpipewire sdbus-cpp wayland wayland-protocols scdoc --noconfirm
 git clone --recursive https://github.com/hyprwm/xdg-desktop-portal-hyprland $workDirName/xdg-desktop-portal-hyprland
 cd $workDirName/xdg-desktop-portal-hyprland
 cmake -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib -DCMAKE_INSTALL_PREFIX=/usr -B build
@@ -151,15 +166,23 @@ cd ..
 log_prompt "INFO" && echo "Installation de aquamarine" && echo ""
 yay -S hwdata --noconfirm
 git clone --recursive https://github.com/hyprwm/aquamarine.git $workDirName/aquamarine
-cd $workDirName/aquamarine && hyprBuildInstall all && cd ..
+cd $workDirName/aquamarine
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target all -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 ##############################################################################
 ## hyprpaper                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de hyprpaper" && echo ""
-yay -S pango libjpeg-turbo libglvnd libwebp --noconfirm
+yay -S gcc libjpeg-turbo libwebp pango cairo pkgconf cmake libglvnd --noconfirm
 git clone --recursive https://github.com/hyprwm/hyprpaper.git $workDirName/hyprpaper
-cd $workDirName/hyprpaper && hyprBuildInstall hyprpaper && cd ..
+cd $workDirName/hyprpaper
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target hyprpaper -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 
 ##############################################################################
@@ -168,17 +191,23 @@ cd $workDirName/hyprpaper && hyprBuildInstall hyprpaper && cd ..
 log_prompt "INFO" && echo "Installation de hyprlock" && echo ""
 yay -S pam --noconfirm
 git clone --recursive https://github.com/hyprwm/hyprlock.git $workDirName/hyprlock
-cd $workDirName/hyprlock && hyprBuildInstall hyprlock && cd ..
+cd $workDirName/hyprlock
+cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_INSTALL_PREFIX:PATH=/usr -S . -B ./build
+cmake --build ./build --config Release --target hyprlock -j`nproc 2>/dev/null || getconf _NPROCESSORS_CONF`
+sudo cmake --install ./build
+cd ..
 
 
 ##############################################################################
 ## Hyprland                                              
 ##############################################################################
 log_prompt "INFO" && echo "Installation de Hyprland" && echo ""
-yay -S gdb ninja gcc cmake meson libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman wayland-protocols cairo pango seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
+yay -S libxcb xcb-proto xcb-util xcb-util-keysyms libxfixes libx11 libxcomposite xorg-xinput libxrender pixman seatd libxkbcommon xcb-util-wm xorg-xwayland libinput libliftoff libdisplay-info cpio tomlplusplus xcb-util-errors --noconfirm
 git clone --recursive https://github.com/hyprwm/Hyprland $workDirName/Hyprland
 cd $workDirName/Hyprland
-make all && sudo make install
+meson setup build
+ninja -C build
+sudo ninja -C build install
 cd ..
 
 ##############################################################################
