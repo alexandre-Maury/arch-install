@@ -29,6 +29,8 @@ LOCALE="fr_FR"
 KEYMAP="fr"
 HOSTNAME="archlinux-alexandre"
 
+PAYS="France"
+
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
 MAC_ADDRESS=$(ip link | awk '/ether/ {print $2; exit}')
 DNS_SERVERS="1.1.1.1 9.9.9.9"
