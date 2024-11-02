@@ -24,17 +24,16 @@ FS_TYPE="ext4"
 SHRED_PASS="1"
 MOUNT_POINT="/mnt"
 BOOTLOADER="systemd-boot"    # grub ou systemd-boot : systemd-boot ne peut être utilisé qu'en mode UEFI.
-REGION="Europe"
-PAYS="France"
-CITY="Paris"
+
 LOCALE="fr_FR"
-LANG="fr_FR.UTF-8"
+KEYMAP="fr"
 HOSTNAME="archlinux-alexandre"
+
 INTERFACE="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
 MAC_ADDRESS=$(ip link | awk '/ether/ {print $2; exit}')
 DNS_SERVERS="1.1.1.1 9.9.9.9"
 FALLBACK_DNS="8.8.8.8"
-KEYMAP="fr"
+
 GPU_VENDOR=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
 PASSWDQC_CONF="/etc/security/passwdqc.conf"
 MIN_SIMPLE="4" # Valeurs : disabled : Longueur minimale pour un mot de passe simple, c'est-à-dire uniquement des lettres minuscules (ex. : "abcdef").
@@ -50,5 +49,6 @@ SIMILAR="permit" # Valeurs : permit ou deny : Définit la politique en matière 
 RANDOM="47"
 ENFORCE="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
 RETRY="3" # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé.
+
 SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 SSH_CONFIG_FILE="/etc/ssh/sshd_config"

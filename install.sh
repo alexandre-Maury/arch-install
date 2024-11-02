@@ -103,9 +103,6 @@ else
     echo "Bootloader : $BOOTLOADER"
 fi
 
-echo "Pays : $PAYS"
-echo "Region : $REGION"
-echo "City : $CITY"
 echo "Locale : $LOCALE"
 echo "Langue : $LANG"
 echo "Hostname : $HOSTNAME"
@@ -291,12 +288,6 @@ log_prompt "INFO" && echo "arch-chroot - Configuration des locales" && echo ""
 echo "KEYMAP=${KEYMAP}" > ${MOUNT_POINT}/etc/vconsole.conf
 sed -i "/^#$LOCALE/s/^#//g" ${MOUNT_POINT}/etc/locale.gen
 arch-chroot ${MOUNT_POINT} locale-gen
-
-# log_prompt "INFO" && echo "arch-chroot - Configuration du fuseau horaire" && echo ""
-# timedatectl set-ntp true
-# timedatectl set-timezone ${REGION}/${CITY}
-# localectl set-locale LANG="${LANG}" LC_TIME="${LANG}"
-# hwclock --systohc --utc
 
 log_prompt "SUCCESS" && echo "Terminée" && echo ""
 
