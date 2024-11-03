@@ -104,7 +104,6 @@ else
 fi
 
 echo "Locale : $LOCALE"
-echo "Langue : $LANG"
 echo "Hostname : $HOSTNAME"
 echo "Interface : $INTERFACE"
 echo "Keymap : $KEYMAP"
