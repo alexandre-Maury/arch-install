@@ -12,7 +12,7 @@ source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies d
 
 # Vérifier les privilèges root
 if [ "$EUID" -ne 0 ]; then
-  echo "Veuillez exécuter ce script en tant qu'utilisateur root."
+  log_prompt "ERROR" && echo "Veuillez exécuter ce script en tant qu'utilisateur root."
   exit 1
 fi
 
