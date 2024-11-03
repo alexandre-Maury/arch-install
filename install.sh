@@ -21,7 +21,7 @@ fi
 ##############################################################################
 log_prompt "INFO" && echo "Vérification de la connexion Internet"
 $(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo "")
-log_prompt "SUCCESS" && echo "Terminée" && echo "" && sleep 3
+log_prompt "SUCCESS" && echo "OK" && echo "" && sleep 3
 
 ##############################################################################
 ## Bienvenue                                                    
