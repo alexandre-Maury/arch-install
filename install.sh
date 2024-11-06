@@ -519,7 +519,7 @@ if [[ "${BOOTLOADER}" == "grub" ]]; then
 elif [[ "${BOOTLOADER}" == "systemd-boot" ]]; then
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot"
-        arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
+        arch-chroot ${MOUNT_POINT} pacman -S efibootmgr os-prober --noconfirm 
         arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
