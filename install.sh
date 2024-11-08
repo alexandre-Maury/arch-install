@@ -44,8 +44,8 @@ fi
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
 OPTION=""
 while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-    log_prompt "INFO" && read -p "Votre Choix : " OPTION
-    echo ""
+    log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+    
 
     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
     if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
@@ -115,7 +115,7 @@ echo ""
 # Demande tant que la réponse n'est pas y/Y ou n/N
 while true; do
 
-    log_prompt "INFO" && read -p "Vérifiez que les informations ci-dessus sont correctes (Y/n) : " CONFIGURATION
+    log_prompt "INFO" && read -p "Vérifiez que les informations ci-dessus sont correctes (Y/n) : " CONFIGURATION && echo ""
     
     # Vérifie la validité de l'entrée
     if [[ "$CONFIGURATION" =~ ^[yYnN]$ ]]; then
@@ -604,8 +604,8 @@ done
 if [[ "$PASSROOT" =~ ^[yY]$ ]]; then
     # Demande de changer le mot de passe root
     while true; do
-        read -p "Veuillez entrer le nouveau mot de passe pour root : " -s NEW_PASS
-        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS
+        read -p "Veuillez entrer le nouveau mot de passe pour root : " -s NEW_PASS && echo ""
+        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS && echo ""
 
         # Vérifie si les mots de passe correspondent
         if [[ "$NEW_PASS" == "$CONFIRM_PASS" ]]; then
@@ -649,8 +649,8 @@ if [[ "$USER" =~ ^[yY]$ ]]; then
 
     # Demande de changer le mot de passe $USER
     while true; do
-        read -p "Veuillez entrer le nouveau mot de passe pour $sudo_user : " -s NEW_PASS 
-        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS
+        read -p "Veuillez entrer le nouveau mot de passe pour $sudo_user : " -s NEW_PASS  && echo ""
+        read -p "Confirmez le mot de passe : " -s CONFIRM_PASS  && echo ""
 
         # Vérifie si les mots de passe correspondent
         if [[ "$NEW_PASS" == "$CONFIRM_PASS" ]]; then
