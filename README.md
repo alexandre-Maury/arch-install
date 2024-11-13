@@ -41,7 +41,7 @@ Suivez les étapes ci-dessous pour installer et configurer Arch Linux avec Hyprl
 
     cd arch-install && nano config.sh
 
-    ![screenshot](misc/assets/config.png)
+    ![screenshot](arch-install\misc\assets\config.png)
 
 8- Rendez le script exécutable et lancez-le pour commencer l'installation :
 
