@@ -1,4 +1,4 @@
-# `Projet 1 : Installation de Base Arch Linux (Sans Interface Graphique)`
+# `Projet 1 : Arch Linux - (Sans Interface Graphique)`
 
 ## Description
 Ce projet vise à automatiser l'installation de base d'Arch Linux sans interface graphique. Il est conçu pour les utilisateurs qui souhaitent une installation minimale, offrant une fondation légère et personnalisable pour des environnements spécifiques comme le développement, le pentesting, ou les serveurs.
