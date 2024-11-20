@@ -108,76 +108,76 @@ done
 
 
 
-# Formatage des partitions
-echo "Formatage de la partition /boot..."
-mkfs.fat -F32 "${DISK}p1"  # La partition /boot
+# # Formatage des partitions
+# echo "Formatage de la partition /boot..."
+# mkfs.fat -F32 "${DISK}p1"  # La partition /boot
 
-echo "Formatage des partitions restantes en Btrfs..."
-mkfs.btrfs "${DISK}p2"  # Partition root
+# echo "Formatage des partitions restantes en Btrfs..."
+# mkfs.btrfs "${DISK}p2"  # Partition root
 
-# Montage de la partition root
-echo "Montage du système de fichiers..."
-mount "${DISK}p2" /mnt
+# # Montage de la partition root
+# echo "Montage du système de fichiers..."
+# mount "${DISK}p2" /mnt
 
-# Création des sous-volumes Btrfs
-echo "Création des sous-volumes Btrfs..."
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
+# # Création des sous-volumes Btrfs
+# echo "Création des sous-volumes Btrfs..."
+# btrfs subvolume create /mnt/@
+# btrfs subvolume create /mnt/@home
 
-# Montage des sous-volumes
-umount /mnt
-mount -o noatime,compress=lzo,subvol=@ "${DISK}p2" /mnt
-mkdir /mnt/home
-mount -o noatime,compress=lzo,subvol=@home "${DISK}p2" /mnt/home
+# # Montage des sous-volumes
+# umount /mnt
+# mount -o noatime,compress=lzo,subvol=@ "${DISK}p2" /mnt
+# mkdir /mnt/home
+# mount -o noatime,compress=lzo,subvol=@home "${DISK}p2" /mnt/home
 
-# Montage de la partition /boot
-mkdir /mnt/boot
-mount "${DISK}p1" /mnt/boot
+# # Montage de la partition /boot
+# mkdir /mnt/boot
+# mount "${DISK}p1" /mnt/boot
 
-# Installation de Arch Linux
-echo "Installation d'Arch Linux..."
-pacstrap /mnt base linux linux-firmware
+# # Installation de Arch Linux
+# echo "Installation d'Arch Linux..."
+# pacstrap /mnt base linux linux-firmware
 
-# Configuration du système
-echo "Génération de l'fstab..."
-genfstab -U /mnt >> /mnt/etc/fstab
+# # Configuration du système
+# echo "Génération de l'fstab..."
+# genfstab -U /mnt >> /mnt/etc/fstab
 
-# Chroot dans le nouveau système
-echo "Chroot dans le système..."
-arch-chroot /mnt /bin/bash <<EOF
-# Configuration du système
-echo "Configuration du système..."
+# # Chroot dans le nouveau système
+# echo "Chroot dans le système..."
+# arch-chroot /mnt /bin/bash <<EOF
+# # Configuration du système
+# echo "Configuration du système..."
 
-# Mise à jour du miroir
-pacman -Sy reflector
-reflector --country 'France' --sort rate --save /etc/pacman.d/mirrorlist
+# # Mise à jour du miroir
+# pacman -Sy reflector
+# reflector --country 'France' --sort rate --save /etc/pacman.d/mirrorlist
 
-# Installation du bootloader systemd-boot
-bootctl --path=/mnt/boot install
+# # Installation du bootloader systemd-boot
+# bootctl --path=/mnt/boot install
 
-# Configuration du noyau et initramfs
-mkinitcpio -P
+# # Configuration du noyau et initramfs
+# mkinitcpio -P
 
-# Configuration de la locale
-echo "en_US.UTF-8 UTF-8" > /mnt/etc/locale.gen
-locale-gen
+# # Configuration de la locale
+# echo "en_US.UTF-8 UTF-8" > /mnt/etc/locale.gen
+# locale-gen
 
-# Configuration de la timezone
-ln -sf /usr/share/zoneinfo/Europe/Paris /mnt/etc/localtime
+# # Configuration de la timezone
+# ln -sf /usr/share/zoneinfo/Europe/Paris /mnt/etc/localtime
 
-# Création de l'utilisateur
-useradd -m -G wheel -s /bin/bash user
-echo "user:password" | chpasswd
+# # Création de l'utilisateur
+# useradd -m -G wheel -s /bin/bash user
+# echo "user:password" | chpasswd
 
-# Activation du sudo
-pacman -S sudo
-echo "user ALL=(ALL) ALL" >> /mnt/etc/sudoers.d/user
+# # Activation du sudo
+# pacman -S sudo
+# echo "user ALL=(ALL) ALL" >> /mnt/etc/sudoers.d/user
 
-# Fin de la configuration
-EOF
+# # Fin de la configuration
+# EOF
 
-# Sortie du chroot et démontage
-echo "Démontage des partitions..."
-umount -R /mnt
+# # Sortie du chroot et démontage
+# echo "Démontage des partitions..."
+# umount -R /mnt
 
-echo "Installation terminée. Vous pouvez redémarrer le système."
+# echo "Installation terminée. Vous pouvez redémarrer le système."
