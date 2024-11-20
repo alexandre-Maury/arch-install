@@ -1,19 +1,17 @@
 #!/bin/bash
 
-# Choix du nombre de partitions
-NUM_PARTITIONS=4
+if [ -d /sys/firmware/efi ]; then
+  MODE="UEFI"
+fi
 
-# Taille des partitions (en Mo), par exemple: 512 pour /boot, 30000 pour / et 4096 pour swap
-PARTITION_SIZES=("512MiB" "4096MiB" "30GiB" "100%")
-
-# Choix de la partition de swap ou fichier swap (true/false)
-USE_SWAP_PARTITION=true
-
-# Choix du système de fichiers
-FILESYSTEM="btrfs"
-
-# Choix du bootloader
-BOOTLOADER="systemd-boot"
-
-# Choix du mode de démarrage (uefi ou bios)
-BOOT_MODE="uefi"  # Valeurs possibles : "uefi" ou "bios"
+ENABLE_SWAP="On"              # Mettre sur "On" pour activer le swap [création partition ou fichier swap] ou "Off" pour le désactiver
+FILE_SWAP="Off"               # "On" pour utiliser un fichier swap, "Off" pour une partition swap
+MERGE_ROOT_HOME="On"          # "On" pour fusionner root et home dans une seule partition : Taille de la partition 100%, "Off" pour les séparer
+SIZE_BOOT="512M" 
+SIZE_SWAP="4G"    
+SIZE_ROOT="100G"  
+SIZE_HOME="100%"  
+FS_TYPE="btrf"    
+SHRED_PASS="1"
+MOUNT_POINT="/mnt"
+BOOTLOADER="systemd-boot"    

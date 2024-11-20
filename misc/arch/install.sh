@@ -1,108 +1,178 @@
 #!/bin/bash
 
-# Source la configuration
-source ./config.sh
+# script install.sh
 
-# Vérification que le script est exécuté en tant que root
-if [[ $EUID -ne 0 ]]; then
-   echo "Ce script doit être exécuté en tant que root" 
-   exit 1
+set -e  # Quitte immédiatement en cas d'erreur.
+
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+
+
+# Vérifier les privilèges root
+if [ "$EUID" -ne 0 ]; then
+  log_prompt "ERROR" && echo "Veuillez exécuter ce script en tant qu'utilisateur root."
+  exit 1
 fi
 
-# Choisir le disque à partitionner
-echo "Disques disponibles :"
-lsblk -d -o NAME,SIZE,MODEL | grep -v "NAME"
 
-# Demander à l'utilisateur de choisir un disque
-read -p "Entrez le nom du disque à partitionner (ex: /dev/sda, /dev/nvme0n1, etc.): " DISK
+##############################################################################
+## Récupération des disques disponible                                                      
+##############################################################################
+LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
-# Vérification que le disque existe
-if [[ ! -b "$DISK" ]]; then
-   echo "Erreur: Le disque $DISK n'existe pas."
-   exit 1
+if [[ -z "${LIST}" ]]; then
+    log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
+    exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
+else
+    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
+    echo "${LIST}" && echo ""
 fi
 
-# Confirmation de l'effacement du disque
-echo "Le disque $DISK sera entièrement effacé. Êtes-vous sûr ? (y/n)"
-read -p "Confirmer : " confirm
-if [[ "$confirm" != "y" ]]; then
-    echo "Opération annulée."
-    exit 1
-fi
+# Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
+OPTION=""
+while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
+    log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+    
 
-# Effacer toutes les partitions existantes
-sgdisk --zap-all "$DISK"
-
-# Fonction pour convertir les tailles avec unités (MiB, GiB) en secteurs
-convert_to_sectors() {
-    local size=$1
-    local sectors
-    if [[ "$size" =~ ([0-9]+)(MiB|GiB|Gi|MB|GB)$ ]]; then
-        local value=${BASH_REMATCH[1]}
-        local unit=${BASH_REMATCH[2]}
-        
-        case $unit in
-            "MiB" | "MB")
-                # 1 MiB = 2048 secteurs de 512 octets
-                sectors=$((value * 2048))
-                ;;
-            "GiB" | "GB")
-                # 1 GiB = 1048576 secteurs de 512 octets
-                sectors=$((value * 1048576))
-                ;;
-            "Gi")
-                # 1 Gi = 1048576 secteurs de 512 octets
-                sectors=$((value * 1048576))
-                ;;
-            *)
-                echo "Unité non supportée"
-                exit 1
-                ;;
-        esac
+    # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
+    if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
+        # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
+        DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
+        break
     else
-        echo "Format incorrect : $size"
-        exit 1
-    fi
-    echo $sectors
-}
-
-# Calcul de l'espace restant après chaque partition
-START=2048  # Début après le MBR ou la table GPT
-TOTAL_SIZE=$(blockdev --getsize64 "$DISK")  # Taille totale du disque
-REMAINING_SPACE=$TOTAL_SIZE  # Initialiser l'espace restant
-
-# Créer toutes les partitions dans la boucle
-for i in $(seq 1 $NUM_PARTITIONS); do
-    # Déterminer la taille de la partition
-    PART_SIZE="${PARTITION_SIZES[$i-1]}"
-
-    if [[ "$PART_SIZE" == "100%" ]]; then
-        # Si c'est 100%, on prendra tout l'espace restant
-        END=$((REMAINING_SPACE / 512))  # Utiliser tout l'espace restant en secteurs de 512 octets
-    else
-        # Convertir la taille de la partition en secteurs
-        PART_SIZE_SECTORS=$(convert_to_sectors "$PART_SIZE")
-        END=$((START + PART_SIZE_SECTORS))
-    fi
-
-    # Créer la partition (type = 8300 pour Linux)
-    sgdisk --new=$i:$START:$END --typecode=$i:8300 "$DISK"
-
-    # Réduire l'espace restant
-    START=$((END + 1))  # Déplacer le point de départ pour la partition suivante
-    REMAINING_SPACE=$((REMAINING_SPACE - (END - START) * 512))  # Réduire l'espace restant
-
-    # Si c'est la partition swap (repérée par la taille définie dans PARTITION_SIZES), alors créer la swap
-    if [[ "$PART_SIZE" =~ ^[0-9]+MiB$ && "$i" == "${NUM_PARTITIONS}" ]]; then
-        # C'est la dernière partition définie comme partition swap (ex : 4096MiB)
-        echo "Création de la partition swap..."
-        # Créer la partition swap (type = 8200 pour swap)
-        sgdisk --new=$((NUM_PARTITIONS + 1)):$START:+${PARTITION_SIZES[$NUM_PARTITIONS]} --typecode=$((NUM_PARTITIONS + 1)):8200 "$DISK"
-        mkswap "${DISK}p$((NUM_PARTITIONS + 1))"
-        swapon "${DISK}p$((NUM_PARTITIONS + 1))"
+        # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
+        DISK="${OPTION}"
         break
     fi
 done
+
+##############################################################################
+## Création des partitions + formatage et montage                                                      
+##############################################################################
+if [[ "${MODE}" == "UEFI" ]]; then
+    log_prompt "INFO" && echo "Création de la table GPT" && echo ""
+    parted --script -a optimal /dev/${DISK} mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    log_prompt "INFO" && echo "Création de la partition EFI"
+    parted --script -a optimal /dev/${DISK} mkpart primary fat32 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
+    parted --script -a optimal /dev/${DISK} set 1 esp on
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+fi
+
+if  [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "Off" ]]; then
+    log_prompt "INFO" && echo "Création de la partition SWAP"
+    parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    log_prompt "INFO" && echo "Activation du SWAP"
+    mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
+    swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    # Gestion de la fusion root et home
+    if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
+        # Création d'une seule partition pour root + home
+        log_prompt "INFO" && echo "Création de la partition ROOT/HOME"
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
+        PART_ROOT=3
+        PART_HOME=""  # Désactivation de la partition home spécifique
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    else
+        log_prompt "INFO" && echo "Création de la partition ROOT"
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+
+        log_prompt "INFO" && echo "Création de la partition HOME"
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
+        PART_ROOT=3
+        PART_HOME=4
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    fi
+
+else # Le swap est désactiver
+
+    # Gestion de la fusion root et home
+    if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
+        # Création d'une seule partition pour root + home
+        log_prompt "INFO" && echo "Création de la partition ROOT/HOME"
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
+        PART_ROOT=2
+        PART_HOME=""  # Désactivation de la partition home spécifique
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    else
+        # Création de partitions séparées pour root et home
+        log_prompt "INFO" && echo "Création de la partition ROOT" 
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+        
+        log_prompt "INFO" && echo "Création de la partition HOME"
+        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
+        PART_ROOT=2
+        PART_HOME=3
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    fi
+fi
+
+# Formatage des partitions en fonction du système de fichiers spécifié
+[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" 
+[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" 
+mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
+log_prompt "SUCCESS" && echo "OK" && echo ""
+
+# Montage des partitions
+[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" 
+[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" 
+mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
+log_prompt "SUCCESS" && echo "OK" && echo ""
+
+if [[ -n "${PART_HOME}" ]]; then
+    log_prompt "INFO" && echo "Formatage de la partition HOME ==> /dev/${DISK}${PART_HOME}" 
+    mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home ==> /dev/${DISK}${PART_HOME} en "${FS_TYPE}" "; exit 1; }
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+fi
+
+# Si root et home sont séparés, monter home
+if [[ -n "${PART_HOME}" ]]; then
+    log_prompt "INFO" && echo "Création du point de montage de la partition HOME ==> /dev/${DISK}${PART_HOME}" 
+    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+fi
+
+# Formatage de la partition boot en fonction du mode
+if [[ "${MODE}" == "UEFI" ]]; then
+    log_prompt "INFO" && echo "Formatage de la partition EFI" 
+    mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    log_prompt "INFO" && echo "Création du point de montage de la partition EFI" 
+    mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+fi
+
+# Gestion de la swap
+if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
+    # Création d'un fichier swap si FILE_SWAP="On"
+    log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" 
+    mkdir -p $MOUNT_POINT/swap
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" 
+    dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+
+    log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" 
+    chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
+    mkswap "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+    swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
+    log_prompt "SUCCESS" && echo "OK" && echo ""
+fi
+
+# Affichage de la table des partitions pour vérification
+parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
 
 
 
