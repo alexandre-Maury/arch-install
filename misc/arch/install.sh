@@ -45,8 +45,8 @@ FILE_SWAP="Off"              # Fichier de mémoire virtuelle
 # Déclaration de la liste de partitions
 PARTITION_TYPES=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
 
-# Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
-if [[ "${FILE_SWAP}" != "Off" ]]; then
+# Condition pour ajouter la partition swap si FILE_SWAP n'est pas "On"
+if [[ "${FILE_SWAP}" == "Off" ]]; then
     PARTITION_TYPES+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
 fi
 
