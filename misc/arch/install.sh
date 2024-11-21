@@ -28,6 +28,7 @@ select_disk() {
     else
         log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
         echo "${LIST}"  # Affiche la liste des disques disponibles
+        echo ""
     fi
 
     # # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
@@ -56,3 +57,6 @@ select_disk() {
 
 # Appel de la fonction et récupération du disque choisi
 disk=$(select_disk)
+
+# Affichage du disque choisi
+echo "Vous avez choisi le disque : $disk"
