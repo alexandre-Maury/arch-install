@@ -141,6 +141,8 @@ while true; do
         custom_size=$(get_partition_size "$default_size")
         if [[ $? -eq 0 ]]; then
             break  # La taille est valide, on sort de la boucle
+        else
+            log_prompt "WARNING" && echo "Taille invalide, réessayez." && echo ""
         fi
     done
         
