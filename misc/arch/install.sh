@@ -142,7 +142,7 @@ while true; do
             break  # La taille est valide, on sort de la boucle
         else
             echo ""
-            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB|GiB|% ] réessayez." && echo ""
+            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
         fi
     done
         
