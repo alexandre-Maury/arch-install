@@ -101,7 +101,7 @@ clear
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
-local selected_partitions=()
+local selected_partitions
 local remaining_types=("${PARTITION_TYPES[@]}")
 
 while true; do
