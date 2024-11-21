@@ -44,37 +44,31 @@ get_partition_size() {
 # Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
 select_disk() {
 
-    echo "test1"
-
-    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
-
-    echo "test2"
- 
+    LIST="$1"
 
     if [[ -z "${LIST}" ]]; then
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     else
-        echo "test3"
         echo "${LIST}" && echo ""
     fi
 
-    # # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
-    # OPTION=""
-    # while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-    #     log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+    # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
+    OPTION=""
+    while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
+        log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
         
 
-    #     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
-    #     if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
-    #         # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-    #         DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
-    #         break
-    #     else
-    #         # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
-    #         DISK="${OPTION}"
-    #         break
-    #     fi
-    # done
+        # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
+        if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
+            # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
+            DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
+            break
+        else
+            # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
+            DISK="${OPTION}"
+            break
+        fi
+    done
 }
 
 # Sélectionner et configurer les partitions
@@ -171,8 +165,9 @@ create_partitions() {
 # Fonction principale
 main() {
     # Sélectionner un disque
-    local disk
-    disk=$(select_disk)
+    
+    disk="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+    select_disk $disk
     
     # # Sélectionner et configurer les partitions
     # local selected_partitions
