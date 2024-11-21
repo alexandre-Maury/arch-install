@@ -34,14 +34,13 @@ if [[ -z "${list}" ]]; then
     log_prompt "ERROR" "Aucun disque disponible pour l'installation."
     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
 else
-    echo "${list}"
+    echo "${list}" && echo ""
 fi
 
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
 option=""
 while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
-    log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
-    read -p "Votre Choix : " option && echo ""
+    log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) " && read -p " : " option 
     
 
     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
