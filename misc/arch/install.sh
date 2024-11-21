@@ -59,6 +59,7 @@ get_partition_size() {
             echo "$custom_size"
             return
         else
+            exit 1
             echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
         fi
     done
