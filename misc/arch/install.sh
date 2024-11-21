@@ -15,11 +15,6 @@ PARTITION_TYPES=(
     "home:btrfs:100%"      # Partition pour les fichiers utilisateur
 )
 
-# Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
-get_available_disks() {
-    lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") "
-}
-
 # Afficher les types de partitions disponibles
 display_partition_types() {
     echo "Types de partitions disponibles :"
@@ -46,43 +41,35 @@ get_partition_size() {
     done
 }
 
-# Récupération du disque à utiliser
+# Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
 select_disk() {
-    local list
-    list=$(get_available_disks)
-    
-    if [[ -z "$list" ]]; then
-        log_prompt "ERROR" "Aucun disque disponible pour l'installation."
-        exit 1
+    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
+
+    if [[ -z "${LIST}" ]]; then
+        log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
+        exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     else
-        log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) :"
-        echo "$list" && echo ""
+        log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
+        echo "${LIST}" && echo ""
     fi
 
-    # Boucle pour permettre à l'utilisateur de choisir un disque
-    local option=""
-    while [[ -z "$(echo "$list" | grep "  ${option})")" ]]; do
-        log_prompt "INFO" "Votre choix (numéro du disque ou nom du périphérique, ex : /dev/sda) :"
-        read -p "Votre choix : " option && echo ""
+    # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
+    OPTION=""
+    while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
+        log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+        
 
-        # Vérification de l'entrée de l'utilisateur
-        if [[ -n "$(echo "$list" | grep "  ${option})")" ]]; then
-            # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque
-            local disk
-            disk=$(echo "$list" | grep "  ${option})" | awk '{print $2}')
-            break
-        elif [[ -n "$option" && -e "$option" ]]; then
-            # Si l'utilisateur a entré un nom de disque valide (par ex : /dev/sda)
-            disk="$option"
+        # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
+        if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
+            # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
+            DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
             break
         else
-            # Si l'entrée n'est pas valide, afficher un message d'erreur
-            log_prompt "ERROR" "Choix invalide. Veuillez choisir un disque valide."
+            # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
+            DISK="${OPTION}"
+            break
         fi
     done
-
-    log_prompt "INFO" "Vous avez choisi le disque : $disk"
-    echo "$disk"
 }
 
 # Sélectionner et configurer les partitions
