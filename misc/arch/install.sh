@@ -101,8 +101,8 @@ clear
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
-local selected_partitions
-local remaining_types=("${PARTITION_TYPES[@]}")
+selected_partitions=()
+remaining_types=("${PARTITION_TYPES[@]}")
 
 while true; do
 
@@ -128,8 +128,8 @@ while true; do
         continue
     fi
         
-    local selected_index=$((choice-1))
-    local partition="${remaining_types[$selected_index]}"
+    selected_index=$((choice-1))
+    partition="${remaining_types[$selected_index]}"
         
     IFS=':' read -r name type default_size <<< "$partition"
         
