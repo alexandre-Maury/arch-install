@@ -17,7 +17,7 @@ PARTITION_TYPES=(
 
 # Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
 get_available_disks() {
-    lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s
+    lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") "
 }
 
 # Afficher les types de partitions disponibles
