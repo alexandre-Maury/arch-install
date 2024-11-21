@@ -160,6 +160,8 @@ for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
     echo "$name ($type): $size"
 done
+
+echo ""
     
 # Confirmer la création des partitions
 log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
