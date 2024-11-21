@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list=""
+
 
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
@@ -22,7 +22,7 @@ PARTITION_TYPES=(
 ##############################################################################
 select_disk() {
 
-    list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+    list=${1}
 
     if [[ -z "${list}" ]]; then
         log_prompt "ERROR" "Aucun disque disponible pour l'installation."
@@ -57,7 +57,8 @@ select_disk() {
 }
 
 # Appel de la fonction et récupération du disque choisi
-disk=$(select_disk)
+list_disk="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+disk=$(select_disk $list_disk)
 
 # Affichage du disque choisi
 echo "Vous avez choisi le disque : $disk"
