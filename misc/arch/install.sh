@@ -58,23 +58,23 @@ select_disk() {
         echo "${LIST}" && echo ""
     fi
 
-    # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
-    OPTION=""
-    while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-        log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+    # # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
+    # OPTION=""
+    # while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
+    #     log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
         
 
-        # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
-        if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
-            # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-            DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
-            break
-        else
-            # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
-            DISK="${OPTION}"
-            break
-        fi
-    done
+    #     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
+    #     if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
+    #         # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
+    #         DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
+    #         break
+    #     else
+    #         # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
+    #         DISK="${OPTION}"
+    #         break
+    #     fi
+    # done
 }
 
 # Sélectionner et configurer les partitions
