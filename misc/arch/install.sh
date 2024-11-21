@@ -59,8 +59,8 @@ get_partition_size() {
             echo "$custom_size"
             return
         else
-            exit 1
             echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
+            exit 1
         fi
     done
 }
@@ -108,8 +108,8 @@ remaining_types=("${PARTITION_TYPES[@]}")
 while true; do
 
     echo "Types de partitions disponibles :"
-    for i in "${!PARTITION_TYPES[@]}"; do
-        IFS=':' read -r name type size <<< "${PARTITION_TYPES[$i]}"
+    for i in "${!remaining_types[@]}"; do
+        IFS=':' read -r name type size <<< "${remaining_types[$i]}"
         printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
     done
 
@@ -138,8 +138,9 @@ while true; do
     custom_size=$(get_partition_size "$default_size")
         
     selected_partitions+=("$name:$type:$custom_size")
-    unset 'remaining_types[$selected_index]'
-    remaining_types=("${remaining_types[@]}")
+
+    # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
+    remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
 done
     
 echo "Partitions sélectionnées :"
