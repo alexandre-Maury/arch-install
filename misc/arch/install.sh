@@ -20,30 +20,30 @@ PARTITION_TYPES=(
 ##############################################################################
 select_disk() {
 
-    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
+    local list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
-    if [[ -z "${LIST}" ]]; then
+    if [[ -z "${list}" ]]; then
         log_prompt "ERROR" "Aucun disque disponible pour l'installation."
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     fi
 
-    echo "${LIST}"  # Affiche la liste des disques disponibles
+    echo "${list}"  # Affiche la liste des disques disponibles
     log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
 
     # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
-    OPTION=""
+    local option=""
     while true; do
         read -p "Votre Choix : " OPTION  # Demander le choix à l'utilisateur
         echo ""
 
         # Vérification si l'utilisateur a entré un numéro dans la liste
-        if [[ -n "$(echo "${LIST}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)")" ]]; then
+        if [[ -n "$(echo "${list}" | grep -e "^[[:space:]]*${option}[[:space:]]*\)")" ]]; then
             # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-            DISK="$(echo "${LIST}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)" | awk '{print $2}')"
+            local disk="$(echo "${list}" | grep -e "^[[:space:]]*${option}[[:space:]]*\)" | awk '{print $2}')"
             break
-        elif [[ -b "$OPTION" ]]; then
+        elif [[ -b "$option" ]]; then
             # Si l'utilisateur a entré un nom de disque valide, utiliser ce nom
-            DISK="$OPTION"
+            local disk="$option"
             break
         else
             log_prompt "ERROR" "Choix invalide, veuillez entrer un numéro valide ou un nom de disque."
@@ -51,7 +51,7 @@ select_disk() {
     done
 
     # # Retourner le disque choisi
-    # echo "$DISK"
+    echo "$disk"
 }
 
 # Appel de la fonction et récupération du disque choisi
