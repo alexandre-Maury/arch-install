@@ -106,19 +106,20 @@ selected_partitions=()
 remaining_types=("${PARTITION_TYPES[@]}")
 
 while true; do
-
-    echo "Types de partitions disponibles :"
+    log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
     for i in "${!remaining_types[@]}"; do
         IFS=':' read -r name type size <<< "${remaining_types[$i]}"
         printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
     done
 
-    echo "0) Terminer la configuration des partitions"
-    read -p "Sélectionnez un type de partition (0 pour terminer) : " choice
+    echo "0) Terminer la configuration des partitions" && echo ""
+
+    log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
+    
         
     if [[ "$choice" -eq 0 ]]; then
         if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-            echo "Erreur: Vous devez sélectionner au moins une partition."
+            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
             continue
         fi
         break
@@ -126,6 +127,7 @@ while true; do
         
     if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
         echo "Sélection invalide, réessayez."
+        log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
         continue
     fi
         
@@ -143,17 +145,15 @@ while true; do
     remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
 done
     
-echo "Partitions sélectionnées :"
+log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
 for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
     echo "$name ($type): $size"
 done
     
 # Confirmer la création des partitions
-read -p "Confirmer la création des partitions (y/n) : " confirm
+log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
 if [[ "$confirm" != "y" ]]; then
     echo "Annulation de la création des partitions."
     exit 1
 fi
-
-echo "$selected_partitions"
