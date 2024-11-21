@@ -42,7 +42,7 @@ log_prompt() {
 # Configuration des types de partitions disponibles
 PARTITION_TYPES=(
     "boot:fat32:512M"      # Partition de démarrage (EFI ou BIOS)
-    "swap:linux-swap:4GiB"   # Partition de mémoire virtuelle 
+    "swap:linux-swap:4G"   # Partition de mémoire virtuelle 
     "root:btrfs:100G"      # Partition racine du système
     "home:btrfs:100%"      # Partition pour les fichiers utilisateur
 )
