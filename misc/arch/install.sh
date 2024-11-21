@@ -2,19 +2,41 @@
 
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
-    local type="$1"
-    local message="$2"
-    local color
+    local log_level="$1" # INFO - WARNING - ERROR - SUCCESS
+    local log_date="$(date +"%Y-%m-%d %H:%M:%S")"
 
-    case "$type" in
-        "INFO")    color="\e[34m";;    # Bleu
-        "SUCCESS") color="\e[32m";;    # Vert
-        "ERROR")   color="\e[31m";;    # Rouge
-        "WARNING") color="\e[33m";;    # Jaune
-        *)        color="\e[0m";;      # Défaut
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    LIGHT_CYAN='\033[0;96m'
+    RESET='\033[0m'
+
+    case "${log_level}" in
+
+        "SUCCESS")
+            log_color="${GREEN}"
+            log_status='SUCCESS'
+            ;;
+        "WARNING")
+            log_color="${YELLOW}"
+            log_status='WARNING'
+            ;;
+        "ERROR")
+            log_color="${RED}"
+            log_status='ERROR'
+            ;;
+        "INFO")
+            log_color="${LIGHT_CYAN}"
+            log_status='INFO'
+            ;;
+        *)
+            log_color="${RESET}" # Au cas où un niveau inconnu est utilisé
+            log_status='UNKNOWN'
+            ;;
     esac
 
-    echo -e "${color}[${type}] ${message}\e[0m"
+    echo -ne "${log_color} [ ${log_status} ] "${log_date}" ==> ${RESET}"
+
 }
 
 # Configuration des types de partitions disponibles
@@ -31,16 +53,18 @@ PARTITION_TYPES=(
 list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
 if [[ -z "${list}" ]]; then
-    log_prompt "ERROR" "Aucun disque disponible pour l'installation."
+    log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
 else
+    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) " 
     echo "${list}" && echo ""
 fi
 
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
 option=""
 while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
-    log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) " && read -p " : " option 
+    
+    log_prompt "INFO" && read -p "Votre Choix : " OPTION 
     
 
     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
@@ -55,4 +79,5 @@ while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
     fi
 done
 
+clear
 echo "vous avez choisi $disk"
