@@ -6,8 +6,8 @@ set -e  # Quitte immédiatement en cas d'erreur.
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-source $SCRIPT_DIR/misc/arch/config.sh # Inclure le fichier de configuration.
-source $SCRIPT_DIR/misc/arch/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+source $SCRIPT_DIR/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
 
 
 # Vérifier les privilèges root
