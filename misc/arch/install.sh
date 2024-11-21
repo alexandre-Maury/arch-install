@@ -56,6 +56,3 @@ select_disk() {
 
 # Appel de la fonction et récupération du disque choisi
 disk=$(select_disk)
-
-# Affichage du disque choisi
-echo "Vous avez choisi le disque : $disk"
