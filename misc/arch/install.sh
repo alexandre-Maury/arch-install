@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# script install.sh : https://github.com/Zelrin/arch-btrfs-install-guide - https://sharafat.pages.dev/archlinux-install/
+# script install.sh : 
+
+# https://github.com/Zelrin/arch-btrfs-install-guide 
+# https://sharafat.pages.dev/archlinux-install/
+# https://chadymorra.github.io/
 
 set -e  # Quitte immédiatement en cas d'erreur.
 
