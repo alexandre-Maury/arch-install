@@ -166,7 +166,7 @@ create_partitions() {
 main() {
     # Sélectionner un disque
     
-    disk="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+    disk=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")
     select_disk $disk
     
     # # Sélectionner et configurer les partitions
