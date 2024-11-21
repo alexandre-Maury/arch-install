@@ -39,13 +39,16 @@ log_prompt() {
 
 }
 
-# Configuration des types de partitions disponibles
-PARTITION_TYPES=(
-    "boot:fat32:512MiB"      # Partition de démarrage (EFI ou BIOS)
-    "swap:linux-swap:4GiB"   # Partition de mémoire virtuelle 
-    "root:btrfs:100GiB"      # Partition racine du système
-    "home:btrfs:100%"        # Partition pour les fichiers utilisateur
-)
+# Configuration générale
+FILE_SWAP="Off"              # Fichier de mémoire virtuelle
+
+# Déclaration de la liste de partitions
+PARTITION_TYPES=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
+
+# Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
+if [[ "${FILE_SWAP}" != "Off" ]]; then
+    PARTITION_TYPES+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
+fi
 
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
@@ -162,7 +165,7 @@ for partition in "${selected_partitions[@]}"; do
 done
 
 echo ""
-    
+
 # Confirmer la création des partitions
 log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
 if [[ "$confirm" != "y" ]]; then
