@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
     local level=$1
@@ -22,14 +20,14 @@ PARTITION_TYPES=(
 ##############################################################################
 select_disk() {
 
-    list=${1}
+    LIST=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s")
 
-    if [[ -z "${list}" ]]; then
+    if [[ -z "${LIST}" ]]; then
         log_prompt "ERROR" "Aucun disque disponible pour l'installation."
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     else
         log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
-        echo "${list}"  # Affiche la liste des disques disponibles
+        echo "${LIST}"  # Affiche la liste des disques disponibles
     fi
 
     # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
@@ -39,9 +37,9 @@ select_disk() {
         echo ""
 
         # Vérification si l'utilisateur a entré un numéro dans la liste
-        if [[ -n "$(echo "${list}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)")" ]]; then
+        if [[ -n "$(echo "${LIST}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)")" ]]; then
             # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-            DISK="$(echo "${list}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)" | awk '{print $2}')"
+            DISK="$(echo "${LIST}" | grep -e "^[[:space:]]*${OPTION}[[:space:]]*\)" | awk '{print $2}')"
             break
         elif [[ -b "$OPTION" ]]; then
             # Si l'utilisateur a entré un nom de disque valide, utiliser ce nom
@@ -57,9 +55,7 @@ select_disk() {
 }
 
 # Appel de la fonction et récupération du disque choisi
-list_disk="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
-echo $list_disk
-disk=$(select_disk $list_disk)
+disk=$(select_disk)
 
 # Affichage du disque choisi
 echo "Vous avez choisi le disque : $disk"
