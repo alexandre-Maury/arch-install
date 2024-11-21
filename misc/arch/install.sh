@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
-LOG_PROMPT() {
+log_prompt() {
     local type="$1"
     local message="$2"
     local color
