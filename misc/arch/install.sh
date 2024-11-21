@@ -169,12 +169,12 @@ main() {
     local disk
     disk=$(select_disk)
     
-    # Sélectionner et configurer les partitions
-    local selected_partitions
-    selected_partitions=$(select_partitions)
+    # # Sélectionner et configurer les partitions
+    # local selected_partitions
+    # selected_partitions=$(select_partitions)
     
-    # Créer les partitions sur le disque choisi
-    create_partitions "$disk" $selected_partitions
+    # # Créer les partitions sur le disque choisi
+    # create_partitions "$disk" $selected_partitions
 }
 
 # Appel de la fonction principale
