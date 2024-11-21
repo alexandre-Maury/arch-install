@@ -145,7 +145,6 @@ while true; do
     remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
 
     clear
-    log_prompt "INFO" && echo "Types de partitions choisi : $name $type $custom_size " && echo ""
 
 done
     
