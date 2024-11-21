@@ -140,3 +140,39 @@ if [[ "$confirm" != "y" ]]; then
     echo "Annulation de la création des partitions."
     exit 1
 fi
+
+##############################################################################
+## Création des partitions                                                     
+##############################################################################
+
+# Vérification de l'espace disponible sur le disque
+available_space=$(lsblk -d -o SIZE --noheadings "$disk" | tr -d '[:space:]')
+echo "Espace total disponible sur $disk : $available_space"
+
+parted --script "$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
+
+start="1MiB"
+partition_number=1
+
+for partition in "${selected_partitions[@]:1}"; do
+    IFS=':' read -r name type size <<< "$partition"
+
+    # Calcul de la taille de la partition et fin
+    if [[ "$size" == "100%" ]]; then
+        end="100%"
+    else
+        end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
+        end=$(numfmt --to=iec "${end}")
+    fi
+
+    # Création de la partition
+    parted --script "$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+
+    case "$name" in
+        "boot") parted --script "$disk" set "$partition_number" esp on ;;
+        "swap") parted --script "$disk" set "$partition_number" swap on ;;
+    esac
+
+    start="$end"
+    ((partition_number++))
+done

@@ -2,41 +2,9 @@
 
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
-    local log_level="$1" # INFO - WARNING - ERROR - SUCCESS
-    local log_date="$(date +"%Y-%m-%d %H:%M:%S")"
-
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[0;33m'
-    LIGHT_CYAN='\033[0;96m'
-    RESET='\033[0m'
-
-    case "${log_level}" in
-
-        "SUCCESS")
-            log_color="${GREEN}"
-            log_status='SUCCESS'
-            ;;
-        "WARNING")
-            log_color="${YELLOW}"
-            log_status='WARNING'
-            ;;
-        "ERROR")
-            log_color="${RED}"
-            log_status='ERROR'
-            ;;
-        "INFO")
-            log_color="${LIGHT_CYAN}"
-            log_status='INFO'
-            ;;
-        *)
-            log_color="${RESET}" # Au cas où un niveau inconnu est utilisé
-            log_status='UNKNOWN'
-            ;;
-    esac
-
-    echo -ne "${log_color} [ ${log_status} ] "${log_date}" ==> ${RESET}"
-
+    local level=$1
+    local message=$2
+    echo "[$level] $message"
 }
 
 # Configuration des types de partitions disponibles
@@ -46,6 +14,15 @@ PARTITION_TYPES=(
     "root:btrfs:100G"      # Partition racine du système
     "home:btrfs:100%"      # Partition pour les fichiers utilisateur
 )
+
+# Afficher les types de partitions disponibles
+display_partition_types() {
+    echo "Types de partitions disponibles :"
+    for i in "${!PARTITION_TYPES[@]}"; do
+        IFS=':' read -r name type size <<< "${PARTITION_TYPES[$i]}"
+        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+    done
+}
 
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
@@ -60,103 +37,116 @@ get_partition_size() {
             return
         else
             echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
-            exit 1
         fi
     done
 }
 
-##############################################################################
-## Récupération des disques disponibles                                                      
-##############################################################################
-list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
-if [[ -z "${list}" ]]; then
-    log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
-    exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
-else
-    clear
-    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) " && echo ""
-    echo "${list}" && echo ""
-fi
 
-# Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
-option=""
-while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
-    
-    log_prompt "INFO" && read -p "Votre Choix : " option 
-    
-    # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
-    if [[ -n "$(echo "${list}" | grep "  ${option})")" ]]; then
-        # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-        disk="$(echo "${list}" | grep "  ${option})" | awk '{print $2}')"
-        break
-    else
-        # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
-        disk="${option}"
-        break
-    fi
-done
+# Sélectionner et configurer les partitions
+select_partitions() {
+    local selected_partitions=()
+    local remaining_types=("${PARTITION_TYPES[@]}")
 
-clear
-
-##############################################################################
-## Sélection des partitions                                                     
-##############################################################################
-selected_partitions=()
-remaining_types=("${PARTITION_TYPES[@]}")
-
-while true; do
-    log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-    for i in "${!remaining_types[@]}"; do
-        IFS=':' read -r name type size <<< "${remaining_types[$i]}"
-        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-    done
-
-    echo "0) Terminer la configuration des partitions" && echo ""
-
-    log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
-    
+    while true; do
+        display_partition_types
+        echo "0) Terminer la configuration des partitions"
+        read -p "Sélectionnez un type de partition (0 pour terminer) : " choice
         
-    if [[ "$choice" -eq 0 ]]; then
-        if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
+        if [[ "$choice" -eq 0 ]]; then
+            if [[ ${#selected_partitions[@]} -eq 0 ]]; then
+                echo "Erreur: Vous devez sélectionner au moins une partition."
+                continue
+            fi
+            break
+        fi
+        
+        if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
+            echo "Sélection invalide, réessayez."
             continue
         fi
-        break
-    fi
         
-    if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-        echo "Sélection invalide, réessayez."
-        log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
-        continue
-    fi
+        local selected_index=$((choice-1))
+        local partition="${remaining_types[$selected_index]}"
         
-    selected_index=$((choice-1))
-    partition="${remaining_types[$selected_index]}"
+        IFS=':' read -r name type default_size <<< "$partition"
         
-    IFS=':' read -r name type default_size <<< "$partition"
+        # Demander la taille de partition
+        custom_size=$(get_partition_size "$default_size")
         
-    # Demander la taille de partition
-    custom_size=$(get_partition_size "$default_size")
-        
-    selected_partitions+=("$name:$type:$custom_size")
-
-    # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
-    remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
-
-    clear
-
-done
+        selected_partitions+=("$name:$type:$custom_size")
+        unset 'remaining_types[$selected_index]'
+        remaining_types=("${remaining_types[@]}")
+    done
     
-log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
-for partition in "${selected_partitions[@]}"; do
-    IFS=':' read -r name type size <<< "$partition"
-    echo "$name ($type): $size"
-done
+    echo "Partitions sélectionnées :"
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        echo "$name ($type): $size"
+    done
     
-# Confirmer la création des partitions
-log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
-if [[ "$confirm" != "y" ]]; then
-    echo "Annulation de la création des partitions."
-    exit 1
-fi
+    # Confirmer la création des partitions
+    read -p "Confirmer la création des partitions (y/n) : " confirm
+    if [[ "$confirm" != "y" ]]; then
+        echo "Annulation de la création des partitions."
+        exit 1
+    fi
+
+    echo "$selected_partitions"
+}
+
+# Créer les partitions sur le disque
+create_partitions() {
+    local disk="$1"
+    local partitions=("$@")
+
+    # Vérification de l'espace disponible sur le disque
+    local available_space
+    available_space=$(lsblk -d -o SIZE --noheadings "$disk" | tr -d '[:space:]')
+    echo "Espace total disponible sur $disk : $available_space"
+
+    parted --script "$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
+
+    local start="1MiB"
+    local partition_number=1
+    for partition in "${partitions[@]:1}"; do
+        IFS=':' read -r name type size <<< "$partition"
+
+        # Calcul de la taille de la partition et fin
+        local end
+        if [[ "$size" == "100%" ]]; then
+            end="100%"
+        else
+            end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
+            end=$(numfmt --to=iec "${end}")
+        fi
+
+        # Création de la partition
+        parted --script "$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+
+        case "$name" in
+            "boot") parted --script "$disk" set "$partition_number" esp on ;;
+            "swap") parted --script "$disk" set "$partition_number" swap on ;;
+        esac
+
+        start="$end"
+        ((partition_number++))
+    done
+}
+
+# Fonction principale
+main() {
+    # Sélectionner un disque
+    local disk
+    disk=$(select_disk)
+    
+    # # Sélectionner et configurer les partitions
+    local selected_partitions
+    selected_partitions=$(select_partitions)
+    
+    # # Créer les partitions sur le disque choisi
+    # create_partitions "$disk" $selected_partitions
+}
+
+# Appel de la fonction principale
+main
