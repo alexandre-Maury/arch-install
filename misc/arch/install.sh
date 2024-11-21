@@ -21,15 +21,14 @@ PARTITION_TYPES=(
 select_disk() {
 
     LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
-    echo $LIST
 
-    # if [[ -z "${LIST}" ]]; then
-    #     log_prompt "ERROR" "Aucun disque disponible pour l'installation."
-    #     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
-    # else
-    #     log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
-    #     echo "${LIST}"  # Affiche la liste des disques disponibles
-    # fi
+    if [[ -z "${LIST}" ]]; then
+        log_prompt "ERROR" "Aucun disque disponible pour l'installation."
+        exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
+    else
+        log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
+        echo "${LIST}"  # Affiche la liste des disques disponibles
+    fi
 
     # # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
     # OPTION=""
