@@ -44,7 +44,7 @@ get_partition_size() {
 # Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
 select_disk() {
 
-    LIST="$1"
+    LIST=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")
 
     if [[ -z "${LIST}" ]]; then
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
@@ -165,9 +165,8 @@ create_partitions() {
 # Fonction principale
 main() {
     # Sélectionner un disque
-    
-    disk=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")
-    select_disk $disk
+    local disk
+    disk=$(select_disk)
     
     # # Sélectionner et configurer les partitions
     # local selected_partitions
