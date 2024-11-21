@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
     local level=$1
@@ -16,26 +15,26 @@ PARTITION_TYPES=(
     "home:btrfs:100%"      # Partition pour les fichiers utilisateur
 )
 
-
+# Fonction pour sélectionner un disque
 select_disk() {
     ##############################################################################
-    ## Récupération des disques disponible                                                      
+    ## Récupération des disques disponibles                                                      
     ##############################################################################
-    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
+    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s")"  # Correction de la syntaxe
 
     if [[ -z "${LIST}" ]]; then
-        log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
+        log_prompt "ERROR" "Aucun disque disponible pour l'installation."
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     else
-        log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
-        echo "${LIST}" && echo ""
+        log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) : "
+        echo "${LIST}"  # Affiche la liste des disques disponibles
     fi
 
     # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
     OPTION=""
     while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-        log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
-        
+        read -p "Votre Choix : " OPTION  # Demander le choix à l'utilisateur
+        echo ""
 
         # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
         if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
@@ -48,9 +47,13 @@ select_disk() {
             break
         fi
     done
+
+    # Retourner le disque choisi
+    echo "$DISK"
 }
 
-
+# Appel de la fonction et récupération du disque choisi
 disk=$(select_disk)
 
+# Affichage du disque choisi
 echo "Vous avez choisi le disque : $disk"
