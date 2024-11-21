@@ -41,10 +41,10 @@ log_prompt() {
 
 # Configuration des types de partitions disponibles
 PARTITION_TYPES=(
-    "boot:fat32:512M"      # Partition de démarrage (EFI ou BIOS)
-    "swap:linux-swap:4G"   # Partition de mémoire virtuelle 
-    "root:btrfs:100G"      # Partition racine du système
-    "home:btrfs:100%"      # Partition pour les fichiers utilisateur
+    "boot:fat32:512MiB"      # Partition de démarrage (EFI ou BIOS)
+    "swap:linux-swap:4GiB"   # Partition de mémoire virtuelle 
+    "root:btrfs:100GiB"      # Partition racine du système
+    "home:btrfs:100%"        # Partition pour les fichiers utilisateur
 )
 
 # Fonction pour demander à l'utilisateur une taille de partition valide
@@ -55,7 +55,7 @@ get_partition_size() {
         custom_size=${custom_size:-$default_size}
         
         # Vérification de la validité de la taille (format correct)
-        if [[ "$custom_size" =~ ^[0-9]+(M|G|T|%)$ ]]; then
+        if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
             echo "$custom_size"
             return 0  # Retourne une valeur valide, pas de problème
         else
@@ -142,7 +142,8 @@ while true; do
         if [[ $? -eq 0 ]]; then
             break  # La taille est valide, on sort de la boucle
         else
-            log_prompt "WARNING" && echo "Taille invalide, réessayez." && echo ""
+            echo ""
+            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB|GiB|% ] réessayez." && echo ""
         fi
     done
         
