@@ -1,5 +1,7 @@
 #!/bin/bash
 
+list=""
+
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
     local level=$1
@@ -19,8 +21,6 @@ PARTITION_TYPES=(
 ## Récupération des disques disponibles                                                      
 ##############################################################################
 select_disk() {
-
-    local list
 
     list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
 
