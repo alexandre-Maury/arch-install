@@ -20,7 +20,7 @@ select_disk() {
     ##############################################################################
     ## Récupération des disques disponibles                                                      
     ##############################################################################
-    LIST=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s")
+    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
 
     if [[ -z "${LIST}" ]]; then
         log_prompt "ERROR" "Aucun disque disponible pour l'installation."
