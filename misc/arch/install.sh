@@ -57,10 +57,10 @@ get_partition_size() {
         # Vérification de la validité de la taille (format correct)
         if [[ "$custom_size" =~ ^[0-9]+(M|G|T|%)$ ]]; then
             echo "$custom_size"
-            return
+            return 0  # Retourne une valeur valide, pas de problème
         else
-            echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
-            exit 1
+            log_prompt "ERROR" && echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
+            return 1  # Erreur, invite à réessayer
         fi
     done
 }
@@ -68,7 +68,7 @@ get_partition_size() {
 ##############################################################################
 ## Récupération des disques disponibles                                                      
 ##############################################################################
-list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
+list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s")"
 
 if [[ -z "${list}" ]]; then
     log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
@@ -137,7 +137,12 @@ while true; do
     IFS=':' read -r name type default_size <<< "$partition"
         
     # Demander la taille de partition
-    custom_size=$(get_partition_size "$default_size")
+    while true; do
+        custom_size=$(get_partition_size "$default_size")
+        if [[ $? -eq 0 ]]; then
+            break  # La taille est valide, on sort de la boucle
+        fi
+    done
         
     selected_partitions+=("$name:$type:$custom_size")
 
