@@ -68,7 +68,7 @@ get_partition_size() {
 ##############################################################################
 ## Récupération des disques disponibles                                                      
 ##############################################################################
-list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s")"
+list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
 if [[ -z "${list}" ]]; then
     log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
