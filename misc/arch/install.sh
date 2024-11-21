@@ -43,13 +43,18 @@ get_partition_size() {
 
 # Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
 select_disk() {
-    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
+
+    echo "test1"
+
+    LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+
+    echo "test2"
+ 
 
     if [[ -z "${LIST}" ]]; then
-        log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
         exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
     else
-        log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
+        echo "test3"
         echo "${LIST}" && echo ""
     fi
 
