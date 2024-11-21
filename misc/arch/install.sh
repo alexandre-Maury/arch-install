@@ -1,257 +1,194 @@
 #!/bin/bash
 
-# script install.sh : 
-# Script test
-# https://github.com/Zelrin/arch-btrfs-install-guide 
-# https://sharafat.pages.dev/archlinux-install/
-# https://chadymorra.github.io/
+# Fonction pour loguer les informations (niveau: INFO, ERROR)
+log_prompt() {
+    local level=$1
+    local message=$2
+    echo "[$level] $message"
+}
 
-set -e  # Quitte immédiatement en cas d'erreur.
+# Configuration des types de partitions disponibles
+PARTITION_TYPES=(
+    "boot:fat32:512M"      # Partition de démarrage (EFI ou BIOS)
+    "swap:linux-swap:4G"   # Partition de mémoire virtuelle 
+    "root:btrfs:100G"      # Partition racine du système
+    "home:btrfs:100%"      # Partition pour les fichiers utilisateur
+)
 
-SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# Récupérer la liste des disques disponibles (exclut les disques "loop" et "sr")
+get_available_disks() {
+    lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s
+}
 
-source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
-source $SCRIPT_DIR/misc/scripts/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+# Afficher les types de partitions disponibles
+display_partition_types() {
+    echo "Types de partitions disponibles :"
+    for i in "${!PARTITION_TYPES[@]}"; do
+        IFS=':' read -r name type size <<< "${PARTITION_TYPES[$i]}"
+        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+    done
+}
 
-
-# Vérifier les privilèges root
-if [ "$EUID" -ne 0 ]; then
-  log_prompt "ERROR" && echo "Veuillez exécuter ce script en tant qu'utilisateur root."
-  exit 1
-fi
-
-
-##############################################################################
-## Récupération des disques disponible                                                      
-##############################################################################
-LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
-
-if [[ -z "${LIST}" ]]; then
-    log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
-    exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
-else
-    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
-    echo "${LIST}" && echo ""
-fi
-
-# Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
-OPTION=""
-while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-    log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
-    
-
-    # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
-    if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
-        # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
-        DISK="$(echo "${LIST}" | grep "  ${OPTION})" | awk '{print $2}')"
-        break
-    else
-        # Si l'utilisateur a entré quelque chose qui n'est pas dans la liste, considérer que c'est un nom de disque
-        DISK="${OPTION}"
-        break
-    fi
-done
-
-##############################################################################
-## Création des partitions + formatage et montage                                                      
-##############################################################################
-if [[ "${MODE}" == "UEFI" ]]; then
-    log_prompt "INFO" && echo "Création de la table GPT" && echo ""
-    parted --script -a optimal /dev/${DISK} mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-
-    log_prompt "INFO" && echo "Création de la partition EFI"
-    parted --script -a optimal /dev/${DISK} mkpart primary fat32 1MiB "${SIZE_BOOT}" || { echo "Erreur lors de la création de la partition boot"; exit 1; }
-    parted --script -a optimal /dev/${DISK} set 1 esp on
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-fi
-
-if  [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "Off" ]]; then
-    log_prompt "INFO" && echo "Création de la partition SWAP"
-    parted --script -a optimal /dev/${DISK} mkpart primary linux-swap "${SIZE_BOOT}" "${SIZE_SWAP}" || { echo "Erreur lors de la création de la partition swap"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-
-    log_prompt "INFO" && echo "Activation du SWAP"
-    mkswap /dev/${DISK}2 || { echo "Erreur lors de la création de la partition swap"; exit 1; }
-    swapon /dev/${DISK}2 || { echo "Erreur lors de l'activation de la partition swap"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-
-    # Gestion de la fusion root et home
-    if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
-        # Création d'une seule partition pour root + home
-        log_prompt "INFO" && echo "Création de la partition ROOT/HOME"
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
-        PART_ROOT=3
-        PART_HOME=""  # Désactivation de la partition home spécifique
-        log_prompt "SUCCESS" && echo "OK" && echo ""
-    else
-        log_prompt "INFO" && echo "Création de la partition ROOT"
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_SWAP}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo ""
-
-        log_prompt "INFO" && echo "Création de la partition HOME"
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
-        PART_ROOT=3
-        PART_HOME=4
-        log_prompt "SUCCESS" && echo "OK" && echo ""
-    fi
-
-else # Le swap est désactiver
-
-    # Gestion de la fusion root et home
-    if [[ "${MERGE_ROOT_HOME}" == "On" ]]; then
-        # Création d'une seule partition pour root + home
-        log_prompt "INFO" && echo "Création de la partition ROOT/HOME"
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "100%" || { echo "Erreur lors de la création de la partition root/home"; exit 1; }
-        PART_ROOT=2
-        PART_HOME=""  # Désactivation de la partition home spécifique
-        log_prompt "SUCCESS" && echo "OK" && echo ""
-    else
-        # Création de partitions séparées pour root et home
-        log_prompt "INFO" && echo "Création de la partition ROOT" 
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_BOOT}" "${SIZE_ROOT}" || { echo "Erreur lors de la création de la partition root"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo ""
+# Fonction pour demander à l'utilisateur une taille de partition valide
+get_partition_size() {
+    local default_size=$1
+    while true; do
+        read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
+        custom_size=${custom_size:-$default_size}
         
-        log_prompt "INFO" && echo "Création de la partition HOME"
-        parted --script -a optimal /dev/${DISK} mkpart primary "${FS_TYPE}" "${SIZE_ROOT}" "100%" || { echo "Erreur lors de la création de la partition home"; exit 1; }
-        PART_ROOT=2
-        PART_HOME=3
-        log_prompt "SUCCESS" && echo "OK" && echo ""
+        # Vérification de la validité de la taille (format correct)
+        if [[ "$custom_size" =~ ^[0-9]+(M|G|T|%)$ ]]; then
+            echo "$custom_size"
+            return
+        else
+            echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
+        fi
+    done
+}
+
+# Récupération du disque à utiliser
+select_disk() {
+    local list
+    list=$(get_available_disks)
+    
+    if [[ -z "$list" ]]; then
+        log_prompt "ERROR" "Aucun disque disponible pour l'installation."
+        exit 1
+    else
+        log_prompt "INFO" "Choisissez un disque pour l'installation (ex : 1) :"
+        echo "$list" && echo ""
     fi
-fi
 
-# Formatage des partitions en fonction du système de fichiers spécifié
-[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" 
-[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Formatage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" 
-mkfs."${FS_TYPE}" /dev/${DISK}${PART_ROOT} || { echo "Erreur lors du formatage de la partition root en "${FS_TYPE}" "; exit 1; }
-log_prompt "SUCCESS" && echo "OK" && echo ""
+    # Boucle pour permettre à l'utilisateur de choisir un disque
+    local option=""
+    while [[ -z "$(echo "$list" | grep "  ${option})")" ]]; do
+        log_prompt "INFO" "Votre choix (numéro du disque ou nom du périphérique, ex : /dev/sda) :"
+        read -p "Votre choix : " option && echo ""
 
-# Montage des partitions
-[[ "${MERGE_ROOT_HOME}" == "On" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT/HOME ==> /dev/${DISK}${PART_ROOT}" 
-[[ "${MERGE_ROOT_HOME}" == "Off" ]] && log_prompt "INFO" && echo "Création du point de montage de la partition ROOT ==> /dev/${DISK}${PART_ROOT}" 
-mkdir -p "${MOUNT_POINT}" && mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
-log_prompt "SUCCESS" && echo "OK" && echo ""
+        # Vérification de l'entrée de l'utilisateur
+        if [[ -n "$(echo "$list" | grep "  ${option})")" ]]; then
+            # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque
+            local disk
+            disk=$(echo "$list" | grep "  ${option})" | awk '{print $2}')
+            break
+        elif [[ -n "$option" && -e "$option" ]]; then
+            # Si l'utilisateur a entré un nom de disque valide (par ex : /dev/sda)
+            disk="$option"
+            break
+        else
+            # Si l'entrée n'est pas valide, afficher un message d'erreur
+            log_prompt "ERROR" "Choix invalide. Veuillez choisir un disque valide."
+        fi
+    done
 
-if [[ -n "${PART_HOME}" ]]; then
-    log_prompt "INFO" && echo "Formatage de la partition HOME ==> /dev/${DISK}${PART_HOME}" 
-    mkfs."${FS_TYPE}" /dev/${DISK}${PART_HOME} || { echo "Erreur lors du formatage de la partition home ==> /dev/${DISK}${PART_HOME} en "${FS_TYPE}" "; exit 1; }
-    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-fi
+    log_prompt "INFO" "Vous avez choisi le disque : $disk"
+    echo "$disk"
+}
 
-# Si root et home sont séparés, monter home
-if [[ -n "${PART_HOME}" ]]; then
-    log_prompt "INFO" && echo "Création du point de montage de la partition HOME ==> /dev/${DISK}${PART_HOME}" 
-    mkdir -p "${MOUNT_POINT}/home" && mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-fi
+# Sélectionner et configurer les partitions
+select_partitions() {
+    local selected_partitions=()
+    local remaining_types=("${PARTITION_TYPES[@]}")
 
-# Formatage de la partition boot en fonction du mode
-if [[ "${MODE}" == "UEFI" ]]; then
-    log_prompt "INFO" && echo "Formatage de la partition EFI" 
-    mkfs.vfat -F32 /dev/${DISK}1 || { echo "Erreur lors du formatage de la partition efi en FAT32"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+    while true; do
+        display_partition_types
+        echo "0) Terminer la configuration des partitions"
+        read -p "Sélectionnez un type de partition (0 pour terminer) : " choice
+        
+        if [[ "$choice" -eq 0 ]]; then
+            if [[ ${#selected_partitions[@]} -eq 0 ]]; then
+                echo "Erreur: Vous devez sélectionner au moins une partition."
+                continue
+            fi
+            break
+        fi
+        
+        if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
+            echo "Sélection invalide, réessayez."
+            continue
+        fi
+        
+        local selected_index=$((choice-1))
+        local partition="${remaining_types[$selected_index]}"
+        
+        IFS=':' read -r name type default_size <<< "$partition"
+        
+        # Demander la taille de partition
+        custom_size=$(get_partition_size "$default_size")
+        
+        selected_partitions+=("$name:$type:$custom_size")
+        unset 'remaining_types[$selected_index]'
+        remaining_types=("${remaining_types[@]}")
+    done
+    
+    echo "Partitions sélectionnées :"
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        echo "$name ($type): $size"
+    done
+    
+    # Confirmer la création des partitions
+    read -p "Confirmer la création des partitions (y/n) : " confirm
+    if [[ "$confirm" != "y" ]]; then
+        echo "Annulation de la création des partitions."
+        exit 1
+    fi
 
-    log_prompt "INFO" && echo "Création du point de montage de la partition EFI" 
-    mkdir -p "${MOUNT_POINT}/boot" && mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-fi
+    echo "$selected_partitions"
+}
 
-# Gestion de la swap
-if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
-    # Création d'un fichier swap si FILE_SWAP="On"
-    log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" 
-    mkdir -p $MOUNT_POINT/swap
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+# Créer les partitions sur le disque
+create_partitions() {
+    local disk="$1"
+    local partitions=("$@")
 
-    log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" 
-    dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+    # Vérification de l'espace disponible sur le disque
+    local available_space
+    available_space=$(lsblk -d -o SIZE --noheadings "$disk" | tr -d '[:space:]')
+    echo "Espace total disponible sur $disk : $available_space"
 
-    log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" 
-    chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
-    mkswap "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
-    swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-fi
+    parted --script "$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
 
-# Affichage de la table des partitions pour vérification
-parted /dev/${DISK} print || { echo "Erreur lors de l'affichage des partitions"; exit 1; }
+    local start="1MiB"
+    local partition_number=1
+    for partition in "${partitions[@]:1}"; do
+        IFS=':' read -r name type size <<< "$partition"
 
+        # Calcul de la taille de la partition et fin
+        local end
+        if [[ "$size" == "100%" ]]; then
+            end="100%"
+        else
+            end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
+            end=$(numfmt --to=iec "${end}")
+        fi
 
+        # Création de la partition
+        parted --script "$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
 
+        case "$name" in
+            "boot") parted --script "$disk" set "$partition_number" esp on ;;
+            "swap") parted --script "$disk" set "$partition_number" swap on ;;
+        esac
 
+        start="$end"
+        ((partition_number++))
+    done
+}
 
-# # Formatage des partitions
-# echo "Formatage de la partition /boot..."
-# mkfs.fat -F32 "${DISK}p1"  # La partition /boot
+# Fonction principale
+main() {
+    # Sélectionner un disque
+    local disk
+    disk=$(select_disk)
+    
+    # Sélectionner et configurer les partitions
+    local selected_partitions
+    selected_partitions=$(select_partitions)
+    
+    # Créer les partitions sur le disque choisi
+    create_partitions "$disk" $selected_partitions
+}
 
-# echo "Formatage des partitions restantes en Btrfs..."
-# mkfs.btrfs "${DISK}p2"  # Partition root
-
-# # Montage de la partition root
-# echo "Montage du système de fichiers..."
-# mount "${DISK}p2" /mnt
-
-# # Création des sous-volumes Btrfs
-# echo "Création des sous-volumes Btrfs..."
-# btrfs subvolume create /mnt/@
-# btrfs subvolume create /mnt/@home
-
-# # Montage des sous-volumes
-# umount /mnt
-# mount -o noatime,compress=lzo,subvol=@ "${DISK}p2" /mnt
-# mkdir /mnt/home
-# mount -o noatime,compress=lzo,subvol=@home "${DISK}p2" /mnt/home
-
-# # Montage de la partition /boot
-# mkdir /mnt/boot
-# mount "${DISK}p1" /mnt/boot
-
-# # Installation de Arch Linux
-# echo "Installation d'Arch Linux..."
-# pacstrap /mnt base linux linux-firmware
-
-# # Configuration du système
-# echo "Génération de l'fstab..."
-# genfstab -U /mnt >> /mnt/etc/fstab
-
-# # Chroot dans le nouveau système
-# echo "Chroot dans le système..."
-# arch-chroot /mnt /bin/bash <<EOF
-# # Configuration du système
-# echo "Configuration du système..."
-
-# # Mise à jour du miroir
-# pacman -Sy reflector
-# reflector --country 'France' --sort rate --save /etc/pacman.d/mirrorlist
-
-# # Installation du bootloader systemd-boot
-# bootctl --path=/mnt/boot install
-
-# # Configuration du noyau et initramfs
-# mkinitcpio -P
-
-# # Configuration de la locale
-# echo "en_US.UTF-8 UTF-8" > /mnt/etc/locale.gen
-# locale-gen
-
-# # Configuration de la timezone
-# ln -sf /usr/share/zoneinfo/Europe/Paris /mnt/etc/localtime
-
-# # Création de l'utilisateur
-# useradd -m -G wheel -s /bin/bash user
-# echo "user:password" | chpasswd
-
-# # Activation du sudo
-# pacman -S sudo
-# echo "user ALL=(ALL) ALL" >> /mnt/etc/sudoers.d/user
-
-# # Fin de la configuration
-# EOF
-
-# # Sortie du chroot et démontage
-# echo "Démontage des partitions..."
-# umount -R /mnt
-
-# echo "Installation terminée. Vous pouvez redémarrer le système."
+# Appel de la fonction principale
+main
