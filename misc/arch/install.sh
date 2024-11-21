@@ -58,6 +58,7 @@ select_disk() {
 
 # Appel de la fonction et récupération du disque choisi
 list_disk="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")"
+echo $list_disk
 disk=$(select_disk $list_disk)
 
 # Affichage du disque choisi
