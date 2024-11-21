@@ -65,7 +65,7 @@ fi
 option=""
 while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
     
-    log_prompt "INFO" && read -p "Votre Choix : " OPTION 
+    log_prompt "INFO" && read -p "Votre Choix : " option 
     
     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
     if [[ -n "$(echo "${list}" | grep "  ${option})")" ]]; then
