@@ -17,19 +17,25 @@ PARTITION_TYPES=(
 )
 
 
-LIST=$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")
+##############################################################################
+## Récupération des disques disponible                                                      
+##############################################################################
+LIST="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
 
 if [[ -z "${LIST}" ]]; then
+    log_prompt "ERROR" && echo "Aucun disque disponible pour l'installation."
     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
 else
+    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) : " && echo ""
     echo "${LIST}" && echo ""
 fi
 
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
 OPTION=""
 while [[ -z "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; do
-    read -p "Votre Choix : " OPTION && echo ""
-        
+    log_prompt "INFO" && read -p "Votre Choix : " OPTION && echo ""
+    
+
     # Vérification si l'utilisateur a entré un numéro (choix dans la liste)
     if [[ -n "$(echo "${LIST}" | grep "  ${OPTION})")" ]]; then
         # Si l'utilisateur a choisi un numéro valide, récupérer le nom du disque correspondant
