@@ -56,14 +56,12 @@ fi
 
 clear
 
-echo "vous avez choisi $disk"
-
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
 
 # Vérification si le disque est vide (sans partition)
-partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
+partitions=$(lsblk $disk -n -o NAME | grep -E "^$disk[0-9]+")
 
 if [[ -z "$partitions" ]]; then
     # Le disque est vide, donc il n'y a pas de partitions
