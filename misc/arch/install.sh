@@ -59,23 +59,6 @@ clear
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
-
-# # Vérification si le disque est vide (sans partition)
-# partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
-
-# if [[ -z "$partitions" ]]; then
-#     # Le disque est vide, donc il n'y a pas de partitions
-#     log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
-
-
-# else
-#     # Le disque contient des partitions
-#     log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
-#     echo "$partitions"
-# fi
-
-
-
 disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
 used_space=0  # Initialiser l'espace utilisé
@@ -208,3 +191,14 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
+# Vérification si le disque est vide (sans partition)
+partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
+
+if [[ -z "$partitions" ]]; then
+    # Le disque est vide, donc il n'y a pas de partitions
+    log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
+else
+    # Le disque contient des partitions
+    log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
+    echo "$partitions"
+fi
