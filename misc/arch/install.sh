@@ -51,24 +51,6 @@ done
 
 clear
 
-
-
-# # Vérification si le disque est vide (sans partition)
-# partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
-
-# if [[ -z "$partitions" ]]; then
-#     # Le disque est vide, donc il n'y a pas de partitions
-#     log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
-# else
-#     # Le disque contient des partitions
-#     log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
-#     echo "$partitions"
-# fi
-
-# # Ici tu peux ajouter le code pour demander à l'utilisateur de partitionner le disque ou de choisir une partition
-
-
-
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
@@ -90,73 +72,87 @@ get_partition_size() {
     done
 }
 
-selected_partitions=()
-remaining_types=("${PARTITION_TYPES[@]}")
+# Vérification si le disque est vide (sans partition)
+partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
 
-while true; do
-    log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-    for i in "${!remaining_types[@]}"; do
-        IFS=':' read -r name type size <<< "${remaining_types[$i]}"
-        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-    done
+if [[ -z "$partitions" ]]; then
+    # Le disque est vide, donc il n'y a pas de partitions
+    log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
 
-    echo "0) Terminer la configuration des partitions" && echo ""
+    selected_partitions=()
+    remaining_types=("${PARTITION_TYPES[@]}")
 
-    log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
-    
+    while true; do
+        log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
+        for i in "${!remaining_types[@]}"; do
+            IFS=':' read -r name type size <<< "${remaining_types[$i]}"
+            printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+        done
+
+        echo "0) Terminer la configuration des partitions" && echo ""
+
+        log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
         
-    if [[ "$choice" -eq 0 ]]; then
-        if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
+            
+        if [[ "$choice" -eq 0 ]]; then
+            if [[ ${#selected_partitions[@]} -eq 0 ]]; then
+                log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
+                continue
+            fi
+            break
+        fi
+            
+        if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
+            echo "Sélection invalide, réessayez."
+            log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
             continue
         fi
-        break
-    fi
-        
-    if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-        echo "Sélection invalide, réessayez."
-        log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
-        continue
-    fi
-        
-    selected_index=$((choice-1))
-    partition="${remaining_types[$selected_index]}"
-        
-    IFS=':' read -r name type default_size <<< "$partition"
-        
-    # Demander la taille de partition
-    while true; do
-        custom_size=$(get_partition_size "$default_size")
-        if [[ $? -eq 0 ]]; then
-            break  # La taille est valide, on sort de la boucle
-        else
-            echo ""
-            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
-        fi
+            
+        selected_index=$((choice-1))
+        partition="${remaining_types[$selected_index]}"
+            
+        IFS=':' read -r name type default_size <<< "$partition"
+            
+        # Demander la taille de partition
+        while true; do
+            custom_size=$(get_partition_size "$default_size")
+            if [[ $? -eq 0 ]]; then
+                break  # La taille est valide, on sort de la boucle
+            else
+                echo ""
+                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+            fi
+        done
+            
+        selected_partitions+=("$name:$type:$custom_size")
+
+        # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
+        remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
+
+        clear
+
     done
         
-    selected_partitions+=("$name:$type:$custom_size")
+    log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        echo "$name ($type): $size"
+    done
 
-    # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
-    remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
+    echo ""
 
-    clear
+    # Confirmer la création des partitions
+    log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
+    if [[ "$confirm" != "y" ]]; then
+        echo "Annulation de la création des partitions."
+        exit 1
+    fi
 
-done
-    
-log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
-for partition in "${selected_partitions[@]}"; do
-    IFS=':' read -r name type size <<< "$partition"
-    echo "$name ($type): $size"
-done
 
-echo ""
-
-# Confirmer la création des partitions
-log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
-if [[ "$confirm" != "y" ]]; then
-    echo "Annulation de la création des partitions."
-    exit 1
+else
+    # Le disque contient des partitions
+    log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
+    echo "$partitions"
 fi
 
 ##############################################################################
