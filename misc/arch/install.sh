@@ -164,34 +164,39 @@ fi
 ## Création des partitions                                                     
 ##############################################################################
 
+
 # Vérification de l'espace disponible sur le disque
 available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 echo "Espace total disponible sur $disk : $available_space"
 
+# Créer la table de partition GPT
 parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
 
 start="1MiB"
 partition_number=1
 
-for partition in "${selected_partitions[@]:1}"; do
+for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
-
-    # Calcul de la taille de la partition et fin
+    
     if [[ "$size" == "100%" ]]; then
+        # La partition doit prendre tout l'espace restant
         end="100%"
     else
+        # Calculer la taille de la partition
         end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
         end=$(numfmt --to=iec "${end}")
     fi
 
-    # Création de la partition
+    # Créer la partition avec parted
     parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
 
+    # Définir des options supplémentaires selon le type de partition
     case "$name" in
         "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
         "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
     esac
 
+    # Mise à jour de la position de départ pour la prochaine partition
     start="$end"
     ((partition_number++))
 done
