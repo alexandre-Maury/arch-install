@@ -74,6 +74,25 @@ clear
 #     echo "$partitions"
 # fi
 
+# Fonction pour convertir les tailles en MiB
+convert_to_mib() {
+    local size="$1"
+    local numeric_size
+    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
+    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
+        numeric_size=$(echo "$size" | sed 's/GiB//')
+        echo $(($numeric_size * 1024))  # Convertir en MiB
+    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
+        # Si la taille est déjà en MiB, on la garde telle quelle
+        echo "$size" | sed 's/MiB//'
+    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
+        # Si la taille est un pourcentage, retourner "100%" directement
+        echo "$size"
+    else
+        echo "0"  # Retourne 0 si l'unité est mal définie
+    fi
+}
+
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
     local default_size=$1
@@ -91,11 +110,19 @@ get_partition_size() {
     done
 }
 
+disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 selected_partitions=()
 remaining_types=("${PARTITION_TYPES[@]}")
+used_space=0
 
 while true; do
+    # Calculer l'espace restant
+    remaining_space=$(($disk_size - $used_space))
+    
+    log_prompt "INFO" && echo "Espace restant sur le disque : $(numfmt --to=iec $remaining_space) " && echo ""
     log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
+    
+    # Afficher les types de partitions disponibles
     for i in "${!remaining_types[@]}"; do
         IFS=':' read -r name type size <<< "${remaining_types[$i]}"
         printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
@@ -105,17 +132,16 @@ while true; do
 
     log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
     
-        
+    # Terminer si l'utilisateur choisit 0
     if [[ "$choice" -eq 0 ]]; then
         if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
+            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition." && echo ""
             continue
         fi
         break
     fi
         
     if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-        echo "Sélection invalide, réessayez."
         log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
         continue
     fi
@@ -125,26 +151,29 @@ while true; do
         
     IFS=':' read -r name type default_size <<< "$partition"
         
-    # Demander la taille de partition
+    # Demander la taille de la partition
     while true; do
         custom_size=$(get_partition_size "$default_size")
         if [[ $? -eq 0 ]]; then
             break  # La taille est valide, on sort de la boucle
         else
-            echo ""
             log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
         fi
     done
         
     selected_partitions+=("$name:$type:$custom_size")
 
+    # Calculer l'espace utilisé
+    size_in_miB=$(convert_to_mib "$custom_size")
+    used_space=$(($used_space + $size_in_miB))
+    
     # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
     remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
 
     clear
-
 done
     
+# Afficher les partitions sélectionnées
 log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
 for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
@@ -165,42 +194,16 @@ fi
 ##############################################################################
 
 
-##############################################################################
-## Création des partitions                                                     
-##############################################################################
-
-##############################################################################
-## Création des partitions                                                     
-##############################################################################
 
 # Vérification de l'espace disponible sur le disque
-available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-echo "Espace total disponible sur $disk : $available_space"
+# available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
+# echo "Espace total disponible sur $disk : $available_space"
 
 # Créer la table de partition GPT
 parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
 
 start="1MiB"
 partition_number=1
-
-# Fonction pour convertir les tailles en MiB
-convert_to_mib() {
-    local size="$1"
-    local numeric_size
-    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
-    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
-        numeric_size=$(echo "$size" | sed 's/GiB//')
-        echo $(($numeric_size * 1024))  # Convertir en MiB
-    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
-        # Si la taille est déjà en MiB, on la garde telle quelle
-        echo "$size" | sed 's/MiB//'
-    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
-        # Si la taille est un pourcentage, retourner "100%" directement
-        echo "$size"
-    else
-        echo "0"  # Retourne 0 si l'unité est mal définie
-    fi
-}
 
 for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
