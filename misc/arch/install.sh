@@ -191,16 +191,25 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
-# partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$")
+# Définition des colonnes à afficher
+columns="NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,STATE,OWNER,GROUP,MODE"
+
+# Affiche les informations du disque
+echo "=== Information détaillée du disque /dev/$disk ==="
+lsblk "/dev/$disk" -n -o "$columns"
+
+# Récupère les partitions du disque
 partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
-# Affiche les partitions
-echo "Partitions sur /dev/$disk :"
-
+# Affiche les informations détaillées pour chaque partition
+echo -e "\n=== Détails des partitions ==="
 while read -r partition; do
-    # Vérifie si la partition existe avant d'afficher ses informations
     if [ -b "/dev/$partition" ]; then
-        echo "/dev/$partition"
-        lsblk "/dev/$partition" -n -o SIZE,FSTYPE,MOUNTPOINT
+        echo -e "\nPartition: /dev/$partition"
+        lsblk "/dev/$partition" -n -o "$columns" | column -t
+
+        # Affiche des informations supplémentaires si disponibles
+        echo "UUID complet: $(blkid -s UUID -o value "/dev/$partition" 2>/dev/null)"
+        echo "Type de partition: $(blkid -s TYPE -o value "/dev/$partition" 2>/dev/null)"
     fi
 done <<< "$partitions"
