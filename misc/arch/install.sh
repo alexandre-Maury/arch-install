@@ -174,8 +174,15 @@ while true; do
         
     selected_partitions+=("$name:$type:$custom_size")
 
-    # Convertir la taille de la partition en MiB et calculer l'espace utilisé
-    size_in_miB=$(convert_to_mib "$custom_size")
+    # Si la taille est "100%", on la considère comme prenant tout l'espace restant
+    if [[ "$custom_size" == "100%" ]]; then
+        # La partition prend tout l'espace restant
+        size_in_miB=$remaining_space
+    else
+        # Convertir la taille de la partition en MiB
+        size_in_miB=$(convert_to_mib "$custom_size")
+    fi
+
     used_space=$((used_space + size_in_miB))
     
     # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
