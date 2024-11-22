@@ -119,13 +119,22 @@ get_partition_size() {
     done
 }
 
-# Fonction pour formater l'espace en une unité lisible (GiB, MiB, etc.)
+# Fonction pour formater l'espace en GiB ou MiB
 format_space() {
-    local space="$1"
-    if [[ "$space" -gt 1048576 ]]; then  # Si l'espace est plus grand que 1 GiB (1 GiB = 1024 MiB)
-        echo "$(numfmt --to=iec $space)"  # Afficher en GiB ou Mo ou autre unité (IEC)
+    local space=$1
+    local space_in_gib
+    local space_in_mib
+
+    # Convertir l'espace en GiB
+    space_in_gib=$(echo "scale=2; $space / 1024 / 1024" | bc)
+    
+    # Si l'espace est supérieur ou égal à 1 GiB, afficher en GiB
+    if (( $(echo "$space_in_gib >= 1" | bc -l) )); then
+        echo "${space_in_gib} GiB"
     else
-        echo "$(numfmt --to=iec-i $space)"  # Utilise le format standard pour les petites tailles
+        # Sinon, afficher en MiB
+        space_in_mib=$(echo "scale=2; $space / 1024" | bc)
+        echo "${space_in_mib} MiB"
     fi
 }
 
