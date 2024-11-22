@@ -191,12 +191,16 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
-# Affiche les partitions
-log_prompt "INFO" && echo "Affichage des partitions" && echo ""
-partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$")
+# partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$")
+partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
+# Affiche les partitions
 echo "Partitions sur /dev/$disk :"
-for partition in "${partitions[@]}"; do
-    # echo "$partition"
-    lsblk "/dev/$partition" -n -o SIZE,FSTYPE,MOUNTPOINT
-done
+
+while read -r partition; do
+    # Vérifie si la partition existe avant d'afficher ses informations
+    if [ -b "/dev/$partition" ]; then
+        echo "/dev/$partition"
+        lsblk "/dev/$partition" -n -o SIZE,FSTYPE,MOUNTPOINT
+    fi
+done <<< "$partitions"
