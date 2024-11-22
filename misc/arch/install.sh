@@ -191,20 +191,12 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
+# Affiche les partitions
+log_prompt "INFO" && echo "Affichage des partitions" && echo ""
 partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$")
 
-# Création d'un tableau pour stocker les partitions avec /dev/
-partitions_with_dev=()
-
-# Ajoute /dev/ devant chaque partition
-while read -r partition; do
-    partitions_with_dev+=("/dev/$partition")
-done <<< "$partitions"
-
-# Affiche les partitions
 echo "Partitions sur /dev/$disk :"
-for partition in "${partitions_with_dev[@]}"; do
-    echo "$partition"
-    # Optionnel : afficher plus d'informations sur la partition
-    lsblk "$partition" -n -o SIZE,FSTYPE,MOUNTPOINT
+for partition in "${partitions[@]}"; do
+    # echo "$partition"
+    lsblk "/dev/$partition" -n -o SIZE,FSTYPE,MOUNTPOINT
 done
