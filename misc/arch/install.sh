@@ -82,9 +82,17 @@ convert_to_mib() {
     if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
         numeric_size=$(echo "$size" | sed 's/GiB//')
         echo $(($numeric_size * 1024))  # Convertir en MiB
+    # Si la taille est en GiB avec "G", convertir aussi en MiB
+    elif [[ "$size" =~ ^[0-9]+G$ ]]; then
+        numeric_size=$(echo "$size" | sed 's/G//')
+        echo $(($numeric_size * 1024))  # Convertir en MiB
     elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
         # Si la taille est déjà en MiB, on la garde telle quelle
         echo "$size" | sed 's/MiB//'
+    elif [[ "$size" =~ ^[0-9]+M$ ]]; then
+        # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
+        numeric_size=$(echo "$size" | sed 's/M//')
+        echo "$numeric_size"
     elif [[ "$size" =~ ^[0-9]+%$ ]]; then
         # Si la taille est un pourcentage, retourner "100%" directement
         echo "$size"
@@ -92,6 +100,7 @@ convert_to_mib() {
         echo "0"  # Retourne 0 si l'unité est mal définie
     fi
 }
+
 
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
