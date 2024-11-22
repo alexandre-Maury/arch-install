@@ -120,13 +120,15 @@ get_partition_size() {
 }
 
 disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
+disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
+used_space=0  # Initialiser l'espace utilisé
 selected_partitions=()
 remaining_types=("${PARTITION_TYPES[@]}")
-used_space=0
 
+# Boucle pour configurer les partitions
 while true; do
-    # Calculer l'espace restant
-    remaining_space=$(($disk_size - $used_space))
+    # Calculer l'espace restant en MiB
+    remaining_space=$((disk_size_mib - used_space))
     
     log_prompt "INFO" && echo "Espace restant sur le disque : $(numfmt --to=iec $remaining_space) " && echo ""
     log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
@@ -172,9 +174,9 @@ while true; do
         
     selected_partitions+=("$name:$type:$custom_size")
 
-    # Calculer l'espace utilisé
+    # Convertir la taille de la partition en MiB et calculer l'espace utilisé
     size_in_miB=$(convert_to_mib "$custom_size")
-    used_space=$(($used_space + $size_in_miB))
+    used_space=$((used_space + size_in_miB))
     
     # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
     remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
