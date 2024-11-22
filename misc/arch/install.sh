@@ -51,6 +51,24 @@ done
 
 clear
 
+
+
+# # Vérification si le disque est vide (sans partition)
+# partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
+
+# if [[ -z "$partitions" ]]; then
+#     # Le disque est vide, donc il n'y a pas de partitions
+#     log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
+# else
+#     # Le disque contient des partitions
+#     log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
+#     echo "$partitions"
+# fi
+
+# # Ici tu peux ajouter le code pour demander à l'utilisateur de partitionner le disque ou de choisir une partition
+
+
+
 ##############################################################################
 ## Sélection des partitions                                                     
 ##############################################################################
