@@ -123,15 +123,15 @@ get_partition_size() {
 format_space() {
     local space=$1
 
-    # Si l'espace est supérieur ou égal à 1 GiB (1024 MiB), l'afficher en GiB
-    if (( space >= 1024 * 1024 )); then
-        # Affichage en GiB (1 GiB = 1024 MiB)
-        local space_in_gib=$(echo "scale=2; $space / 1024 / 1024" | bc)
+    # Vérifier si l'espace est en GiB ou MiB
+    # Si l'espace est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
+    if (( space >= 1024 )); then
+        # Convertir l'espace en GiB
+        local space_in_gib=$(echo "scale=2; $space / 1024" | bc)
         echo "${space_in_gib} GiB"
     else
-        # Sinon, l'afficher en MiB
-        local space_in_mib=$(echo "scale=2; $space / 1024" | bc)
-        echo "${space_in_mib} MiB"
+        # Si l'espace est inférieur à 1 GiB, afficher en MiB
+        echo "${space} MiB"
     fi
 }
 
