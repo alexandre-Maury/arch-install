@@ -60,19 +60,19 @@ clear
 ## Sélection des partitions                                                     
 ##############################################################################
 
-# Vérification si le disque est vide (sans partition)
-partitions=$(lsblk $disk -n -o NAME | grep -E "^$disk[0-9]+")
+# # Vérification si le disque est vide (sans partition)
+# partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
 
-if [[ -z "$partitions" ]]; then
-    # Le disque est vide, donc il n'y a pas de partitions
-    log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
+# if [[ -z "$partitions" ]]; then
+#     # Le disque est vide, donc il n'y a pas de partitions
+#     log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
 
 
-else
-    # Le disque contient des partitions
-    log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
-    echo "$partitions"
-fi
+# else
+#     # Le disque contient des partitions
+#     log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
+#     echo "$partitions"
+# fi
 
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
