@@ -169,6 +169,10 @@ fi
 ## Création des partitions                                                     
 ##############################################################################
 
+##############################################################################
+## Création des partitions                                                     
+##############################################################################
+
 # Vérification de l'espace disponible sur le disque
 available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 echo "Espace total disponible sur $disk : $available_space"
@@ -179,6 +183,25 @@ parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer
 start="1MiB"
 partition_number=1
 
+# Fonction pour convertir les tailles en MiB
+convert_to_mib() {
+    local size="$1"
+    local numeric_size
+    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
+    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
+        numeric_size=$(echo "$size" | sed 's/GiB//')
+        echo $(($numeric_size * 1024))  # Convertir en MiB
+    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
+        # Si la taille est déjà en MiB, on la garde telle quelle
+        echo "$size" | sed 's/MiB//'
+    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
+        # Si la taille est un pourcentage, retourner "100%" directement
+        echo "$size"
+    else
+        echo "0"  # Retourne 0 si l'unité est mal définie
+    fi
+}
+
 for partition in "${selected_partitions[@]}"; do
     IFS=':' read -r name type size <<< "$partition"
     
@@ -186,16 +209,10 @@ for partition in "${selected_partitions[@]}"; do
         # La partition doit prendre tout l'espace restant
         end="100%"
     else
-        # Convertir la taille en MiB (ou GiB) et effectuer des calculs arithmétiques simples
-        start_in_miB=$(echo "$start" | sed 's/MiB//')
-        size_in_miB=$(echo "$size" | sed 's/MiB//')
+        # Convertir la taille en MiB avant de faire des calculs
+        start_in_miB=$(convert_to_mib "$start")
+        size_in_miB=$(convert_to_mib "$size")
         
-        # Convertir la taille du disque en MiB si nécessaire
-        # Exemple: 1GiB = 1024MiB
-        if [[ "$size" == *GiB ]]; then
-            size_in_miB=$(($size_in_miB * 1024))
-        fi
-
         # Calculer la fin de la partition en MiB
         end_in_miB=$(($start_in_miB + $size_in_miB))
         end="${end_in_miB}MiB"
@@ -214,3 +231,4 @@ for partition in "${selected_partitions[@]}"; do
     start="$end"
     ((partition_number++))
 done
+
