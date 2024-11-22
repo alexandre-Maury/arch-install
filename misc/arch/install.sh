@@ -119,6 +119,16 @@ get_partition_size() {
     done
 }
 
+# Fonction pour formater l'espace en une unité lisible (GiB, MiB, etc.)
+format_space() {
+    local space="$1"
+    if [[ "$space" -gt 1048576 ]]; then  # Si l'espace est plus grand que 1 GiB (1 GiB = 1024 MiB)
+        echo "$(numfmt --to=iec $space)"  # Afficher en GiB ou Mo ou autre unité (IEC)
+    else
+        echo "$(numfmt --to=iec-i $space)"  # Utilise le format standard pour les petites tailles
+    fi
+}
+
 disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
 used_space=0  # Initialiser l'espace utilisé
@@ -130,7 +140,7 @@ while true; do
     # Calculer l'espace restant en MiB
     remaining_space=$((disk_size_mib - used_space))
     
-    log_prompt "INFO" && echo "Espace restant sur le disque : $(numfmt --to=iec $remaining_space) " && echo ""
+    log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
     log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
     
     # Afficher les types de partitions disponibles
