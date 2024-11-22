@@ -91,107 +91,107 @@ get_partition_size() {
     done
 }
 
-# selected_partitions=()
-# remaining_types=("${PARTITION_TYPES[@]}")
+selected_partitions=()
+remaining_types=("${PARTITION_TYPES[@]}")
 
-# while true; do
-#     log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-#     for i in "${!remaining_types[@]}"; do
-#         IFS=':' read -r name type size <<< "${remaining_types[$i]}"
-#         printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-#     done
+while true; do
+    log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
+    for i in "${!remaining_types[@]}"; do
+        IFS=':' read -r name type size <<< "${remaining_types[$i]}"
+        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+    done
 
-#     echo "0) Terminer la configuration des partitions" && echo ""
+    echo "0) Terminer la configuration des partitions" && echo ""
 
-#     log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
+    log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
     
         
-#     if [[ "$choice" -eq 0 ]]; then
-#         if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-#             log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
-#             continue
-#         fi
-#         break
-#     fi
+    if [[ "$choice" -eq 0 ]]; then
+        if [[ ${#selected_partitions[@]} -eq 0 ]]; then
+            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition. " && echo ""
+            continue
+        fi
+        break
+    fi
         
-#     if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-#         echo "Sélection invalide, réessayez."
-#         log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
-#         continue
-#     fi
+    if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
+        echo "Sélection invalide, réessayez."
+        log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
+        continue
+    fi
         
-#     selected_index=$((choice-1))
-#     partition="${remaining_types[$selected_index]}"
+    selected_index=$((choice-1))
+    partition="${remaining_types[$selected_index]}"
         
-#     IFS=':' read -r name type default_size <<< "$partition"
+    IFS=':' read -r name type default_size <<< "$partition"
         
-#     # Demander la taille de partition
-#     while true; do
-#         custom_size=$(get_partition_size "$default_size")
-#         if [[ $? -eq 0 ]]; then
-#             break  # La taille est valide, on sort de la boucle
-#         else
-#             echo ""
-#             log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
-#         fi
-#     done
+    # Demander la taille de partition
+    while true; do
+        custom_size=$(get_partition_size "$default_size")
+        if [[ $? -eq 0 ]]; then
+            break  # La taille est valide, on sort de la boucle
+        else
+            echo ""
+            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+        fi
+    done
         
-#     selected_partitions+=("$name:$type:$custom_size")
+    selected_partitions+=("$name:$type:$custom_size")
 
-#     # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
-#     remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
+    # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
+    remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
 
-#     clear
+    clear
 
-# done
+done
     
-# log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
-# for partition in "${selected_partitions[@]}"; do
-#     IFS=':' read -r name type size <<< "$partition"
-#     echo "$name ($type): $size"
-# done
+log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
+for partition in "${selected_partitions[@]}"; do
+    IFS=':' read -r name type size <<< "$partition"
+    echo "$name ($type): $size"
+done
 
-# echo ""
+echo ""
 
-# # Confirmer la création des partitions
-# log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
-# if [[ "$confirm" != "y" ]]; then
-#     echo "Annulation de la création des partitions."
-#     exit 1
-# fi
+# Confirmer la création des partitions
+log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
+if [[ "$confirm" != "y" ]]; then
+    echo "Annulation de la création des partitions."
+    exit 1
+fi
 
 ##############################################################################
 ## Création des partitions                                                     
 ##############################################################################
 
-# # Vérification de l'espace disponible sur le disque
-# available_space=$(lsblk -d -o SIZE --noheadings "$disk" | tr -d '[:space:]')
-# echo "Espace total disponible sur $disk : $available_space"
+# Vérification de l'espace disponible sur le disque
+available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
+echo "Espace total disponible sur $disk : $available_space"
 
-# parted --script "$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
+parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
 
-# start="1MiB"
-# partition_number=1
+start="1MiB"
+partition_number=1
 
-# for partition in "${selected_partitions[@]:1}"; do
-#     IFS=':' read -r name type size <<< "$partition"
+for partition in "${selected_partitions[@]:1}"; do
+    IFS=':' read -r name type size <<< "$partition"
 
-#     # Calcul de la taille de la partition et fin
-#     if [[ "$size" == "100%" ]]; then
-#         end="100%"
-#     else
-#         end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
-#         end=$(numfmt --to=iec "${end}")
-#     fi
+    # Calcul de la taille de la partition et fin
+    if [[ "$size" == "100%" ]]; then
+        end="100%"
+    else
+        end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
+        end=$(numfmt --to=iec "${end}")
+    fi
 
-#     # Création de la partition
-#     parted --script "$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+    # Création de la partition
+    parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
 
-#     case "$name" in
-#         "boot") parted --script "$disk" set "$partition_number" esp on ;;
-#         "swap") parted --script "$disk" set "$partition_number" swap on ;;
-#     esac
+    case "$name" in
+        "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
+        "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
+    esac
 
-#     start="$end"
-#     ((partition_number++))
-# done
+    start="$end"
+    ((partition_number++))
+done
