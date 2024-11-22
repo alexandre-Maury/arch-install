@@ -49,6 +49,11 @@ while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
     fi
 done
 
+# Vérifier le type de disque (SATA ou NVMe)
+if [[ "$disk" =~ ^nvme ]]; then
+    partition_prefix="p"   # Format pour NVMe, ex: nvme0n1
+fi
+
 clear
 
 ##############################################################################
@@ -69,22 +74,22 @@ else
     echo "$partitions"
 fi
 
-# # Fonction pour demander à l'utilisateur une taille de partition valide
-# get_partition_size() {
-#     local default_size=$1
-#     while true; do
-#         read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
-#         custom_size=${custom_size:-$default_size}
+# Fonction pour demander à l'utilisateur une taille de partition valide
+get_partition_size() {
+    local default_size=$1
+    while true; do
+        read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
+        custom_size=${custom_size:-$default_size}
         
-#         # Vérification de la validité de la taille (format correct)
-#         if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
-#             echo "$custom_size"
-#             return 0  # Retourne une valeur valide, pas de problème
-#         else
-#             return 1  # Erreur, invite à réessayer
-#         fi
-#     done
-# }
+        # Vérification de la validité de la taille (format correct)
+        if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
+            echo "$custom_size"
+            return 0  # Retourne une valeur valide, pas de problème
+        else
+            return 1  # Erreur, invite à réessayer
+        fi
+    done
+}
 
 # selected_partitions=()
 # remaining_types=("${PARTITION_TYPES[@]}")
