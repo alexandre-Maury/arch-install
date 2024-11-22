@@ -165,6 +165,10 @@ fi
 ##############################################################################
 
 
+##############################################################################
+## Création des partitions                                                     
+##############################################################################
+
 # Vérification de l'espace disponible sur le disque
 available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 echo "Espace total disponible sur $disk : $available_space"
@@ -182,9 +186,19 @@ for partition in "${selected_partitions[@]}"; do
         # La partition doit prendre tout l'espace restant
         end="100%"
     else
-        # Calculer la taille de la partition
-        end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
-        end=$(numfmt --to=iec "${end}")
+        # Convertir la taille en MiB (ou GiB) et effectuer des calculs arithmétiques simples
+        start_in_miB=$(echo "$start" | sed 's/MiB//')
+        size_in_miB=$(echo "$size" | sed 's/MiB//')
+        
+        # Convertir la taille du disque en MiB si nécessaire
+        # Exemple: 1GiB = 1024MiB
+        if [[ "$size" == *GiB ]]; then
+            size_in_miB=$(($size_in_miB * 1024))
+        fi
+
+        # Calculer la fin de la partition en MiB
+        end_in_miB=$(($start_in_miB + $size_in_miB))
+        end="${end_in_miB}MiB"
     fi
 
     # Créer la partition avec parted
