@@ -191,14 +191,17 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
-# Vérification si le disque est vide (sans partition)
+# Récupère les partitions du disque
 partitions=$(lsblk /dev/$disk -n -o NAME | grep -E "^$disk[0-9]+")
 
-if [[ -z "$partitions" ]]; then
-    # Le disque est vide, donc il n'y a pas de partitions
-    log_prompt "INFO" && echo "Le disque /dev/$disk est vide, vous pouvez créer de nouvelles partitions."
-else
-    # Le disque contient des partitions
-    log_prompt "INFO" && echo "Le disque /dev/$disk contient les partitions suivantes :"
-    echo "$partitions"
-fi
+# Ajoute /dev/ devant chaque partition
+partitions_with_dev=()
+for partition in $partitions; do
+    partitions_with_dev+=("/dev/$partition")
+done
+
+# Affiche les partitions
+echo "Partitions sur /dev/$disk :"
+for partition in "${partitions_with_dev[@]}"; do
+    echo "$partition"
+done
