@@ -74,66 +74,7 @@ clear
 #     echo "$partitions"
 # fi
 
-# Fonction pour convertir les tailles en MiB
-convert_to_mib() {
-    local size="$1"
-    local numeric_size
-    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
-    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
-        numeric_size=$(echo "$size" | sed 's/GiB//')
-        echo $(($numeric_size * 1024))  # Convertir en MiB
-    # Si la taille est en GiB avec "G", convertir aussi en MiB
-    elif [[ "$size" =~ ^[0-9]+G$ ]]; then
-        numeric_size=$(echo "$size" | sed 's/G//')
-        echo $(($numeric_size * 1024))  # Convertir en MiB
-    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
-        # Si la taille est déjà en MiB, on la garde telle quelle
-        echo "$size" | sed 's/MiB//'
-    elif [[ "$size" =~ ^[0-9]+M$ ]]; then
-        # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
-        numeric_size=$(echo "$size" | sed 's/M//')
-        echo "$numeric_size"
-    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
-        # Si la taille est un pourcentage, retourner "100%" directement
-        echo "$size"
-    else
-        echo "0"  # Retourne 0 si l'unité est mal définie
-    fi
-}
 
-
-# Fonction pour demander à l'utilisateur une taille de partition valide
-get_partition_size() {
-    local default_size=$1
-    while true; do
-        read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
-        custom_size=${custom_size:-$default_size}
-        
-        # Vérification de la validité de la taille (format correct)
-        if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
-            echo "$custom_size"
-            return 0  # Retourne une valeur valide, pas de problème
-        else
-            return 1  # Erreur, invite à réessayer
-        fi
-    done
-}
-
-# Fonction pour formater l'espace en GiB ou MiB
-format_space() {
-    local space=$1
-
-    # Vérifier si l'espace est en GiB ou MiB
-    # Si l'espace est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
-    if (( space >= 1024 )); then
-        # Convertir l'espace en GiB
-        local space_in_gib=$(echo "scale=2; $space / 1024" | bc)
-        echo "${space_in_gib} GiB"
-    else
-        # Si l'espace est inférieur à 1 GiB, afficher en MiB
-        echo "${space} MiB"
-    fi
-}
 
 disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
 disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
@@ -227,12 +168,6 @@ fi
 ## Création des partitions                                                     
 ##############################################################################
 
-
-
-# Vérification de l'espace disponible sur le disque
-# available_space=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-# echo "Espace total disponible sur $disk : $available_space"
-
 # Créer la table de partition GPT
 parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
 
@@ -268,4 +203,8 @@ for partition in "${selected_partitions[@]}"; do
     start="$end"
     ((partition_number++))
 done
+
+# Afficher le disk partitionné
+log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
+parted /dev/$disk print
 
