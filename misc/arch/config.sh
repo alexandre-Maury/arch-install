@@ -6,13 +6,6 @@
 # https://sharafat.pages.dev/archlinux-install/
 # https://chadymorra.github.io/
 
-# Détection automatique du mode de démarrage
-if [ -d /sys/firmware/efi ]; then
-    MODE="UEFI"
-else
-    MODE="BIOS"
-fi
-
 # Configuration générale
 FILE_SWAP="Off"              # Fichier de mémoire virtuelle
 

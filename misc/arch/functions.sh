@@ -2,6 +2,13 @@
 
 # script functions.sh
 
+# Détection automatique du mode de démarrage
+if [ -d /sys/firmware/efi ]; then
+    MODE="UEFI"
+else
+    MODE="BIOS"
+fi
+
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
     local log_level="$1" # INFO - WARNING - ERROR - SUCCESS
@@ -106,7 +113,8 @@ format_disk() {
 
     local status=$1
 
-    echo "Status : $status"
+    log_prompt "INFO" && echo "$status" && echo ""
+
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"

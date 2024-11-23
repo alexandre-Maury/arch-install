@@ -70,6 +70,10 @@ if [ -z "$partitions" ]; then
     ## Disque vierge - Sélection des partitions                                                     
     ##############################################################################
 
+    # TODO: Implémenter cette partie plus tard
+    # Cette section de code n'est pas terminée, elle nécessite encore du travail.
+    # Ex. formatage des partitions 
+
     echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
@@ -219,31 +223,8 @@ else
 
     echo "$(format_disk 'Le disque est déja partitionné' )"
 
-    # echo "Status : Le disque est déja partitionné"
-    # echo "Device : /dev/$disk"
-    # echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
-    # echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
-    # echo -e "\nInformations des partitions :"
-    # echo "----------------------------------------"
-    
-    # # Définition des colonnes à afficher
-    # columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
-    
-    # # En-tête
-    # printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-    #        "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
-    # echo "----------------------------------------"
-    
-    # # Affiche les informations de chaque partition
-    # while read -r partition; do
-    #     if [ -b "/dev/$partition" ]; then
-    #         lsblk "/dev/$partition" -n -o "$columns" | \
-    #             awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
-    #     fi
-    # done <<< "$partitions"
-    
-    # # Résumé
-    # echo -e "\nRésumé :"
-    # echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
-    # echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    # TODO: Implémenter cette partie plus tard
+    # Cette section de code n'est pas terminée, elle nécessite encore du travail.
+    # Ex. formatage d'une partition en particulier pour réinstallation du systeme
+
 fi
