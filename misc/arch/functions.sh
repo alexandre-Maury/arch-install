@@ -122,7 +122,7 @@ format_disk() {
     echo "----------------------------------------"
     
     # Définition des colonnes à afficher
-    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
+    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,UUID"
     
     # En-tête
     printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
@@ -132,8 +132,28 @@ format_disk() {
     # Affiche les informations de chaque partition
     while read -r partition; do
         if [ -b "/dev/$partition" ]; then
-            lsblk "/dev/$partition" -n -o "$columns" | \
-                awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
+            # Récupérer les informations de la partition
+            partition_info=$(lsblk "/dev/$partition" -n -o "$columns")
+            
+            # Remplacer les champs vides par [ vide ]
+            partition_name=$(echo "$partition_info" | awk '{print $1}')
+            partition_size=$(echo "$partition_info" | awk '{print $2}')
+            partition_fstype=$(echo "$partition_info" | awk '{print $3}')
+            partition_label=$(echo "$partition_info" | awk '{print $4}')
+            partition_mountpoint=$(echo "$partition_info" | awk '{print $5}')
+            partition_uuid=$(echo "$partition_info" | awk '{print $6}')
+            
+            # Remplacer par "[ vide ]" si les champs sont vides
+            [ -z "$partition_name" ] && partition_name="[ vide ]"
+            [ -z "$partition_size" ] && partition_size="[ vide ]"
+            [ -z "$partition_fstype" ] && partition_fstype="[ vide ]"
+            [ -z "$partition_label" ] && partition_label="[ vide ]"
+            [ -z "$partition_mountpoint" ] && partition_mountpoint="[ vide ]"
+            [ -z "$partition_uuid" ] && partition_uuid="[ vide ]"
+            
+            # Afficher les informations de la partition avec les champs modifiés
+            printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+                "$partition_name" "$partition_size" "$partition_fstype" "$partition_label" "$partition_mountpoint" "$partition_uuid"
         fi
     done <<< "$partitions"
     
