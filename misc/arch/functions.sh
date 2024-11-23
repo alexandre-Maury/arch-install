@@ -192,7 +192,7 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                umount "/dev/${part##*/}" 2>/dev/null
+                umount "/dev/${part##*/}" 
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors du démontage de /dev/${part##*/}"
                 fi
@@ -211,7 +211,7 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                swapoff "/dev/${part##*/}" 2>/dev/null
+                swapoff "/dev/${part##*/}" 
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/${part##*/}"
                 fi
