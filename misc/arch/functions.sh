@@ -112,7 +112,7 @@ format_space() {
 format_disk() {
 
     local status="$1"
-    local partitions=($2)  
+    local partitions=($2)
     local disk="$3"
 
     log_prompt "INFO" && echo "$status" && echo ""
@@ -132,19 +132,23 @@ format_disk() {
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
-        lsblk "/dev/$partition" -n -o "$columns" | \
-        awk '{
-            # Stockage des valeurs avec gestion des champs vides
-            p1 = ($1 == "" ? "[vide]" : $1)
-            p2 = ($2 == "" ? "[vide]" : $2)
-            p3 = ($3 == "" ? "[vide]" : $3)
-            p4 = ($4 == "" ? "[vide]" : $4)
-            p5 = ($5 == "" ? "[vide]" : $5)
-            p6 = ($6 == "" ? "[vide]" : $6)
+        if [ -b "/dev/$partition" ]; then
+            # Extraire les informations pour chaque partition
+            # Nous allons nous assurer que les colonnes sont correctement extraites
+            lsblk "/dev/$partition" -n -o "$columns" | \
+            awk '{
+                # Traitement des valeurs avec gestion des champs vides
+                p1 = ($1 == "" ? "[vide]" : $1)          # PARTITION
+                p2 = ($2 == "" ? "[vide]" : $2)          # TAILLE
+                p3 = ($3 == "" ? "[vide]" : $3)          # TYPE FS
+                p4 = ($4 == "" ? "[vide]" : $4)          # LABEL
+                p5 = ($5 == "" ? "[vide]" : $5)          # POINT MONT.
+                p6 = ($6 == "" ? "[vide]" : $6)          # UUID
                 
-            # Affichage formaté
-            printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
-        }'
+                # Affichage formaté
+                printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
+            }'
+        fi
     done
 
     # Résumé
@@ -152,6 +156,7 @@ format_disk() {
     echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
     echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 }
+
 
 # Fonction pour effacer tout le disque
 erase_disk() {
