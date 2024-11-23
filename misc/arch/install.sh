@@ -49,18 +49,12 @@ while [[ -z "$(echo "${list}" | grep "  ${option})")" ]]; do
     fi
 done
 
-# Vérifier le type de disque (SATA ou NVMe)
-if [[ "$disk" =~ ^nvme ]]; then
-    partition_prefix="p"   # Format pour NVMe, ex: nvme0n1
-fi
-
 clear
 
 
 ##############################################################################
 ## Sélection & Création des partitions                                                     
 ##############################################################################
-
 partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
 
 # Vérifie si des partitions existent
@@ -179,6 +173,13 @@ if [ -z "$partitions" ]; then
     start="1MiB"
     partition_number=1
 
+    # Pour les disques NVMe, ajouter un préfixe "p"
+    if [[ "$disk_type" == "nvme" ]]; then
+        partition_prefix="p"
+    else
+        partition_prefix=""
+    fi
+
     for partition in "${selected_partitions[@]}"; do
         IFS=':' read -r name type size <<< "$partition"
         
@@ -196,12 +197,27 @@ if [ -z "$partitions" ]; then
         fi
 
         # Créer la partition avec parted
+        partition_device="/dev/${disk}${partition_prefix}${partition_number}"
         parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
 
         # Définir des options supplémentaires selon le type de partition
         case "$name" in
             "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
             "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
+        esac
+
+        # Formater la partition
+        case "$type" in
+            "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
+            "ext3")  mkfs.ext3 -F -L "$name" "$partition_device" ;;
+            "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
+            "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
+            "fat32") mkfs.fat -F 32 -n "$name" "$partition_device" ;;
+            "ntfs")  mkfs.ntfs -F -L "$name" "$partition_device" ;;
+            *)
+                echo "Erreur: Système de fichiers non supporté: $type" >&2
+                continue
+                ;;
         esac
 
         # Mise à jour de la position de départ pour la prochaine partition
@@ -213,7 +229,7 @@ if [ -z "$partitions" ]; then
     ## Disque vierge - Formatage des partitions                                                     
     ##############################################################################
 
-    
+
 
 
 
