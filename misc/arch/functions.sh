@@ -110,7 +110,11 @@ format_space() {
 
 # Fonction pour afficher les informations des partitions
 format_disk() {
+
     local status=$1
+    local partitions="$2"
+    
+
     log_prompt "INFO" && echo "$status" && echo ""
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
@@ -150,4 +154,44 @@ format_disk() {
     echo -e "\nRésumé :"
     echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
     echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+}
+
+# Fonction pour effacer tout le disque
+erase_disk() {
+
+    local disk="$1"
+    
+    # Vérifier si des partitions sont montées
+    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | grep -v "\[SWAP\]")
+    if [ -n "$mounted_parts" ]; then
+        echo "ATTENTION: Certaines partitions sont montées :"
+        echo "$mounted_parts"
+        echo -n "Voulez-vous les démonter ? (oui/non) : "
+        read -r response
+        if [ "$response" = "oui" ]; then
+            while read -r part _; do
+                umount "/dev/${part##*/}" 2>/dev/null
+            done <<< "$mounted_parts"
+        else
+            echo "Opération annulée"
+            return 1
+        fi
+    fi
+
+    echo "ATTENTION: Vous êtes sur le point d'effacer TOUT le disque /dev/$disk"
+    echo "Cette opération est IRRÉVERSIBLE !"
+    echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
+    echo -n "Êtes-vous vraiment sûr ? (tapez 'EFFACER TOUT' pour confirmer) : "
+    read -r confirm
+
+    if [ "$confirm" = "EFFACER TOUT" ]; then
+        echo "Effacement du disque /dev/$disk en cours..."
+        # Utilisation de dd pour effacer le disque
+        dd if=/dev/zero of="/dev/$disk" bs=4M status=progress
+        sync
+        echo "Effacement terminé"
+    else
+        echo "Opération annulée"
+        return 1
+    fi
 }

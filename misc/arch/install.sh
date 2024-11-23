@@ -229,7 +229,7 @@ if [ -z "$partitions" ]; then
     done
 
     partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
-    echo "$(format_disk 'Le disque est partitionné' )"
+    echo "$(format_disk 'Le disque est partitionné' $partitions)"
 
 else
 
@@ -237,11 +237,50 @@ else
     ## Disque partitionné - Affichage des partitions                                                     
     ##############################################################################
 
-    echo "$(format_disk 'Le disque est déja partitionné' )"
-
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
     # Ex. formatage d'une partition en particulier pour réinstallation du systeme
+
+    echo "$(format_disk 'Le disque est déja partitionné' $partitions)"
+    echo ""
+
+    # Afficher le menu
+    while true; do
+
+        log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
+
+        echo "1) Effacer tout le disque /dev/$disk"
+        echo "2) Effacer une partition spécifique"
+        echo "3) Annuler"
+        echo
+
+        log_prompt "INFO" && read -p "Votre Choix (1-3) " choice 
+
+        case $choice in
+            1)
+                erase_disk "$disk"
+                break
+                ;;
+            2)
+                list_partitions "$disk"
+                echo -n "Entrez le nom de la partition à effacer (ex: sda1) : "
+                read -r partition
+                if [ -b "/dev/$partition" ]; then
+                    erase_partition "$partition"
+                else
+                    echo "Partition invalide !"
+                fi
+                break
+                ;;
+            3)
+                echo "Opération annulée"
+                exit 0
+                ;;
+            *)
+                echo "Choix invalide"
+                ;;
+        esac
+    done
 
 
 fi
