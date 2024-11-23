@@ -168,10 +168,23 @@ format_disk() {
 erase_disk() {
 
     local disk="$1"
-    
-    # Vérifier si des partitions sont montées
+
+    # Vérifier si l'utilisateur est root
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Vous devez être root pour effectuer cette opération."
+        return 1
+    fi
+
+    # Vérifier si le disque existe
+    if [ ! -e "/dev/$disk" ]; then
+        echo "Erreur : Le disque /dev/$disk n'existe pas."
+        return 1
+    fi
+
+    # Vérifier si des partitions sont montées (y compris swap)
     local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | grep -v "\[SWAP\]")
-    
+    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep "\[SWAP\]")
+
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
         echo "$mounted_parts"
@@ -180,7 +193,29 @@ erase_disk() {
         if [ "$response" = "oui" ]; then
             while read -r part _; do
                 umount "/dev/${part##*/}" 2>/dev/null
+                if [ $? -ne 0 ]; then
+                    echo "Erreur lors du démontage de /dev/${part##*/}"
+                fi
             done <<< "$mounted_parts"
+        else
+            echo "Opération annulée"
+            return 1
+        fi
+    fi
+
+    # Désactiver les partitions swap
+    if [ -n "$swap_parts" ]; then
+        echo "ATTENTION: Certaines partitions swap sont activées :"
+        echo "$swap_parts"
+        echo -n "Voulez-vous désactiver les partitions swap ? (oui/non) : "
+        read -r response
+        if [ "$response" = "oui" ]; then
+            while read -r part _; do
+                swapoff "/dev/${part##*/}" 2>/dev/null
+                if [ $? -ne 0 ]; then
+                    echo "Erreur lors de la désactivation de /dev/${part##*/}"
+                fi
+            done <<< "$swap_parts"
         else
             echo "Opération annulée"
             return 1
@@ -195,12 +230,20 @@ erase_disk() {
 
     if [ "$confirm" = "EFFACER TOUT" ]; then
         echo "Effacement du disque /dev/$disk en cours..."
-        # Utilisation de dd pour effacer le disque
-        dd if=/dev/zero of="/dev/$disk" bs=4M status=progress
-        sync
-        echo "Effacement terminé"
+
+        # Effacement pour les disques SSD (si applicable)
+        if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
+            blkdiscard "/dev/$disk"
+            echo "Effacement SSD avec blkdiscard terminé."
+        else
+            # Utilisation de dd pour effacer le disque
+            dd if=/dev/zero of="/dev/$disk" bs=4M status=progress
+            sync
+            echo "Effacement du disque terminé"
+        fi
     else
         echo "Opération annulée"
         return 1
     fi
 }
+
