@@ -182,6 +182,7 @@ erase_disk() {
     fi
 
     # Vérifier si des partitions sont montées, y compris les partitions swap
+    # Récupérer les partitions et points de montage
     local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$")
 
     # Liste des partitions swap
@@ -193,11 +194,11 @@ erase_disk() {
         echo -n "Voulez-vous les démonter ? (oui/non) : "
         read -r response
         if [ "$response" = "oui" ]; then
+            # Utilisation d'un while pour traiter les partitions montées
             while read -r part mountpoint; do
-                # Si un point de montage est trouvé, démonter
                 if [ -n "$mountpoint" ]; then
                     echo "Démontage de /dev/$part"
-                    umount "/dev/$part" 
+                    umount "/dev/$part" 2>/dev/null
                     if [ $? -ne 0 ]; then
                         echo "Erreur lors du démontage de /dev/$part"
                     fi
@@ -218,7 +219,8 @@ erase_disk() {
         if [ "$response" = "oui" ]; then
             while read -r part _; do
                 # Désactiver la partition swap
-                swapoff "/dev/$part" 
+                echo "Désactivation de /dev/$part"
+                swapoff "/dev/$part" 2>/dev/null
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/$part"
                 fi
@@ -237,7 +239,7 @@ erase_disk() {
 
     if [ "$confirm" = "EFFACER TOUT" ]; then
         echo "Effacement du disque /dev/$disk en cours..."
-
+        
         # Effacement pour les disques SSD (si applicable)
         if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
             blkdiscard "/dev/$disk"
@@ -253,6 +255,7 @@ erase_disk() {
         return 1
     fi
 }
+
 
 
 
