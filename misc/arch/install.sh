@@ -191,25 +191,50 @@ done
 log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
 parted /dev/$disk print
 
-# Définition des colonnes à afficher
-columns="NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT,TYPE,STATE,OWNER,GROUP,MODE"
-
-# Affiche les informations du disque
-echo "=== Information détaillée du disque /dev/$disk ==="
-lsblk "/dev/$disk" -n -o "$columns"
+##############################################################################
+## Partitions déja créer                                                     
+##############################################################################
 
 # Récupère les partitions du disque
 partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
-# Affiche les informations détaillées pour chaque partition
-echo -e "\n=== Détails des partitions ==="
-while read -r partition; do
-    if [ -b "/dev/$partition" ]; then
-        echo -e "\nPartition: /dev/$partition"
-        lsblk "/dev/$partition" -n -o "$columns" | column -t
+# Fonction pour obtenir la taille totale formatée
+get_disk_size() {
+    lsblk -n -o SIZE "/dev/$disk" | head -1
+}
 
-        # Affiche des informations supplémentaires si disponibles
-        echo "UUID complet: $(blkid -s UUID -o value "/dev/$partition" 2>/dev/null)"
-        echo "Type de partition: $(blkid -s TYPE -o value "/dev/$partition" 2>/dev/null)"
-    fi
-done <<< "$partitions"
+# Vérifie si des partitions existent
+if [ -z "$partitions" ]; then
+    echo "Status : Disque vierge"
+    echo "Device : /dev/$disk"
+    echo "Taille : $(get_disk_size)"
+    echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+else
+    echo "Status : Partitionné"
+    echo "Device : /dev/$disk"
+    echo "Taille : $(get_disk_size)"
+    echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+    echo -e "\nInformations des partitions :"
+    echo "----------------------------------------"
+    
+    # Définition des colonnes à afficher
+    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
+    
+    # En-tête
+    printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+           "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+    echo "----------------------------------------"
+    
+    # Affiche les informations de chaque partition
+    while read -r partition; do
+        if [ -b "/dev/$partition" ]; then
+            lsblk "/dev/$partition" -n -o "$columns" | \
+                awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
+        fi
+    done <<< "$partitions"
+    
+    # Résumé
+    echo -e "\nRésumé :"
+    echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
+    echo "Espace total : $(get_disk_size)"
+fi
