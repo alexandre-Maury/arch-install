@@ -70,7 +70,7 @@ if [ -z "$partitions" ]; then
     ## Disque vierge - Sélection des partitions                                                     
     ##############################################################################
 
-    echo "Status : Disque vierge"
+    echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
     echo "Taille : $(get_disk_size)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
@@ -214,7 +214,7 @@ else
     ## Disque partitionné - Affichage des partitions                                                     
     ##############################################################################
 
-    echo "Status : Partitionné"
+    echo "Status : Le disque est déja partitionné"
     echo "Device : /dev/$disk"
     echo "Taille : $(get_disk_size)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
