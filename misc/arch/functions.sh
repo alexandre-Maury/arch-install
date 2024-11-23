@@ -173,40 +173,42 @@ erase_disk() {
     
     # Gérer les partitions montées (non-swap)
     if [ -n "$mounted_parts" ]; then
-        echo "ATTENTION: Certaines partitions sont montées :"
+        log_prompt "INFO" && echo "ATTENTION: Certaines partitions sont montées :" && echo ""
         echo "$mounted_parts"
-        echo -n "Voulez-vous les démonter ? (oui/non) : "
-        read -r response
-        if [ "$response" = "oui" ]; then
+        echo ""
+        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo ""
+
+        if [[ "$response" =~ ^[yY]$ ]]; then
             while read -r part mountpoint; do
-                echo "Démontage de /dev/$part"
+                log_prompt "INFO" && echo "Démontage de /dev/$part" && echo ""
                 umount "/dev/$part" 
                 if [ $? -ne 0 ]; then
-                    echo "Erreur lors du démontage de /dev/$part"
+                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo ""
                 fi
             done <<< "$mounted_parts"
         else
-            echo "Opération annulée"
+            log_prompt "WARNING" && echo "Opération annulée" && echo ""
             return 1
         fi
     fi
     
     # Gérer les partitions swap séparément
     if [ -n "$swap_parts" ]; then
-        echo "ATTENTION: Certaines partitions swap sont activées :"
+        log_prompt "INFO" && echo "ATTENTION: Certaines partitions swap sont activées :" && echo ""
         echo "$swap_parts"
-        echo -n "Voulez-vous désactiver les partitions swap ? (oui/non) : "
-        read -r response
-        if [ "$response" = "oui" ]; then
+        echo ""
+        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo ""
+
+        if [[ "$response" =~ ^[yY]$ ]]; then
             while read -r part _; do
-                echo "Désactivation de la partition swap /dev/$part"
+                log_prompt "INFO" && echo "Démontage de /dev/$part" && echo ""
                 swapoff "/dev/$part"
                 if [ $? -ne 0 ]; then
-                    echo "Erreur lors de la désactivation de /dev/$part"
+                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo ""
                 fi
             done <<< "$swap_parts"
         else
-            echo "Opération annulée"
+            log_prompt "WARNING" && echo "Opération annulée" && echo ""
             return 1
         fi
     fi
@@ -214,23 +216,24 @@ erase_disk() {
     echo "ATTENTION: Vous êtes sur le point d'effacer TOUT le disque /dev/$disk"
     echo "Cette opération est IRRÉVERSIBLE !"
     echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
-    echo -n "Êtes-vous vraiment sûr ? (tapez 'EFFACER TOUT' pour confirmer) : "
-    read -r confirm
-    if [ "$confirm" = "EFFACER TOUT" ]; then
-        echo "Effacement du disque /dev/$disk en cours..."
+    echo ""
+    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
+
+    if [[ "$response" =~ ^[yY]$ ]]; then
+        log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours..." && echo ""
        
         # Effacement pour les disques SSD (si applicable)
         if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
             blkdiscard "/dev/$disk"
-            echo "Effacement SSD avec blkdiscard terminé."
+            log_prompt "SUCCESS" && echo "Effacement SSD avec blkdiscard terminé." && echo ""
         else
             # Utilisation de dd pour effacer le disque
             dd if=/dev/zero of="/dev/$disk" bs=4M status=progress
             sync
-            echo "Effacement du disque terminé"
+            log_prompt "SUCCESS" && echo "Effacement du disque terminé" && echo ""
         fi
     else
-        echo "Opération annulée"
+        log_prompt "WARNING" && echo "Opération annulée" && echo ""
         return 1
     fi
 }
