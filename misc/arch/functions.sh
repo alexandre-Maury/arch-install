@@ -103,7 +103,10 @@ format_space() {
 }
 
 format_disk() {
-    echo "Status : Le disque est déja partitionné"
+
+    local msg=$1
+
+    echo "Status : $msg"
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"

@@ -209,7 +209,7 @@ if [ -z "$partitions" ]; then
     log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
     # parted /dev/$disk print
 
-    format_disk()
+    echo "$(format_disk 'Le disque est partitionné' )"
 
 else
 
@@ -217,7 +217,7 @@ else
     ## Disque partitionné - Affichage des partitions                                                     
     ##############################################################################
 
-    format_disk()
+    echo "$(format_disk 'Le disque est déja partitionné' )"
 
     # echo "Status : Le disque est déja partitionné"
     # echo "Device : /dev/$disk"
