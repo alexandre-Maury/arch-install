@@ -164,12 +164,21 @@ format_disk() {
 # Fonction pour effacer tout le disque
 erase_disk() {
     local disk="$1"
-
-    # Vérifier si des partitions sont montées, y compris les partitions swap
-    # Récupérer les partitions et points de montage (en ignorant l'en-tête)
-    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | tail -n +2)
-    # Liste des partitions swap (en ignorant l'en-tête)
-    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep "\[SWAP\]" | tail -n +2)
+    # Vérifier si l'utilisateur est root
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "Vous devez être root pour effectuer cette opération."
+        return 1
+    fi
+    # Vérifier si le disque existe
+    if [ ! -e "/dev/$disk" ]; then
+        echo "Erreur : Le disque /dev/$disk n'existe pas."
+        return 1
+    fi
+    
+    # Récupérer les partitions et points de montage en format noheadings et sans caractères de formatage
+    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep -v "^$disk ")
+    # Liste des partitions swap sans formatage
+    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep "\[SWAP\]")
     
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
