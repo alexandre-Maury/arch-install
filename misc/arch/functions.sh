@@ -162,7 +162,6 @@ format_disk() {
 
 
 # Fonction pour effacer tout le disque
-# Fonction pour effacer tout le disque
 erase_disk() {
     local disk="$1"
     
@@ -221,19 +220,15 @@ erase_disk() {
 
     if [[ "$response" =~ ^[yY]$ ]]; then
         log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours ..." && echo ""
-       
-        # Effacement pour les disques SSD (si applicable)
-        if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
-            blkdiscard "/dev/$disk"
-            log_prompt "SUCCESS" && echo "Effacement SSD avec blkdiscard terminé." && echo ""
-        else
-            # Obtenir la taille exacte du disque en blocs
-            local disk_size=$(blockdev --getsz "/dev/$disk")
-            # Utilisation de dd avec la taille exacte du disque
-            dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
-            sync
-            log_prompt "SUCCESS" && echo "Effacement du disque terminé" && echo ""
-        fi
+
+        # Obtenir la taille exacte du disque en blocs
+        local disk_size=$(blockdev --getsz "/dev/$disk")
+        # Utilisation de dd avec la taille exacte du disque
+        dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
+        sync
+
+        log_prompt "SUCCESS" && echo "Effacement du disque terminé" && echo ""
+        
     else
         log_prompt "WARNING" && echo "Opération annulée" && echo ""
         return 1
@@ -242,5 +237,68 @@ erase_disk() {
 
 
 
+# Fonction pour effacer une partition spécifique
+erase_partition() {
+    local partition="$1"
 
+    # Vérifier si la partition existe
+    if [ ! -e "/dev/$partition" ]; then
+        log_prompt "ERROR" && echo "La partition /dev/$partition n'existe pas." && echo ""
+        return 1
+    fi
+
+    # Vérifier si c'est une partition swap
+    if grep -q "/dev/$partition" /proc/swaps; then
+        log_prompt "ERROR" && echo "L'effacement des partitions swap n'est pas autorisé." && echo ""
+        return 1
+    fi
+
+    # Vérifier si c'est une partition boot
+    local mount_point=$(lsblk -no MOUNTPOINT "/dev/$partition" 2>/dev/null)
+    if [[ "$mount_point" == "/boot" || "$mount_point" == "/boot/efi" ]]; then
+        log_prompt "ERROR" && echo "L'effacement des partitions boot n'est pas autorisé." && echo ""
+        return 1
+    fi
+
+    # Vérifier si la partition est montée
+    if mountpoint -q "/dev/$partition" 2>/dev/null || grep -q "^/dev/$partition" /proc/mounts; then
+        log_prompt "INFO" && echo "La partition /dev/$partition est montée !" && echo ""
+
+        log_prompt "INFO" && read -p "Voulez-vous la démonter ? (y/n) : " response && echo ""
+
+        if [[ "$response" =~ ^[yY]$ ]]; then
+            log_prompt "INFO" && echo "Démontage de la partition..." && echo ""
+            umount "/dev/$partition" || {
+                log_prompt "ERROR" && echo "Erreur lors du démontage !" && echo ""
+                return 1
+            }
+        else
+            log_prompt "WARNING" && echo "Opération annulée" && echo ""
+            return 1
+        fi
+    fi
+
+    echo "Vous êtes sur le point d'effacer la partition /dev/$partition"
+    echo "Cette opération est IRRÉVERSIBLE !"
+    echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
+    echo ""
+    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
+
+    if [[ "$response" =~ ^[yY]$ ]]; then
+
+        log_prompt "INFO" && echo "Effacement de la partition /dev/$partition en cours ..." && echo ""
+        
+        # Obtenir la taille exacte de la partition en blocs
+        local part_size=$(blockdev --getsz "/dev/$partition")
+        # Utilisation de dd avec la taille exacte
+        dd if=/dev/zero of="/dev/$partition" bs=512 count=$part_size status=progress
+        sync
+
+        log_prompt "SUCCESS" && echo "Effacement de la partition terminé avec succès" && echo ""
+
+    else
+        log_prompt "WARNING" && echo "Opération annulée" && echo ""
+        return 1
+    fi
+}
 

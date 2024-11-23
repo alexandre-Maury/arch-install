@@ -262,9 +262,7 @@ else
                 break
                 ;;
             2)
-                list_partitions "$disk"
-                echo -n "Entrez le nom de la partition à effacer (ex: sda1) : "
-                read -r partition
+                log_prompt "INFO" && read -p "Entrez le nom de la partition à effacer (ex: sda1) : " partition && echo ""
                 if [ -b "/dev/$partition" ]; then
                     erase_partition "$partition"
                 else
