@@ -112,7 +112,7 @@ format_space() {
 format_disk() {
 
     local status="$1"
-    local partitions=("${2[@]}")
+    local partitions=($2)
     local disk="$3"
 
     

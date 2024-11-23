@@ -229,7 +229,7 @@ if [ -z "$partitions" ]; then
     done
 
     partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
-    echo "$(format_disk 'Le disque est partitionné' $partitions $disk)"
+    echo "$(format_disk "Le disque est partitionné" "$partitions" "$disk")"
 
 else
 
