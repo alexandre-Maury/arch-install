@@ -229,7 +229,7 @@ if [ -z "$partitions" ]; then
     done
 
     partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
-    echo "$(format_disk 'Le disque est partitionné' $partitions)"
+    echo "$(format_disk 'Le disque est partitionné' $partitions $disk)"
 
 else
 
@@ -241,7 +241,7 @@ else
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
     # Ex. formatage d'une partition en particulier pour réinstallation du systeme
 
-    echo "$(format_disk 'Le disque est déja partitionné' $partitions)"
+    echo "$(format_disk 'Le disque est déja partitionné' $partitions $disk)"
     echo ""
 
     # Afficher le menu

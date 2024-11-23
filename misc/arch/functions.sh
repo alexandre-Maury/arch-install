@@ -111,8 +111,9 @@ format_space() {
 # Fonction pour afficher les informations des partitions
 format_disk() {
 
-    local status=$1
+    local status="$1"
     local partitions="$2"
+    local disk="$3"
     
 
     log_prompt "INFO" && echo "$status" && echo ""
@@ -163,6 +164,7 @@ erase_disk() {
     
     # Vérifier si des partitions sont montées
     local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | grep -v "\[SWAP\]")
+    
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
         echo "$mounted_parts"
