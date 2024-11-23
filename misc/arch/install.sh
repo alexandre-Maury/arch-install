@@ -149,6 +149,7 @@ if [ -z "$partitions" ]; then
     done
         
     # Afficher les partitions sélectionnées
+    clear
     log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
     for partition in "${selected_partitions[@]}"; do
         IFS=':' read -r name type size <<< "$partition"
@@ -199,12 +200,12 @@ if [ -z "$partitions" ]; then
 
         # Créer la partition avec parted
         partition_device="/dev/${disk}${partition_prefix}${partition_number}"
-        parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+        parted --script -a optimal "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
 
         # Définir des options supplémentaires selon le type de partition
         case "$name" in
-            "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
-            "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
+            "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
+            "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
         esac
 
         # Formater la partition
@@ -213,8 +214,9 @@ if [ -z "$partitions" ]; then
             "ext3")  mkfs.ext3 -F -L "$name" "$partition_device" ;;
             "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
             "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-            "fat32") mkfs.fat -F 32 -n "$name" "$partition_device" ;;
+            "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
             "ntfs")  mkfs.ntfs -F -L "$name" "$partition_device" ;;
+            "linux-swap")  mkswap -L "$name" "$partition_device" || { echo "Erreur lors de la création de la partition swap"; exit 1; } && swapon "$partition_device" || { echo "Erreur lors de l'activation de la partition swap"; exit 1; } ;;
             *)
                 echo "Erreur: Système de fichiers non supporté: $type" >&2
                 continue
