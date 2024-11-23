@@ -66,7 +66,7 @@ if [ -z "$partitions" ]; then
 
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
-    # Ex. formatage des partitions 
+    # Ex. formatage des partitions ==> OK (test à effectuer)
 
     echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
@@ -224,16 +224,6 @@ if [ -z "$partitions" ]; then
         start="$end"
         ((partition_number++))
     done
-
-    ##############################################################################
-    ## Disque vierge - Formatage des partitions                                                     
-    ##############################################################################
-
-
-
-
-
-
 
     log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
     echo "$(format_disk 'Le disque est partitionné' )"
