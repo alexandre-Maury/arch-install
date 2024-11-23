@@ -112,7 +112,7 @@ format_space() {
 format_disk() {
 
     local status="$1"
-    local partitions=($2)
+    local partitions=($2)  # Transformation en tableau (enlever les "${2[@]}" et utiliser juste $2)
     local disk="$3"
 
     log_prompt "INFO" && echo "$status" && echo ""
@@ -133,21 +133,20 @@ format_disk() {
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
         if [ -b "/dev/$partition" ]; then
-            # Extraire les informations pour chaque partition
-            # Nous allons nous assurer que les colonnes sont correctement extraites
-            lsblk "/dev/$partition" -n -o "$columns" | \
-            awk '{
-                # Traitement des valeurs avec gestion des champs vides
-                p1 = ($1 == "" ? "[vide]" : $1)          # PARTITION
-                p2 = ($2 == "" ? "[vide]" : $2)          # TAILLE
-                p3 = ($3 == "" ? "[vide]" : $3)          # TYPE FS
-                p4 = ($4 == "" ? "[vide]" : $4)          # LABEL
-                p5 = ($5 == "" ? "[vide]" : $5)          # POINT MONT.
-                p6 = ($6 == "" ? "[vide]" : $6)          # UUID
-                
+            # Extraire les informations de chaque partition
+            # Nous allons traiter les colonnes séparément et gérer les espaces
+            while IFS=" " read -r name size fstype label mountpoint uuid; do
+                # Gestion des valeurs vides pour chaque champ
+                name=${name:-"[vide]"}
+                size=${size:-"[vide]"}
+                fstype=${fstype:-"[vide]"}
+                label=${label:-"[vide]"}
+                mountpoint=${mountpoint:-"[vide]"}
+                uuid=${uuid:-"[vide]"}
+
                 # Affichage formaté
-                printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
-            }'
+                printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$name" "$size" "$fstype" "$label" "$mountpoint" "$uuid"
+            done < <(lsblk "/dev/$partition" -n -o "$columns")
         fi
     done
 
@@ -156,6 +155,7 @@ format_disk() {
     echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
     echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 }
+
 
 
 # Fonction pour effacer tout le disque
