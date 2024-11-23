@@ -110,53 +110,42 @@ format_space() {
 
 # Fonction pour afficher les informations des partitions
 format_disk() {
-
     local status=$1
-
     log_prompt "INFO" && echo "$status" && echo ""
-
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
-    echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+    echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
     echo -e "\nInformations des partitions :"
     echo "----------------------------------------"
-    
+
     # Définition des colonnes à afficher
     columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,UUID"
-    
+
     # En-tête
     printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-           "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+        "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
     echo "----------------------------------------"
-    
+
     # Affiche les informations de chaque partition
     while read -r partition; do
         if [ -b "/dev/$partition" ]; then
-            # Récupérer les informations de la partition
-            partition_info=$(lsblk "/dev/$partition" -n -o "$columns")
-            
-            # Remplacer les champs vides par [ vide ]
-            partition_name=$(echo "$partition_info" | awk '{print $1}')
-            partition_size=$(echo "$partition_info" | awk '{print $2}')
-            partition_fstype=$(echo "$partition_info" | awk '{print $3}')
-            partition_label=$(echo "$partition_info" | awk '{print $4}')
-            partition_mountpoint=$(echo "$partition_info" | awk '{print $5}')
-            partition_uuid=$(echo "$partition_info" | awk '{print $6}')
-            
-            # Remplacer par "[ vide ]" si les champs sont vides
-            [ -z "$partition_name" ] && partition_name="[ vide ]"
-            [ -z "$partition_size" ] && partition_size="[ vide ]"
-            [ -z "$partition_fstype" ] && partition_fstype="[ vide ]"
-            [ -z "$partition_label" ] && partition_label="[ vide ]"
-            [ -z "$partition_mountpoint" ] && partition_mountpoint="[ vide ]"
-            [ -z "$partition_uuid" ] && partition_uuid="[ vide ]"
-            
-            # Afficher les informations de la partition avec les champs modifiés
-            printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-                "$partition_name" "$partition_size" "$partition_fstype" "$partition_label" "$partition_mountpoint" "$partition_uuid"
+            lsblk "/dev/$partition" -n -o "$columns" | \
+            awk '{
+                # Stockage des valeurs avec gestion des champs vides
+                p1 = ($1 == "" ? "[vide]" : $1)
+                p2 = ($2 == "" ? "[vide]" : $2)
+                p3 = ($3 == "" ? "[vide]" : $3)
+                p4 = ($4 == "" ? "[vide]" : $4)
+                p5 = ($5 == "" ? "[vide]" : $5)
+                p6 = ($6 == "" ? "[vide]" : $6)
+                
+                # Affichage formaté
+                printf "%-10s %-10s %-10s %-15s %-15s %s\n", 
+                    p1, p2, p3, p4, p5, p6
+            }'
         fi
     done <<< "$partitions"
-    
+
     # Résumé
     echo -e "\nRésumé :"
     echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
