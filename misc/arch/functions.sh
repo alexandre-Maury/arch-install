@@ -161,44 +161,26 @@ format_disk() {
 }
 
 
-
-
-
 # Fonction pour effacer tout le disque
 erase_disk() {
-
     local disk="$1"
 
-    # Vérifier si l'utilisateur est root
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "Vous devez être root pour effectuer cette opération."
-        return 1
-    fi
-
-    # Vérifier si le disque existe
-    if [ ! -e "/dev/$disk" ]; then
-        echo "Erreur : Le disque /dev/$disk n'existe pas."
-        return 1
-    fi
-
     # Vérifier si des partitions sont montées, y compris les partitions swap
-    # Récupérer les partitions et points de montage
-    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$")
-
-    # Liste des partitions swap
-    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep "\[SWAP\]")
-
+    # Récupérer les partitions et points de montage (en ignorant l'en-tête)
+    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | tail -n +2)
+    # Liste des partitions swap (en ignorant l'en-tête)
+    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep "\[SWAP\]" | tail -n +2)
+    
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
         echo "$mounted_parts"
         echo -n "Voulez-vous les démonter ? (oui/non) : "
         read -r response
         if [ "$response" = "oui" ]; then
-            # Utilisation d'un while pour traiter les partitions montées
             while read -r part mountpoint; do
                 if [ -n "$mountpoint" ]; then
                     echo "Démontage de /dev/$part"
-                    umount "/dev/$part" 2>/dev/null
+                    umount "/dev/$part" 
                     if [ $? -ne 0 ]; then
                         echo "Erreur lors du démontage de /dev/$part"
                     fi
@@ -209,7 +191,7 @@ erase_disk() {
             return 1
         fi
     fi
-
+    
     # Désactiver les partitions swap
     if [ -n "$swap_parts" ]; then
         echo "ATTENTION: Certaines partitions swap sont activées :"
@@ -218,9 +200,8 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                # Désactiver la partition swap
                 echo "Désactivation de /dev/$part"
-                swapoff "/dev/$part" 2>/dev/null
+                swapoff "/dev/$part" 
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/$part"
                 fi
@@ -230,16 +211,15 @@ erase_disk() {
             return 1
         fi
     fi
-
+    
     echo "ATTENTION: Vous êtes sur le point d'effacer TOUT le disque /dev/$disk"
     echo "Cette opération est IRRÉVERSIBLE !"
     echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
     echo -n "Êtes-vous vraiment sûr ? (tapez 'EFFACER TOUT' pour confirmer) : "
     read -r confirm
-
     if [ "$confirm" = "EFFACER TOUT" ]; then
         echo "Effacement du disque /dev/$disk en cours..."
-        
+       
         # Effacement pour les disques SSD (si applicable)
         if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
             blkdiscard "/dev/$disk"
