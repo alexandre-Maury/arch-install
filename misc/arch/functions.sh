@@ -181,9 +181,11 @@ erase_disk() {
         return 1
     fi
 
-    # Vérifier si des partitions sont montées (y compris swap)
-    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | grep -v "\[SWAP\]")
-    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep "\[SWAP\]")
+    # Vérifier si des partitions sont montées, y compris les partitions swap
+    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$")
+
+    # Liste des partitions swap
+    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep "\[SWAP\]")
 
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
@@ -192,7 +194,7 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part mountpoint; do
-                # Vérifier si le point de montage est spécifié avant d'appeler umount
+                # Si un point de montage est trouvé, démonter
                 if [ -n "$mountpoint" ]; then
                     echo "Démontage de /dev/$part"
                     umount "/dev/$part" 
@@ -215,7 +217,7 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                # Vérifier si la partition swap est activée et la désactiver
+                # Désactiver la partition swap
                 swapoff "/dev/$part" 
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/$part"
@@ -251,6 +253,7 @@ erase_disk() {
         return 1
     fi
 }
+
 
 
 
