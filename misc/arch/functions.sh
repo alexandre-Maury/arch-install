@@ -162,24 +162,16 @@ format_disk() {
 
 
 # Fonction pour effacer tout le disque
+# Fonction pour effacer tout le disque
 erase_disk() {
     local disk="$1"
-    # Vérifier si l'utilisateur est root
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "Vous devez être root pour effectuer cette opération."
-        return 1
-    fi
-    # Vérifier si le disque existe
-    if [ ! -e "/dev/$disk" ]; then
-        echo "Erreur : Le disque /dev/$disk n'existe pas."
-        return 1
-    fi
     
-    # Récupérer les partitions et points de montage en format noheadings et sans caractères de formatage
-    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep -v "^$disk ")
-    # Liste des partitions swap sans formatage
+    # Récupérer les partitions montées (non-swap)
+    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep -v "\[SWAP\]" | grep -v "^$disk " | grep -v " $")
+    # Liste des partitions swap
     local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep "\[SWAP\]")
     
+    # Gérer les partitions montées (non-swap)
     if [ -n "$mounted_parts" ]; then
         echo "ATTENTION: Certaines partitions sont montées :"
         echo "$mounted_parts"
@@ -187,12 +179,10 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part mountpoint; do
-                if [ -n "$mountpoint" ]; then
-                    echo "Démontage de /dev/$part"
-                    umount "/dev/$part" 
-                    if [ $? -ne 0 ]; then
-                        echo "Erreur lors du démontage de /dev/$part"
-                    fi
+                echo "Démontage de /dev/$part"
+                umount "/dev/$part" 
+                if [ $? -ne 0 ]; then
+                    echo "Erreur lors du démontage de /dev/$part"
                 fi
             done <<< "$mounted_parts"
         else
@@ -201,7 +191,7 @@ erase_disk() {
         fi
     fi
     
-    # Désactiver les partitions swap
+    # Gérer les partitions swap séparément
     if [ -n "$swap_parts" ]; then
         echo "ATTENTION: Certaines partitions swap sont activées :"
         echo "$swap_parts"
@@ -209,8 +199,8 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                echo "Désactivation de /dev/$part"
-                swapoff "/dev/$part" 
+                echo "Désactivation de la partition swap /dev/$part"
+                swapoff "/dev/$part"
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/$part"
                 fi
