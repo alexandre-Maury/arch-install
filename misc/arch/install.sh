@@ -134,6 +134,7 @@ if [ -z "$partitions" ]; then
         if [[ "$custom_size" == "100%" ]]; then
             # La partition prend tout l'espace restant
             size_in_miB=$remaining_space
+            break  # Sortir de la boucle une fois qu'une partition de 100% est ajoutée
         else
             # Convertir la taille de la partition en MiB
             size_in_miB=$(convert_to_mib "$custom_size")
