@@ -254,7 +254,7 @@ else
         echo "3) Annuler"
         echo
 
-        log_prompt "INFO" && read -p "Votre Choix (1-3) " choice 
+        log_prompt "INFO" && read -p "Votre Choix (1-3) " choice && echo "" 
 
         case $choice in
             1)

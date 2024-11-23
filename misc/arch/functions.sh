@@ -220,15 +220,17 @@ erase_disk() {
     log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
 
     if [[ "$response" =~ ^[yY]$ ]]; then
-        log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours..." && echo ""
+        log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours ..." && echo ""
        
         # Effacement pour les disques SSD (si applicable)
         if lsblk "/dev/$disk" -o TRAN | grep -q "usb"; then
             blkdiscard "/dev/$disk"
             log_prompt "SUCCESS" && echo "Effacement SSD avec blkdiscard terminé." && echo ""
         else
-            # Utilisation de dd pour effacer le disque
-            dd if=/dev/zero of="/dev/$disk" bs=4M status=progress
+            # Obtenir la taille exacte du disque en blocs
+            local disk_size=$(blockdev --getsz "/dev/$disk")
+            # Utilisation de dd avec la taille exacte du disque
+            dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
             sync
             log_prompt "SUCCESS" && echo "Effacement du disque terminé" && echo ""
         fi
