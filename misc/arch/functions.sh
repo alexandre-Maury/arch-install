@@ -134,8 +134,7 @@ format_disk() {
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
         if [ -b "/dev/$partition" ]; then
             # Extraire les informations de chaque partition
-            # Nous allons traiter les colonnes séparément et gérer les espaces
-            while IFS=" " read -r name size fstype label mountpoint uuid; do
+            lsblk "/dev/$partition" -n -o "$columns" | while read -r name size fstype label mountpoint uuid; do
                 # Gestion des valeurs vides pour chaque champ
                 name=${name:-"[vide]"}
                 size=${size:-"[vide]"}
@@ -146,7 +145,7 @@ format_disk() {
 
                 # Affichage formaté
                 printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$name" "$size" "$fstype" "$label" "$mountpoint" "$uuid"
-            done < <(lsblk "/dev/$partition" -n -o "$columns")
+            done
         fi
     done
 
@@ -155,6 +154,7 @@ format_disk() {
     echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
     echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 }
+
 
 
 
