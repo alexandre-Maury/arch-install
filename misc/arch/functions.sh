@@ -169,18 +169,6 @@ erase_disk() {
 
     local disk="$1"
 
-    # Vérifier si l'utilisateur est root
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "Vous devez être root pour effectuer cette opération."
-        return 1
-    fi
-
-    # Vérifier si le disque existe
-    if [ ! -e "/dev/$disk" ]; then
-        echo "Erreur : Le disque /dev/$disk n'existe pas."
-        return 1
-    fi
-
     # Vérifier si des partitions sont montées (y compris swap)
     local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep -v "^$" | grep -v "\[SWAP\]")
     local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT | grep -v "^$disk " | grep "\[SWAP\]")
@@ -191,10 +179,14 @@ erase_disk() {
         echo -n "Voulez-vous les démonter ? (oui/non) : "
         read -r response
         if [ "$response" = "oui" ]; then
-            while read -r part _; do
-                umount "/dev/${part##*/}" 
-                if [ $? -ne 0 ]; then
-                    echo "Erreur lors du démontage de /dev/${part##*/}"
+            while read -r part mountpoint; do
+                # Vérifier si le point de montage est spécifié avant d'appeler umount
+                if [ -n "$mountpoint" ]; then
+                    echo "Démontage de /dev/${part}"
+                    umount "/dev/${part}"
+                    if [ $? -ne 0 ]; then
+                        echo "Erreur lors du démontage de /dev/${part}"
+                    fi
                 fi
             done <<< "$mounted_parts"
         else
@@ -211,7 +203,7 @@ erase_disk() {
         read -r response
         if [ "$response" = "oui" ]; then
             while read -r part _; do
-                swapoff "/dev/${part##*/}" 
+                swapoff "/dev/${part##*/}"
                 if [ $? -ne 0 ]; then
                     echo "Erreur lors de la désactivation de /dev/${part##*/}"
                 fi
@@ -246,4 +238,5 @@ erase_disk() {
         return 1
     fi
 }
+
 
