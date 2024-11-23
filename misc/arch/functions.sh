@@ -104,9 +104,9 @@ format_space() {
 
 format_disk() {
 
-    local msg=$1
+    local status=$1
 
-    echo "Status : $msg"
+    echo "Status : $status"
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
