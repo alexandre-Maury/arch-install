@@ -241,7 +241,7 @@ else
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
     # Ex. formatage d'une partition en particulier pour réinstallation du systeme
 
-    echo "$(format_disk 'Le disque est déja partitionné' $partitions $disk)"
+    echo "$(format_disk "Le disque est partitionné" "$partitions" "$disk")"
     echo ""
 
     # Afficher le menu
