@@ -112,7 +112,7 @@ format_space() {
 format_disk() {
 
     local status="$1"
-    local partitions=($2)  # Transformation en tableau (enlever les "${2[@]}" et utiliser juste $2)
+    local partitions=($2)  
     local disk="$3"
 
     log_prompt "INFO" && echo "$status" && echo ""
@@ -132,21 +132,19 @@ format_disk() {
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
-        if [ -b "/dev/$partition" ]; then
-            lsblk "/dev/$partition" -n -o "$columns" | \
-            awk '{
-                # Stockage des valeurs avec gestion des champs vides
-                p1 = ($1 == "" ? "[vide]" : $1)
-                p2 = ($2 == "" ? "[vide]" : $2)
-                p3 = ($3 == "" ? "[vide]" : $3)
-                p4 = ($4 == "" ? "[vide]" : $4)
-                p5 = ($5 == "" ? "[vide]" : $5)
-                p6 = ($6 == "" ? "[vide]" : $6)
+        lsblk "/dev/$partition" -n -o "$columns" | \
+        awk '{
+            # Stockage des valeurs avec gestion des champs vides
+            p1 = ($1 == "" ? "[vide]" : $1)
+            p2 = ($2 == "" ? "[vide]" : $2)
+            p3 = ($3 == "" ? "[vide]" : $3)
+            p4 = ($4 == "" ? "[vide]" : $4)
+            p5 = ($5 == "" ? "[vide]" : $5)
+            p6 = ($6 == "" ? "[vide]" : $6)
                 
-                # Affichage formaté
-                printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
-            }'
-        fi
+            # Affichage formaté
+            printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
+        }'
     done
 
     # Résumé
