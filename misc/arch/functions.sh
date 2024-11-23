@@ -112,10 +112,8 @@ format_space() {
 format_disk() {
 
     local status="$1"
-    local partitions=($2)
+    local partitions=($2)  # Transformation en tableau (enlever les "${2[@]}" et utiliser juste $2)
     local disk="$3"
-
-    
 
     log_prompt "INFO" && echo "$status" && echo ""
     echo "Device : /dev/$disk"
@@ -133,7 +131,7 @@ format_disk() {
     echo "----------------------------------------"
 
     # Affiche les informations de chaque partition
-    while read -r partition; do
+    for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
         if [ -b "/dev/$partition" ]; then
             lsblk "/dev/$partition" -n -o "$columns" | \
             awk '{
@@ -146,15 +144,14 @@ format_disk() {
                 p6 = ($6 == "" ? "[vide]" : $6)
                 
                 # Affichage formaté
-                printf "%-10s %-10s %-10s %-15s %-15s %s\n", 
-                    p1, p2, p3, p4, p5, p6
+                printf "%-10s %-10s %-10s %-15s %-15s %s\n", p1, p2, p3, p4, p5, p6
             }'
         fi
-    done <<< "$partitions"
+    done
 
     # Résumé
     echo -e "\nRésumé :"
-    echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
+    echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
     echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 }
 
