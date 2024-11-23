@@ -228,7 +228,7 @@ if [ -z "$partitions" ]; then
         ((partition_number++))
     done
 
-    log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
+    partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
     echo "$(format_disk 'Le disque est partitionné' )"
 
 else
@@ -242,5 +242,6 @@ else
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
     # Ex. formatage d'une partition en particulier pour réinstallation du systeme
+
 
 fi
