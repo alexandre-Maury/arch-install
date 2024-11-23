@@ -209,10 +209,17 @@ if [ -z "$partitions" ]; then
         ((partition_number++))
     done
 
-    # Afficher le disk partitionné
-    log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
-    # parted /dev/$disk print
+    ##############################################################################
+    ## Disque vierge - Formatage des partitions                                                     
+    ##############################################################################
 
+    
+
+
+
+
+
+    log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
     echo "$(format_disk 'Le disque est partitionné' )"
 
 else

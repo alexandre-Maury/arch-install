@@ -93,22 +93,22 @@ get_partition_size() {
     done
 }
 
-# Fonction pour formater l'espace en GiB ou MiB
+# Fonction pour formater la taille d'une partition en GiB ou MiB
 format_space() {
     local space=$1
 
-    # Vérifier si l'espace est en GiB ou MiB
-    # Si l'espace est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
+    # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
     if (( space >= 1024 )); then
-        # Convertir l'espace en GiB
+        # Convertion en GiB
         local space_in_gib=$(echo "scale=2; $space / 1024" | bc)
         echo "${space_in_gib} GiB"
     else
-        # Si l'espace est inférieur à 1 GiB, afficher en MiB
+        # Si la taille est inférieur à 1 GiB, afficher en MiB
         echo "${space} MiB"
     fi
 }
 
+# Fonction pour afficher les informations des partitions
 format_disk() {
 
     local status=$1
