@@ -102,7 +102,32 @@ format_space() {
     fi
 }
 
-# Fonction pour obtenir la taille totale formatée
-get_disk_size() {
-    lsblk -n -o SIZE "/dev/$disk" | head -1
+format_disk() {
+    echo "Status : Le disque est déja partitionné"
+    echo "Device : /dev/$disk"
+    echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+    echo -e "\nInformations des partitions :"
+    echo "----------------------------------------"
+    
+    # Définition des colonnes à afficher
+    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
+    
+    # En-tête
+    printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+           "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+    echo "----------------------------------------"
+    
+    # Affiche les informations de chaque partition
+    while read -r partition; do
+        if [ -b "/dev/$partition" ]; then
+            lsblk "/dev/$partition" -n -o "$columns" | \
+                awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
+        fi
+    done <<< "$partitions"
+    
+    # Résumé
+    echo -e "\nRésumé :"
+    echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
+    echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 }

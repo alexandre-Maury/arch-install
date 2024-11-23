@@ -72,7 +72,7 @@ if [ -z "$partitions" ]; then
 
     echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
-    echo "Taille : $(get_disk_size)"
+    echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
 
     disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
@@ -81,13 +81,14 @@ if [ -z "$partitions" ]; then
     selected_partitions=()
     remaining_types=("${PARTITION_TYPES[@]}")
 
+    echo ""
+
     # Boucle pour configurer les partitions
     while true; do
         # Calculer l'espace restant en MiB
         remaining_space=$((disk_size_mib - used_space))
         
-        # log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
-        echo "Taille du disque : $(get_disk_size)"
+        log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
         log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
         
         # Afficher les types de partitions disponibles
@@ -206,7 +207,9 @@ if [ -z "$partitions" ]; then
 
     # Afficher le disk partitionné
     log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
-    parted /dev/$disk print
+    # parted /dev/$disk print
+
+    format_disk()
 
 else
 
@@ -214,31 +217,33 @@ else
     ## Disque partitionné - Affichage des partitions                                                     
     ##############################################################################
 
-    echo "Status : Le disque est déja partitionné"
-    echo "Device : /dev/$disk"
-    echo "Taille : $(get_disk_size)"
-    echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
-    echo -e "\nInformations des partitions :"
-    echo "----------------------------------------"
+    format_disk()
+
+    # echo "Status : Le disque est déja partitionné"
+    # echo "Device : /dev/$disk"
+    # echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    # echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+    # echo -e "\nInformations des partitions :"
+    # echo "----------------------------------------"
     
-    # Définition des colonnes à afficher
-    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
+    # # Définition des colonnes à afficher
+    # columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,PARTUUID"
     
-    # En-tête
-    printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-           "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
-    echo "----------------------------------------"
+    # # En-tête
+    # printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+    #        "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+    # echo "----------------------------------------"
     
-    # Affiche les informations de chaque partition
-    while read -r partition; do
-        if [ -b "/dev/$partition" ]; then
-            lsblk "/dev/$partition" -n -o "$columns" | \
-                awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
-        fi
-    done <<< "$partitions"
+    # # Affiche les informations de chaque partition
+    # while read -r partition; do
+    #     if [ -b "/dev/$partition" ]; then
+    #         lsblk "/dev/$partition" -n -o "$columns" | \
+    #             awk '{printf "%-10s %-10s %-10s %-15s %-15s %s\n", $1, $2, $3, $4, $5, $6}'
+    #     fi
+    # done <<< "$partitions"
     
-    # Résumé
-    echo -e "\nRésumé :"
-    echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
-    echo "Espace total : $(get_disk_size)"
+    # # Résumé
+    # echo -e "\nRésumé :"
+    # echo "Nombre de partitions : $(echo "$partitions" | wc -l)"
+    # echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
 fi
