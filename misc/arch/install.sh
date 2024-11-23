@@ -56,160 +56,164 @@ fi
 
 clear
 
-##############################################################################
-## Sélection des partitions                                                     
-##############################################################################
-disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
-used_space=0  # Initialiser l'espace utilisé
-selected_partitions=()
-remaining_types=("${PARTITION_TYPES[@]}")
-
-# Boucle pour configurer les partitions
-while true; do
-    # Calculer l'espace restant en MiB
-    remaining_space=$((disk_size_mib - used_space))
-    
-    log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
-    log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-    
-    # Afficher les types de partitions disponibles
-    for i in "${!remaining_types[@]}"; do
-        IFS=':' read -r name type size <<< "${remaining_types[$i]}"
-        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-    done
-
-    echo "0) Terminer la configuration des partitions" && echo ""
-
-    log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
-    
-    # Terminer si l'utilisateur choisit 0
-    if [[ "$choice" -eq 0 ]]; then
-        if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-            log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition." && echo ""
-            continue
-        fi
-        break
-    fi
-        
-    if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-        log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
-        continue
-    fi
-        
-    selected_index=$((choice-1))
-    partition="${remaining_types[$selected_index]}"
-        
-    IFS=':' read -r name type default_size <<< "$partition"
-        
-    # Demander la taille de la partition
-    while true; do
-        custom_size=$(get_partition_size "$default_size")
-        if [[ $? -eq 0 ]]; then
-            break  # La taille est valide, on sort de la boucle
-        else
-            log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
-        fi
-    done
-        
-    selected_partitions+=("$name:$type:$custom_size")
-
-    # Si la taille est "100%", on la considère comme prenant tout l'espace restant
-    if [[ "$custom_size" == "100%" ]]; then
-        # La partition prend tout l'espace restant
-        size_in_miB=$remaining_space
-    else
-        # Convertir la taille de la partition en MiB
-        size_in_miB=$(convert_to_mib "$custom_size")
-    fi
-
-    used_space=$((used_space + size_in_miB))
-    
-    # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
-    remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
-
-    clear
-done
-    
-# Afficher les partitions sélectionnées
-log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
-for partition in "${selected_partitions[@]}"; do
-    IFS=':' read -r name type size <<< "$partition"
-    echo "$name ($type): $size"
-done
-
-echo ""
-
-# Confirmer la création des partitions
-log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
-if [[ "$confirm" != "y" ]]; then
-    echo "Annulation de la création des partitions."
-    exit 1
-fi
 
 ##############################################################################
-## Création des partitions                                                     
+## Sélection & Création des partitions                                                     
 ##############################################################################
 
-# Créer la table de partition GPT
-parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
-
-start="1MiB"
-partition_number=1
-
-for partition in "${selected_partitions[@]}"; do
-    IFS=':' read -r name type size <<< "$partition"
-    
-    if [[ "$size" == "100%" ]]; then
-        # La partition doit prendre tout l'espace restant
-        end="100%"
-    else
-        # Convertir la taille en MiB avant de faire des calculs
-        start_in_miB=$(convert_to_mib "$start")
-        size_in_miB=$(convert_to_mib "$size")
-        
-        # Calculer la fin de la partition en MiB
-        end_in_miB=$(($start_in_miB + $size_in_miB))
-        end="${end_in_miB}MiB"
-    fi
-
-    # Créer la partition avec parted
-    parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
-
-    # Définir des options supplémentaires selon le type de partition
-    case "$name" in
-        "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
-        "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
-    esac
-
-    # Mise à jour de la position de départ pour la prochaine partition
-    start="$end"
-    ((partition_number++))
-done
-
-# Afficher le disk partitionné
-log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
-parted /dev/$disk print
-
-##############################################################################
-## Partitions déja créer                                                     
-##############################################################################
-
-# Récupère les partitions du disque
-partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
-# Fonction pour obtenir la taille totale formatée
-get_disk_size() {
-    lsblk -n -o SIZE "/dev/$disk" | head -1
-}
+partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
 
 # Vérifie si des partitions existent
 if [ -z "$partitions" ]; then
+
+    ##############################################################################
+    ## Disque vierge - Sélection des partitions                                                     
+    ##############################################################################
+
     echo "Status : Disque vierge"
     echo "Device : /dev/$disk"
     echo "Taille : $(get_disk_size)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
+
+    disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
+    disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
+    used_space=0  # Initialiser l'espace utilisé
+    selected_partitions=()
+    remaining_types=("${PARTITION_TYPES[@]}")
+
+    # Boucle pour configurer les partitions
+    while true; do
+        # Calculer l'espace restant en MiB
+        remaining_space=$((disk_size_mib - used_space))
+        
+        # log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
+        echo "Taille du disque : $(get_disk_size)"
+        log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
+        
+        # Afficher les types de partitions disponibles
+        for i in "${!remaining_types[@]}"; do
+            IFS=':' read -r name type size <<< "${remaining_types[$i]}"
+            printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+        done
+
+        echo "0) Terminer la configuration des partitions" && echo ""
+
+        log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
+        
+        # Terminer si l'utilisateur choisit 0
+        if [[ "$choice" -eq 0 ]]; then
+            if [[ ${#selected_partitions[@]} -eq 0 ]]; then
+                log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition." && echo ""
+                continue
+            fi
+            break
+        fi
+            
+        if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
+            log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
+            continue
+        fi
+            
+        selected_index=$((choice-1))
+        partition="${remaining_types[$selected_index]}"
+            
+        IFS=':' read -r name type default_size <<< "$partition"
+            
+        # Demander la taille de la partition
+        while true; do
+            custom_size=$(get_partition_size "$default_size")
+            if [[ $? -eq 0 ]]; then
+                break  # La taille est valide, on sort de la boucle
+            else
+                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+            fi
+        done
+            
+        selected_partitions+=("$name:$type:$custom_size")
+
+        # Si la taille est "100%", on la considère comme prenant tout l'espace restant
+        if [[ "$custom_size" == "100%" ]]; then
+            # La partition prend tout l'espace restant
+            size_in_miB=$remaining_space
+        else
+            # Convertir la taille de la partition en MiB
+            size_in_miB=$(convert_to_mib "$custom_size")
+        fi
+
+        used_space=$((used_space + size_in_miB))
+        
+        # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
+        remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
+
+        clear
+    done
+        
+    # Afficher les partitions sélectionnées
+    log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        echo "$name ($type): $size"
+    done
+
+    echo ""
+
+    # Confirmer la création des partitions
+    log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
+    if [[ "$confirm" != "y" ]]; then
+        echo "Annulation de la création des partitions."
+        exit 1
+    fi
+
+    ##############################################################################
+    ## Disque vierge - Création des partitions                                                     
+    ##############################################################################
+
+    # Créer la table de partition GPT
+    parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
+
+    start="1MiB"
+    partition_number=1
+
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        
+        if [[ "$size" == "100%" ]]; then
+            # La partition doit prendre tout l'espace restant
+            end="100%"
+        else
+            # Convertir la taille en MiB avant de faire des calculs
+            start_in_miB=$(convert_to_mib "$start")
+            size_in_miB=$(convert_to_mib "$size")
+            
+            # Calculer la fin de la partition en MiB
+            end_in_miB=$(($start_in_miB + $size_in_miB))
+            end="${end_in_miB}MiB"
+        fi
+
+        # Créer la partition avec parted
+        parted --script "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+
+        # Définir des options supplémentaires selon le type de partition
+        case "$name" in
+            "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
+            "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
+        esac
+
+        # Mise à jour de la position de départ pour la prochaine partition
+        start="$end"
+        ((partition_number++))
+    done
+
+    # Afficher le disk partitionné
+    log_prompt "SUCCESS" && echo "Disque prêt pour l'installation" && echo ""
+    parted /dev/$disk print
+
 else
+
+    ##############################################################################
+    ## Disque partitionné - Affichage des partitions                                                     
+    ##############################################################################
+
     echo "Status : Partitionné"
     echo "Device : /dev/$disk"
     echo "Taille : $(get_disk_size)"

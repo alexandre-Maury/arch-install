@@ -101,3 +101,8 @@ format_space() {
         echo "${space} MiB"
     fi
 }
+
+# Fonction pour obtenir la taille totale formatée
+get_disk_size() {
+    lsblk -n -o SIZE "/dev/$disk" | head -1
+}
