@@ -90,9 +90,9 @@ if [ -z "$partitions" ]; then
                 log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo ""
                 if [[ "$choice" =~ ^[yY]$ ]]; then
                     erase_disk "$disk"
-                    full_install "$disk" "$PARTITION_TYPES"
+                    full_install "$disk"
                 else
-                    full_install "$disk" "$PARTITION_TYPES"
+                    full_install "$disk"
                 fi
                 break
                 ;;
