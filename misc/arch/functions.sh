@@ -479,3 +479,11 @@ preparation_disk() {
 
 }
 
+mount_disk() {
+    # A venir
+}
+
+install_system() {
+    # A venir
+}
+

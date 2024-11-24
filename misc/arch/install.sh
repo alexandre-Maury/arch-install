@@ -89,11 +89,11 @@ if [ -z "$partitions" ]; then
             1)
                 log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo ""
                 if [[ "$choice" =~ ^[yY]$ ]]; then
-                    erase_disk "$disk"
-                    preparation_disk "$disk"
-                else
-                    preparation_disk "$disk"
+                    erase_disk "$disk"                    
                 fi
+
+                preparation_disk "$disk"
+                
                 break
                 ;;
             2)
