@@ -117,7 +117,7 @@ format_space() {
 show_disk_partitions() {
     
     local status="$1"
-    local partitions=($2)
+    local partitions=("$2")
     local disk="$3"
     local columns
     local NAME
