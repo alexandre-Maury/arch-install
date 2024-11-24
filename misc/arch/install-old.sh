@@ -1,152 +1,135 @@
 #!/bin/bash
 
-# Fonction pour loguer les informations (niveau: INFO, ERROR)
-log_prompt() {
-    local level=$1
-    local message=$2
-    echo "[$level] $message"
-}
+# # Créer un snapshot de @root et le stocker dans @snapshots
+# btrfs subvolume snapshot /mnt/@root /mnt/snapshots/root_snapshot_$(date +%F)
 
-# Configuration des types de partitions disponibles
-PARTITION_TYPES=(
-    "boot:fat32:512M"      # Partition de démarrage (EFI ou BIOS)
-    "swap:linux-swap:4G"   # Partition de mémoire virtuelle 
-    "root:btrfs:100G"      # Partition racine du système
-    "home:btrfs:100%"      # Partition pour les fichiers utilisateur
-)
+# # Vérifier les sous-volumes et snapshots
+# btrfs subvolume list /mnt
 
-# Afficher les types de partitions disponibles
-display_partition_types() {
-    echo "Types de partitions disponibles :"
-    for i in "${!PARTITION_TYPES[@]}"; do
-        IFS=':' read -r name type size <<< "${PARTITION_TYPES[$i]}"
-        printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-    done
-}
+# # Créer un snapshot de @home et le stocker dans @snapshots
+# btrfs subvolume snapshot /mnt/home /mnt/snapshots/home_snapshot_$(date +%F)
 
-# Fonction pour demander à l'utilisateur une taille de partition valide
-get_partition_size() {
-    local default_size=$1
-    while true; do
-        read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
-        custom_size=${custom_size:-$default_size}
-        
-        # Vérification de la validité de la taille (format correct)
-        if [[ "$custom_size" =~ ^[0-9]+(M|G|T|%)$ ]]; then
-            echo "$custom_size"
-            return
-        else
-            echo "Erreur: La taille doit être spécifiée dans le format correct (par exemple 500M, 2G, 100%)."
-        fi
-    done
-}
+# Gérer les snapshots (rollback, suppression, etc.)
 
+# # Rollback (restaurer un snapshot) : Si tu veux revenir à un état antérieur de @root ou @home, tu peux supprimer le sous-volume actuel et restaurer le snapshot à partir de @snapshots.
 
+# # Supprimer le sous-volume actuel
+# btrfs subvolume delete /mnt/@root
 
-# Sélectionner et configurer les partitions
-select_partitions() {
-    local selected_partitions=()
-    local remaining_types=("${PARTITION_TYPES[@]}")
+# # Restaurer le snapshot à partir de @snapshots
+# btrfs subvolume snapshot /mnt/snapshots/root_snapshot_2024-11-24 /mnt/@root
 
-    while true; do
-        display_partition_types
-        echo "0) Terminer la configuration des partitions"
-        read -p "Sélectionnez un type de partition (0 pour terminer) : " choice
-        
-        if [[ "$choice" -eq 0 ]]; then
-            if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-                echo "Erreur: Vous devez sélectionner au moins une partition."
-                continue
-            fi
-            break
-        fi
-        
-        if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-            echo "Sélection invalide, réessayez."
-            continue
-        fi
-        
-        local selected_index=$((choice-1))
-        local partition="${remaining_types[$selected_index]}"
-        
-        IFS=':' read -r name type default_size <<< "$partition"
-        
-        # Demander la taille de partition
-        custom_size=$(get_partition_size "$default_size")
-        
-        selected_partitions+=("$name:$type:$custom_size")
-        unset 'remaining_types[$selected_index]'
-        remaining_types=("${remaining_types[@]}")
-    done
-    
-    echo "Partitions sélectionnées :"
-    for partition in "${selected_partitions[@]}"; do
-        IFS=':' read -r name type size <<< "$partition"
-        echo "$name ($type): $size"
-    done
-    
-    # Confirmer la création des partitions
-    read -p "Confirmer la création des partitions (y/n) : " confirm
-    if [[ "$confirm" != "y" ]]; then
-        echo "Annulation de la création des partitions."
-        exit 1
-    fi
+# Variables de partitionnement
+EFI_PART="/dev/sda1"
+SWAP_PART="/dev/sda2"
+ROOT_PART="/dev/sda3"
+HOME_PART="/dev/sda4"
 
-    echo "$selected_partitions"
-}
+# Nom de l'utilisateur pour Arch Linux (ajustez selon votre cas)
+USERNAME="archuser"
+HOSTNAME="archlinux"
 
-# Créer les partitions sur le disque
-create_partitions() {
-    local disk="$1"
-    local partitions=("$@")
+# Monter la partition EFI
+echo "Montage de la partition EFI..."
+mount $EFI_PART /mnt/boot
 
-    # Vérification de l'espace disponible sur le disque
-    local available_space
-    available_space=$(lsblk -d -o SIZE --noheadings "$disk" | tr -d '[:space:]')
-    echo "Espace total disponible sur $disk : $available_space"
+# Créer la partition /root en Btrfs et monter
+echo "Création du système de fichiers Btrfs sur /dev/sda3..."
+mkfs.btrfs $ROOT_PART
+mount $ROOT_PART /mnt
 
-    parted --script "$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
+# Créer les sous-volumes pour root, home, et les snapshots
+echo "Création des sous-volumes Btrfs..."
+btrfs subvolume create /mnt/@root
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@snapshots
 
-    local start="1MiB"
-    local partition_number=1
-    for partition in "${partitions[@]:1}"; do
-        IFS=':' read -r name type size <<< "$partition"
+# Démonter la partition root
+umount /mnt
 
-        # Calcul de la taille de la partition et fin
-        local end
-        if [[ "$size" == "100%" ]]; then
-            end="100%"
-        else
-            end=$(($(echo "$start" | numfmt --from=iec) + $(echo "$size" | numfmt --from=iec)))
-            end=$(numfmt --to=iec "${end}")
-        fi
+# Monter les sous-volumes
+echo "Montage des sous-volumes..."
+mount -o subvol=@root $ROOT_PART /mnt
+mkdir /mnt/home
+mount -o subvol=@home $ROOT_PART /mnt/home
+mkdir /mnt/snapshots
+mount -o subvol=@snapshots $ROOT_PART /mnt/snapshots
 
-        # Création de la partition
-        parted --script "$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
+# Formatage de la partition swap et activation
+echo "Formatage et activation de la partition swap..."
+mkswap $SWAP_PART
+swapon $SWAP_PART
 
-        case "$name" in
-            "boot") parted --script "$disk" set "$partition_number" esp on ;;
-            "swap") parted --script "$disk" set "$partition_number" swap on ;;
-        esac
+# Installer le système de base
+echo "Installation du système Arch Linux..."
+pacstrap /mnt base base-devel linux linux-firmware btrfs-progs vim sudo git
 
-        start="$end"
-        ((partition_number++))
-    done
-}
+# Générer le fstab
+echo "Génération du fichier fstab..."
+genfstab -U /mnt >> /mnt/etc/fstab
 
-# Fonction principale
-main() {
-    # Sélectionner un disque
-    local disk
-    disk=$(select_disk)
-    
-    # # Sélectionner et configurer les partitions
-    local selected_partitions
-    selected_partitions=$(select_partitions)
-    
-    # # Créer les partitions sur le disque choisi
-    # create_partitions "$disk" $selected_partitions
-}
+# Chroot dans le système
+echo "Chroot dans le système..."
+arch-chroot /mnt /bin/bash <<EOF
 
-# Appel de la fonction principale
-main
+# Configuration de la timezone
+echo "Configuration de la timezone..."
+ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+hwclock --systohc
+
+# Configuration des locales
+echo "Configuration des locales..."
+sed -i '/en_US.UTF-8/s/^#//g' /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+# Configuration du hostname
+echo "Configuration du hostname..."
+echo "$HOSTNAME" > /etc/hostname
+echo "127.0.0.1   localhost" >> /etc/hosts
+echo "::1         localhost" >> /etc/hosts
+echo "127.0.1.1   $HOSTNAME.localdomain   $HOSTNAME" >> /etc/hosts
+
+# Configuration du mot de passe root
+echo "Configuration du mot de passe root..."
+passwd
+
+# Créer un utilisateur
+echo "Création de l'utilisateur $USERNAME..."
+useradd -m -G wheel -s /bin/bash $USERNAME
+passwd $USERNAME
+echo "$USERNAME ALL=(ALL) ALL" >> /etc/sudoers
+
+# Installer et configurer systemd-boot
+echo "Installation de systemd-boot..."
+bootctl --path=/boot install
+
+# Configuration de systemd-boot
+echo "Configuration de systemd-boot..."
+mkdir -p /boot/loader/entries
+echo "default arch.conf" > /boot/loader/loader.conf
+echo "timeout 4" >> /boot/loader/loader.conf
+
+# Créer le fichier de configuration pour Arch Linux
+cat > /boot/loader/entries/arch.conf <<EOF2
+title   Arch Linux
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=PARTUUID=$(blkid -s PARTUUID -o value $ROOT_PART) rw
+EOF2
+
+# Ajouter l'entrée pour Windows
+echo "Ajout de l'entrée Windows à systemd-boot..."
+cat > /boot/loader/entries/windows.conf <<EOF2
+title   Windows
+efi     /EFI/Microsoft/Boot/bootmgfw.efi
+EOF2
+
+# Sortie du chroot
+exit
+EOF
+
+# Démonter et redémarrer
+echo "Démontage et redémarrage..."
+umount -R /mnt
+reboot
