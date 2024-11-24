@@ -8,11 +8,8 @@
 
 # Configuration générale
 FILE_SWAP="Off"              # Fichier de mémoire virtuelle
-
-
-    
-
 BOOTLOADER="systemd-boot"
+MOUNT_POINT="/mnt"
 
 # Options avancées
 TIMEZONE="Europe/Paris"

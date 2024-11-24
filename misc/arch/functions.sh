@@ -13,12 +13,13 @@ fi
 log_prompt() {
     local log_level="$1" # INFO - WARNING - ERROR - SUCCESS
     local log_date="$(date +"%Y-%m-%d %H:%M:%S")"
-
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[0;33m'
-    LIGHT_CYAN='\033[0;96m'
-    RESET='\033[0m'
+    local log_color
+    local log_status
+    local RED='\033[0;31m'
+    local GREEN='\033[0;32m'
+    local YELLOW='\033[0;33m'
+    local LIGHT_CYAN='\033[0;96m'
+    local RESET='\033[0m'
 
     case "${log_level}" in
 
@@ -52,6 +53,7 @@ log_prompt() {
 convert_to_mib() {
     local size="$1"
     local numeric_size
+
     # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
     if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
         numeric_size=$(echo "$size" | sed 's/GiB//')
@@ -79,6 +81,8 @@ convert_to_mib() {
 # Fonction pour demander à l'utilisateur une taille de partition valide
 get_partition_size() {
     local default_size=$1
+    local custom_size
+
     while true; do
         read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
         custom_size=${custom_size:-$default_size}
@@ -96,11 +100,12 @@ get_partition_size() {
 # Fonction pour formater l'affichage de la taille d'une partition en GiB ou MiB
 format_space() {
     local space=$1
+    local space_in_gib
 
     # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
     if (( space >= 1024 )); then
         # Convertion en GiB
-        local space_in_gib=$(echo "scale=2; $space / 1024" | bc)
+        space_in_gib=$(echo "scale=2; $space / 1024" | bc)
         echo "${space_in_gib} GiB"
     else
         # Si la taille est inférieur à 1 GiB, afficher en MiB
@@ -109,11 +114,18 @@ format_space() {
 }
 
 # Fonction pour afficher les informations des partitions
-format_disk() {
-
+show_disk_partitions() {
+    
     local status="$1"
-    local partitions=($2)
-    local disk="$3"
+    local disk="$2"
+    local partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
+    local columns
+    local NAME
+    local SIZE
+    local FSTYPE
+    local LABEL
+    local MOUNTPOINT
+    local UUID
 
     log_prompt "INFO" && echo "$status" && echo ""
     echo "Device : /dev/$disk"
@@ -164,11 +176,14 @@ format_disk() {
 # Fonction pour effacer tout le disque
 erase_disk() {
     local disk="$1"
+    local disk_size
+    local mounted_parts
+    local swap_parts
     
     # Récupérer les partitions montées (non-swap)
-    local mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep -v "\[SWAP\]" | grep -v "^$disk " | grep -v " $")
+    mounted_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep -v "\[SWAP\]" | grep -v "^$disk " | grep -v " $")
     # Liste des partitions swap
-    local swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep "\[SWAP\]")
+    swap_parts=$(lsblk "/dev/$disk" -o NAME,MOUNTPOINT -n -l | grep "\[SWAP\]")
     
     # Gérer les partitions montées (non-swap)
     if [ -n "$mounted_parts" ]; then
@@ -222,7 +237,7 @@ erase_disk() {
         log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours ..." && echo ""
 
         # Obtenir la taille exacte du disque en blocs
-        local disk_size=$(blockdev --getsz "/dev/$disk")
+        disk_size=$(blockdev --getsz "/dev/$disk")
         # Utilisation de dd avec la taille exacte du disque
         dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
         sync
@@ -240,6 +255,8 @@ erase_disk() {
 # Fonction pour effacer une partition spécifique
 erase_partition() {
     local partition="$1"
+    local part_size
+    local mount_point
 
     # Vérifier si la partition existe
     if [ ! -e "/dev/$partition" ]; then
@@ -254,7 +271,7 @@ erase_partition() {
     fi
 
     # Vérifier si c'est une partition boot
-    local mount_point=$(lsblk -no MOUNTPOINT "/dev/$partition" 2>/dev/null)
+    mount_point=$(lsblk -no MOUNTPOINT "/dev/$partition" 2>/dev/null)
     if [[ "$mount_point" == "/boot" || "$mount_point" == "/boot/efi" ]]; then
         log_prompt "ERROR" && echo "L'effacement des partitions boot n'est pas autorisé." && echo ""
         return 1
@@ -289,7 +306,7 @@ erase_partition() {
         log_prompt "INFO" && echo "Effacement de la partition /dev/$partition en cours ..." && echo ""
         
         # Obtenir la taille exacte de la partition en blocs
-        local part_size=$(blockdev --getsz "/dev/$partition")
+        part_size=$(blockdev --getsz "/dev/$partition")
         # Utilisation de dd avec la taille exacte
         dd if=/dev/zero of="/dev/$partition" bs=512 count=$part_size status=progress
         sync
@@ -302,6 +319,7 @@ erase_partition() {
     fi
 }
 
+# Fonction pour préparer le disque création + formatage des partitions
 preparation_disk() {
 
     # Déclaration de la liste de partitions pour une installation compléte du systeme
@@ -474,7 +492,46 @@ preparation_disk() {
         ((partition_number++))
     done
 
-    partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
-    echo "$(format_disk "Le disque est partitionné" "$partitions" "$disk")"
+}
 
+# Fonction pour monter les partitions en fonction du system de fichier
+mount_partitions() {
+
+    local disk="$1"
+    local partitions=($2)
+
+
+    
+
+    mkdir -p "${MOUNT_POINT}"
+    mkdir -p "${MOUNT_POINT}/home" 
+    mkdir -p "${MOUNT_POINT}/boot"
+
+    mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
+    mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
+    mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
+
+
+
+}
+
+# Fonction pour gérer le swap (activation, désactivation, création, etc.)
+manage_swap() {
+    
+    if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
+        # Création d'un fichier swap si FILE_SWAP="On"
+        log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" 
+        mkdir -p $MOUNT_POINT/swap
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+
+        log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" 
+        dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+
+        log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" 
+        chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
+        mkswap "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+        swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    fi
 }
