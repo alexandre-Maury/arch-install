@@ -127,18 +127,18 @@ show_disk_partitions() {
     local MOUNTPOINT
     local UUID
 
-    if [[ -n "$status" ]]; then
-        log_prompt "INFO" && echo "$status" && echo ""
-        echo "Device : /dev/$disk"
-        echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
-        echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
-        echo -e "\nInformations des partitions :"
-        echo "----------------------------------------"
-        # En-tête
-        printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-            "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
-        echo "----------------------------------------"
-    fi
+
+    log_prompt "INFO" && echo "$status" && echo ""
+    echo "Device : /dev/$disk"
+    echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
+    echo -e "\nInformations des partitions :"
+    echo "----------------------------------------"
+    # En-tête
+    printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+        "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+    echo "----------------------------------------"
+
 
     # récupération des partition à afficher sur le disque
     while IFS= read -r partition; do
@@ -167,19 +167,18 @@ show_disk_partitions() {
             MOUNTPOINT=${MOUNTPOINT:-"[vide]"}
             UUID=${UUID:-"[vide]"}
 
-            if [[ -n "$status" ]]; then
-                # Affichage formaté
-                printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$NAME" "$SIZE" "$FSTYPE" "$LABEL" "$MOUNTPOINT" "$UUID"
-            fi
+
+            # Affichage formaté
+            printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$NAME" "$SIZE" "$FSTYPE" "$LABEL" "$MOUNTPOINT" "$UUID"
+            
         fi
     done
 
-    if [[ -n "$status" ]]; then
-        # Résumé
-        echo -e "\nRésumé :"
-        echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
-        echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
-    fi
+    # Résumé
+    echo -e "\nRésumé :"
+    echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
+    echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+
 }
 
 
@@ -508,10 +507,56 @@ preparation_disk() {
 mount_partitions() {
 
     local disk="$1"
-    local partitions=($2)
+    local partitions
+    local columns
+    local NAME
+    local SIZE
+    local FSTYPE
+    local LABEL
+    local MOUNTPOINT
+    local UUID
+
+    # récupération des partition à afficher sur le disque
+    while IFS= read -r partition; do
+        partitions+=("$partition")
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+
+    # Définition des colonnes à afficher
+    columns="NAME,FSTYPE,LABEL,MOUNTPOINT,UUID"
+
+    # Affiche les informations de chaque partition
+    for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
+        if [ -b "/dev/$partition" ]; then
+            # Récupérer chaque colonne séparément pour éviter toute confusion
+            NAME=$(lsblk "/dev/$partition" -n -o NAME)
+            FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
+            LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
+
+            # Gestion des valeurs vides
+            # NAME=${NAME:-"[vide]"}
+            # FSTYPE=${FSTYPE:-"[vide]"}
+            # LABEL=${LABEL:-"[vide]"}
+
+            # Formater la partition
+            case "$FSTYPE" in
+                "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
+                "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
+                "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
+                "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
+                "linux-swap")  mkswap -L "$name" "$partition_device" || { echo "Erreur lors de la création de la partition swap"; exit 1; } && swapon "$partition_device" || { echo "Erreur lors de l'activation de la partition swap"; exit 1; } ;;
+                *)
+                    echo "Erreur: Système de fichiers non supporté: $type" >&2
+                    continue
+                    ;;
+            esac
 
 
-    
+
+
+            
+        fi
+    done
+
 
     mkdir -p "${MOUNT_POINT}"
     mkdir -p "${MOUNT_POINT}/home" 

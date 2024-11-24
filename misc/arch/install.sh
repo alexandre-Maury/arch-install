@@ -91,9 +91,9 @@ if [ -z "$partitions" ]; then
                 if [[ "$choice" =~ ^[yY]$ ]]; then
                     erase_disk "$disk"                    
                 fi
-
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
+                mount_partitions "$disk" 
 
                 break
                 ;;
@@ -137,9 +137,11 @@ else
 
         case $choice in
             1)
+                clear
                 erase_disk "$disk"
                 preparation_disk "$disk"
-                mount_partitions "$disk" "$partitions"
+                show_disk_partitions "Montage des partitions" "$disk"
+                mount_partitions "$disk" 
                 break
                 ;;
             2)
