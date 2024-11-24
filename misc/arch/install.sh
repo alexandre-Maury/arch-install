@@ -93,7 +93,8 @@ if [ -z "$partitions" ]; then
                 fi
 
                 preparation_disk "$disk"
-                show_disk_partitions "Montage des partitions" "${partitions[@]}" "$disk"
+                # show_disk_partitions "Montage des partitions" "${partitions[@]}" "$disk"
+                show_disk_partitions "Montage des partitions" "$disk"
 
                 break
                 ;;
@@ -119,7 +120,7 @@ else
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
     # Ex. formatage d'une partition en particulier pour réinstallation du systeme
 
-    echo "$(show_disk_partitions "Le disque n'est pas vierge" "${partitions[@]}" "$disk")"
+    echo "$(show_disk_partitions "Le disque n'est pas vierge" "$disk")"
     echo ""
 
     # Afficher le menu

@@ -117,8 +117,9 @@ format_space() {
 show_disk_partitions() {
     
     local status="$1"
-    local partitions=("$2")
-    local disk="$3"
+    # local partitions=($2)
+    local partitions=()
+    local disk="$2"
     local columns
     local NAME
     local SIZE
@@ -133,6 +134,11 @@ show_disk_partitions() {
     echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
     echo -e "\nInformations des partitions :"
     echo "----------------------------------------"
+
+
+    while IFS= read -r partition; do
+        partitions+=("$partition")
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
     # Définition des colonnes à afficher
     columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,UUID"
