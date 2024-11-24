@@ -302,22 +302,34 @@ erase_partition() {
     fi
 }
 
-full_install() {
+preparation_disk() {
 
     # Déclaration de la liste de partitions pour une installation compléte du systeme
-    PARTITION_TYPES=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
+    local partition_types=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
 
     # Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
     if [[ "${FILE_SWAP}" == "Off" ]]; then
-        PARTITION_TYPES+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
+        partition_types+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
     fi
 
     local disk="$1"
-    local remaining_types=("${PARTITION_TYPES[@]}")
+    local remaining_types=("${partition_types[@]}")
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-    local disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
-    local used_space=0  # Initialiser l'espace utilisé
+    local disk_size_mib=$(convert_to_mib "$disk_size")
+    local used_space=0  
     local selected_partitions=()
+    local size_in_miB
+    local remaining_space
+    local selected_index
+    local partition
+    local start
+    local end
+    local partition_number
+    local partition_prefix
+    local start_in_miB
+    local size_in_miB
+    local end_in_miB
+    local partition_device
     
     echo ""
 
@@ -360,7 +372,7 @@ full_install() {
             
         # Demander la taille de la partition
         while true; do
-            custom_size=$(get_partition_size "$default_size")
+            local custom_size=$(get_partition_size "$default_size")
             if [[ $? -eq 0 ]]; then
                 break  # La taille est valide, on sort de la boucle
             else
@@ -403,11 +415,7 @@ full_install() {
     if [[ "$confirm" != "y" ]]; then
         echo "Annulation de la création des partitions."
         exit 1
-    fi
-
-    ##############################################################################
-    ## Disque vierge - Création des partitions                                                     
-    ##############################################################################
+    fi                                                  
 
     # Créer la table de partition GPT
     parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
@@ -451,11 +459,9 @@ full_install() {
         # Formater la partition
         case "$type" in
             "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
-            "ext3")  mkfs.ext3 -F -L "$name" "$partition_device" ;;
             "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
             "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
             "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-            "ntfs")  mkfs.ntfs -F -L "$name" "$partition_device" ;;
             "linux-swap")  mkswap -L "$name" "$partition_device" || { echo "Erreur lors de la création de la partition swap"; exit 1; } && swapon "$partition_device" || { echo "Erreur lors de l'activation de la partition swap"; exit 1; } ;;
             *)
                 echo "Erreur: Système de fichiers non supporté: $type" >&2

@@ -61,7 +61,7 @@ partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─�
 if [ -z "$partitions" ]; then
 
     ##############################################################################
-    ## Disque vierge - Sélection des partitions                                                     
+    ## Disque vierge                                                    
     ##############################################################################
 
     # TODO: Implémenter cette partie plus tard
@@ -90,9 +90,9 @@ if [ -z "$partitions" ]; then
                 log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo ""
                 if [[ "$choice" =~ ^[yY]$ ]]; then
                     erase_disk "$disk"
-                    full_install "$disk"
+                    preparation_disk "$disk"
                 else
-                    full_install "$disk"
+                    preparation_disk "$disk"
                 fi
                 break
                 ;;
@@ -111,7 +111,7 @@ if [ -z "$partitions" ]; then
 else
 
     ##############################################################################
-    ## Disque partitionné - Affichage des partitions                                                     
+    ## Disque partitionné                                                    
     ##############################################################################
 
     # TODO: Implémenter cette partie plus tard
@@ -137,6 +137,7 @@ else
         case $choice in
             1)
                 erase_disk "$disk"
+                preparation_disk "$disk"
                 break
                 ;;
             2)
