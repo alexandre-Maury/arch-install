@@ -93,7 +93,6 @@ if [ -z "$partitions" ]; then
                 fi
 
                 preparation_disk "$disk"
-                # show_disk_partitions "Montage des partitions" "${partitions[@]}" "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
 
                 break

@@ -117,9 +117,8 @@ format_space() {
 show_disk_partitions() {
     
     local status="$1"
-    # local partitions=($2)
-    local partitions=()
     local disk="$2"
+    local partitions
     local columns
     local NAME
     local SIZE
@@ -135,7 +134,7 @@ show_disk_partitions() {
     echo -e "\nInformations des partitions :"
     echo "----------------------------------------"
 
-
+    # récupération des partition à afficher sur le disque
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
