@@ -127,7 +127,7 @@ show_disk_partitions() {
     local MOUNTPOINT
     local UUID
 
-    if [ -n "$status" ] && [ "$status" != "null" ]; then
+    if [[ -n "$status" ]]; then
         log_prompt "INFO" && echo "$status" && echo ""
         echo "Device : /dev/$disk"
         echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
