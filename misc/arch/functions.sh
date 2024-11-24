@@ -328,7 +328,7 @@ erase_partition() {
 preparation_disk() {
 
     # Déclaration de la liste de partitions pour une installation compléte du systeme
-    local partition_types=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
+    local partition_types=("boot:fat32:512MiB" "racine:btrfs:100GiB" "home:btrfs:100%")
 
     # Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
     if [[ "${FILE_SWAP}" == "Off" ]]; then
@@ -366,8 +366,8 @@ preparation_disk() {
 
         echo ""
         # Message d'avertissement concernant la partition racine
-        echo "ATTENTION : La partition root (/) sera celle qui accueillera le système."
-        echo "Il est important de ne pas modifier son label (root), car cela pourrait perturber l'installation."
+        echo "ATTENTION : La partition racine (/) sera celle qui accueillera le système."
+        echo "Il est important de ne pas modifier son label (racine), car cela pourrait perturber l'installation."
         echo "Par contre, le type (btrfs, ext4 ...) ou la taille de cette partition peut être modifiée, en particulier si elle occupe l'espace restant disponible."
         echo ""
 
@@ -539,7 +539,7 @@ mount_partitions() {
                     mount "/dev/$NAME" "${MOUNT_POINT}/boot"
                     ;;
 
-                "root") 
+                "racine") 
                     mount "/dev/$NAME" "${MOUNT_POINT}" 
                     ;;
 

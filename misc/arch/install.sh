@@ -128,7 +128,7 @@ else
         log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
 
         echo "1) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
-        echo "2) Réinstallation de Arch Linux ==> Partition Root"
+        echo "2) Réinstallation de Arch Linux ==> Partition Racine"
         echo "3) Installation en double boot  ==> Windows - Arch Linux"
         echo "4) Annuler"
         echo
@@ -145,7 +145,7 @@ else
                 break
                 ;;
             2)
-                log_prompt "INFO" && read -p "Entrez le nom de la partition à effacer (ex: sda3) : " partition && echo ""
+                log_prompt "INFO" && read -p "Entrez le nom de la partition racine à effacer (ex: sda3) : " partition && echo ""
                 if [ -b "/dev/$partition" ]; then
                     erase_partition "$partition"
                 else
