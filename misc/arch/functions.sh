@@ -304,8 +304,16 @@ erase_partition() {
 
 full_install() {
 
+    # Déclaration de la liste de partitions pour une installation compléte du systeme
+    PARTITION_TYPES=("boot:fat32:512MiB" "root:btrfs:100GiB" "home:btrfs:100%")
+
+    # Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
+    if [[ "${FILE_SWAP}" == "Off" ]]; then
+        PARTITION_TYPES+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
+    fi
+
     local disk="$1"
-    local remaining_types=($2)
+    local remaining_types=("${PARTITION_TYPES[@]}")
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(convert_to_mib "$disk_size")  # Convertir la taille du disque en MiB
     local used_space=0  # Initialiser l'espace utilisé
