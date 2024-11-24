@@ -119,7 +119,6 @@ show_disk_partitions() {
     local status="$1"
     local disk="$2"
     local partitions
-    local columns
     local NAME
     local SIZE
     local FSTYPE
@@ -144,9 +143,6 @@ show_disk_partitions() {
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
-    # Définition des colonnes à afficher
-    columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,UUID"
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
@@ -367,7 +363,14 @@ preparation_disk() {
         
         log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
         log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-        
+
+        echo ""
+        # Message d'avertissement concernant la partition racine
+        echo "ATTENTION : La partition root (/) sera celle qui accueillera le système."
+        echo "Il est important de ne pas modifier son label (root), car cela pourrait perturber l'installation."
+        echo "Par contre, le type (btrfs, ext4 ...) ou la taille de cette partition peut être modifiée, en particulier si elle occupe l'espace restant disponible."
+        echo ""
+
         # Afficher les types de partitions disponibles
         for i in "${!remaining_types[@]}"; do
             IFS=':' read -r name type size <<< "${remaining_types[$i]}"
@@ -508,7 +511,6 @@ mount_partitions() {
 
     local disk="$1"
     local partitions
-    local columns
     local NAME
     local SIZE
     local FSTYPE
@@ -516,13 +518,12 @@ mount_partitions() {
     local MOUNTPOINT
     local UUID
 
+    mkdir -p "${MOUNT_POINT}"
+
     # récupération des partition à afficher sur le disque
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
-    # Définition des colonnes à afficher
-    columns="NAME,FSTYPE,LABEL,MOUNTPOINT,UUID"
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
@@ -532,41 +533,32 @@ mount_partitions() {
             FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
             LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
 
-            # Gestion des valeurs vides
-            # NAME=${NAME:-"[vide]"}
-            # FSTYPE=${FSTYPE:-"[vide]"}
-            # LABEL=${LABEL:-"[vide]"}
+            case "$LABEL" in
+                "boot")      
+                    mkdir -p "${MOUNT_POINT}/boot"
+                    mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+                    ;;
 
-            # Formater la partition
-            case "$FSTYPE" in
-                "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
-                "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
-                "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-                "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-                "linux-swap")  mkswap -L "$name" "$partition_device" || { echo "Erreur lors de la création de la partition swap"; exit 1; } && swapon "$partition_device" || { echo "Erreur lors de l'activation de la partition swap"; exit 1; } ;;
+                "root") 
+                    mount "/dev/$NAME" "${MOUNT_POINT}" 
+                    ;;
+
+                "home") 
+                    mkdir -p "${MOUNT_POINT}/home"  
+                    mount "/dev/$NAME" "${MOUNT_POINT}/home"
+                    ;;
+
+                "swap")  
+                    log_prompt "INFO" && echo "Partition swap déja monté"
+                    ;;
+
                 *)
-                    echo "Erreur: Système de fichiers non supporté: $type" >&2
+                    echo "Erreur: Label non reconnu: $LABEL"
                     continue
                     ;;
             esac
-
-
-
-
-            
         fi
     done
-
-
-    mkdir -p "${MOUNT_POINT}"
-    mkdir -p "${MOUNT_POINT}/home" 
-    mkdir -p "${MOUNT_POINT}/boot"
-
-    mount /dev/${DISK}${PART_ROOT} "${MOUNT_POINT}" || { echo "Erreur lors du montage de la partition root"; exit 1; }
-    mount /dev/${DISK}${PART_HOME} "${MOUNT_POINT}/home" || { echo "Erreur lors du montage de la partition home ==> /dev/${DISK}${PART_HOME}"; exit 1; }
-    mount /dev/${DISK}1 "${MOUNT_POINT}/boot" || { echo "Erreur lors du montage de la partition boot"; exit 1; }
-
-
 
 }
 

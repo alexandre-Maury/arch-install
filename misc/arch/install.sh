@@ -93,7 +93,7 @@ if [ -z "$partitions" ]; then
                 fi
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
-                mount_partitions "$disk" 
+                mount_partitions "$disk"
 
                 break
                 ;;
