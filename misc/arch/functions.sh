@@ -541,11 +541,23 @@ mount_partitions() {
 
                 "racine") 
                     mount "/dev/$NAME" "${MOUNT_POINT}" 
+
+                    if [[ "$FSTYPE" == "btrfs" ]]; then
+                        # Créer le sous-volume pour la racine ("/")
+                        btrfs subvolume create ${MOUNT_POINT}/@
+                    fi
+
                     ;;
 
                 "home") 
                     mkdir -p "${MOUNT_POINT}/home"  
                     mount "/dev/$NAME" "${MOUNT_POINT}/home"
+
+                    if [[ "$FSTYPE" == "btrfs" ]]; then
+                        # Créer le sous-volume pour home ("/home")
+                        btrfs subvolume create ${MOUNT_POINT}/@home
+                    fi
+
                     ;;
 
                 "swap")  
