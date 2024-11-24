@@ -79,7 +79,7 @@ if [ -z "$partitions" ]; then
 
         log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
 
-        echo "1) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
+        echo "1) Installation de Arch Linux"
         echo "2) Annuler"
         echo
 
@@ -93,7 +93,7 @@ if [ -z "$partitions" ]; then
                 fi
 
                 preparation_disk "$disk"
-                
+
                 break
                 ;;
             2)

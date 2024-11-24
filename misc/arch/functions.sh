@@ -478,12 +478,3 @@ preparation_disk() {
     echo "$(format_disk "Le disque est partitionné" "$partitions" "$disk")"
 
 }
-
-mount_disk() {
-    # A venir
-}
-
-install_system() {
-    # A venir
-}
-
