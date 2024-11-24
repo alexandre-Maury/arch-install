@@ -167,15 +167,19 @@ show_disk_partitions() {
             MOUNTPOINT=${MOUNTPOINT:-"[vide]"}
             UUID=${UUID:-"[vide]"}
 
-            # Affichage formaté
-            printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$NAME" "$SIZE" "$FSTYPE" "$LABEL" "$MOUNTPOINT" "$UUID"
+            if [[ -n "$status" ]]; then
+                # Affichage formaté
+                printf "%-10s %-10s %-10s %-15s %-15s %s\n" "$NAME" "$SIZE" "$FSTYPE" "$LABEL" "$MOUNTPOINT" "$UUID"
+            fi
         fi
     done
 
-    # Résumé
-    echo -e "\nRésumé :"
-    echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
-    echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    if [[ -n "$status" ]]; then
+        # Résumé
+        echo -e "\nRésumé :"
+        echo "Nombre de partitions : $(echo "${partitions[@]}" | wc -w)"  # Utilisation de `wc -w` pour compter les éléments du tableau
+        echo "Espace total : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+    fi
 }
 
 
