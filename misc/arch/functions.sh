@@ -127,12 +127,18 @@ show_disk_partitions() {
     local MOUNTPOINT
     local UUID
 
-    log_prompt "INFO" && echo "$status" && echo ""
-    echo "Device : /dev/$disk"
-    echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
-    echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
-    echo -e "\nInformations des partitions :"
-    echo "----------------------------------------"
+    if [ -n "$status" ] && [ "$status" != "null" ]; then
+        log_prompt "INFO" && echo "$status" && echo ""
+        echo "Device : /dev/$disk"
+        echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
+        echo "Type : $(lsblk -n -o TRAN "/dev/$disk")"
+        echo -e "\nInformations des partitions :"
+        echo "----------------------------------------"
+        # En-tête
+        printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
+            "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
+        echo "----------------------------------------"
+    fi
 
     # récupération des partition à afficher sur le disque
     while IFS= read -r partition; do
@@ -141,11 +147,6 @@ show_disk_partitions() {
 
     # Définition des colonnes à afficher
     columns="NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT,UUID"
-
-    # En-tête
-    printf "%-10s %-10s %-10s %-15s %-15s %s\n" \
-        "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
-    echo "----------------------------------------"
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
