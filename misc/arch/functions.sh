@@ -117,8 +117,8 @@ format_space() {
 show_disk_partitions() {
     
     local status="$1"
-    local disk="$2"
-    local partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
+    local partitions=($2)
+    local disk="$3"
     local columns
     local NAME
     local SIZE
