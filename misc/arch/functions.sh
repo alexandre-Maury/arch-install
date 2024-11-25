@@ -330,6 +330,7 @@ preparation_disk() {
     local partition_types=() filesystem_types=() selected_partitions=() available_types=()
     local disk_size disk_size_mib used_space=0 remaining_space partition_number=1
     local partition_prefix start="1MiB" partition_device
+    local home_var
 
     # Configuration initiale des types de partitions
     _init_partition_config() {
@@ -338,8 +339,10 @@ preparation_disk() {
             "boot:fat32:512MiB"
             "racine:btrfs:100GiB"
             "racine_home:btrfs:100%"
-            "home:xfs:100%"
+            
         )
+
+        [[ "${home_var}" == true ]] && partition_types+=("home:xfs:100%")
         [[ "${FILE_SWAP}" == "Off" ]] && partition_types+=("swap:linux-swap:4GiB")
         available_types=("${partition_types[@]}")
     }
@@ -391,12 +394,12 @@ preparation_disk() {
                     [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
                     ;;
                 "home")
-                    # Home n'est disponible que si racine est choisie et racine_home ne l'est pas
-                    [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
+                    # Home n'est disponible que si que si racine_home n'est pas choisie
+                    [[ " ${selected_names[*]} " == *" racine_home "* ]] && can_add=false
                     ;;
                 "racine")
                     # Racine n'est disponible que si racine_home n'est pas choisie
-                    [[ " ${selected_names[*]} " == *" racine_home "* ]] && can_add=false
+                    [[ " ${selected_names[*]} " == *" racine_home "* ]] && home_var=true && can_add=false
                     ;;
                 "swap")
                     # Swap n'est disponible que s'il n'a pas déjà été choisi
