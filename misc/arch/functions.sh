@@ -328,16 +328,16 @@ preparation_disk() {
     # Fonction principale pour la préparation et le partitionnement du disque
     
     local partition_types=()  # Tableau pour stocker les types de partitions disponibles
-    local disk="$1"          # Le disque cible passé en paramètre
-    local disk_size          # Taille totale du disque
-    local disk_size_mib      # Taille du disque convertie en MiB
-    local used_space=0       # Espace déjà utilisé par les partitions
-    local selected_partitions=() # Tableau pour stocker les partitions sélectionnées
+    local disk="$1"           # Le disque cible passé en paramètre
+    local disk_size           # Taille totale du disque
+    local disk_size_mib       # Taille du disque convertie en MiB
+    local used_space=0        # Espace déjà utilisé par les partitions
+    local selected_partitions=()  # Tableau pour stocker les partitions sélectionnées
     local available_types=()  # Types de partitions encore disponibles
-    local remaining_space    # Espace restant sur le disque
+    local remaining_space     # Espace restant sur le disque
     local partition_number=1  # Numéro de la partition en cours
     local partition_prefix    # Préfixe pour les partitions (p pour NVMe)
-    local start="1MiB"       # Point de départ pour la première partition
+    local start="1MiB"        # Point de départ pour la première partition
 
     # Définition des systèmes de fichiers disponibles pour chaque type de partition
     local filesystem_types=(
@@ -346,12 +346,11 @@ preparation_disk() {
         "xfs"
     )
 
-    # Initialisation des types de partitions de base
+    # Initialisation des types de partitions de base (sans la partition home au début)
     partition_types=(
         "boot:fat32:512MiB"
         "racine:btrfs:100GiB"
         "racine_home:btrfs:100%"
-        "home:xfs:100%"  # Home ne sera disponible que si racine est sélectionnée
     )
 
     # Ajout conditionnel de la partition swap si FILE_SWAP est "Off"
@@ -538,14 +537,12 @@ preparation_disk() {
                 log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
             fi
         done
-            
+
         # Ajouter la partition sélectionnée
         selected_partitions+=("$name:$type:$custom_size")
-
-        # Mettre à jour les partitions disponibles
         update_available_partitions
 
-        # Gérer la dernière partition qui utilise tout l'espace restant
+        # Calculer la taille finale de la partition
         if [[ "$custom_size" == "100%" ]]; then
             size_in_miB=$remaining_space
             break
@@ -575,75 +572,8 @@ preparation_disk() {
         echo "Annulation de la création des partitions."
         exit 1
     fi
-
-    # Création de la table de partition GPT
-    parted --script "/dev/$disk" mklabel gpt || { log_prompt "ERROR" && echo "Impossible de créer la table de partition"; exit 1; }
-
-    # Initialisation des variables pour la création des partitions
-    start="1MiB"
-    partition_number=1
-
-    # Définition du préfixe de partition selon le type de disque
-    if [[ "$disk_type" == "nvme" ]]; then
-        partition_prefix="p"
-    else
-        partition_prefix=""
-    fi
-
-    # Création et formatage des partitions
-    for partition in "${selected_partitions[@]}"; do
-        IFS=':' read -r name type size <<< "$partition"
-        
-        # Calcul de la fin de la partition
-        if [[ "$size" == "100%" ]]; then
-            end="100%"
-        else
-            start_in_miB=$(convert_to_mib "$start")
-            size_in_miB=$(convert_to_mib "$size")
-            end_in_miB=$(($start_in_miB + $size_in_miB))
-            end="${end_in_miB}MiB"
-        fi
-
-        # Création de la partition
-        partition_device="/dev/${disk}${partition_prefix}${partition_number}"
-        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { 
-            log_prompt "ERROR" && echo "Impossible de créer la partition $name"; 
-            exit 1; 
-        }
-
-        # Configuration des drapeaux de partition
-        case "$name" in
-            "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
-            "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
-        esac
-
-        # Formatage de la partition
-        case "$type" in
-            "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
-            "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
-            "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-            "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-            "linux-swap")  
-                mkswap -L "$name" "$partition_device" || { 
-                    log_prompt "ERROR" && echo "Erreur lors de la création de la partition swap"; 
-                    exit 1; 
-                } 
-                swapon "$partition_device" || { 
-                    log_prompt "ERROR" && echo "Erreur lors de l'activation de la partition swap"; 
-                    exit 1; 
-                } 
-                ;;
-            *)
-                log_prompt "ERROR" && echo "Système de fichiers non supporté: $type" >&2
-                continue
-                ;;
-        esac
-
-        # Mise à jour de la position de départ pour la prochaine partition
-        start="$end"
-        ((partition_number++))
-    done
 }
+
 
 
 # # Fonction pour préparer le disque création + formatage des partitions
