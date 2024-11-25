@@ -324,7 +324,7 @@ erase_partition() {
     fi
 }
 
-partition_selection_and_creation() {
+preparation_disk() {
     # Tailles et types de systèmes de fichiers par défaut
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="2G"
@@ -334,6 +334,7 @@ partition_selection_and_creation() {
 
     local available_types=("boot" "racine" "racine_home" "swap")
     local selected_partitions=()
+    local formatted_partitions=()  # Tableau pour stocker les partitions enrichies
     local disk="sda"  # Exemple, à modifier selon vos besoins
     local disk_type="basic"  # ou "nvme"
     local partition_number=1
@@ -423,31 +424,49 @@ partition_selection_and_creation() {
                     ;;
             esac
 
-            # Ajouter un choix de système de fichiers
-            if [[ "$partition_type" != "swap" ]]; then
-                echo "Types de fichiers disponibles : fat32, btrfs, ext4, xfs"
-                read -rp "Entrez le type de fichier pour $partition_type (par défaut : $DEFAULT_FS_TYPE) : " fs_type
-                fs_type=${fs_type:-$DEFAULT_FS_TYPE}
-            else
-                fs_type="linux-swap"
-            fi
-
-            selected_partitions+=("$partition_type:$size:$fs_type")
+            selected_partitions+=("$partition_type:$size")
             _update_available_partitions
         else
             echo "Choix invalide. Veuillez entrer un numéro valide."
         fi
     done
 
-    # # Création des partitions
+    # Enrichir les partitions avec le système de fichiers
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r partition_type size <<< "$partition"
+
+        # Définir le système de fichiers par défaut pour chaque type de partition
+        case "$partition_type" in
+            "boot") DEFAULT_FS_TYPE="fat32" ;;
+            "swap") DEFAULT_FS_TYPE="linux-swap" ;;
+            "racine" | "racine_home") DEFAULT_FS_TYPE="btrfs" ;;
+            "home") DEFAULT_FS_TYPE="ext4" ;;
+            *) DEFAULT_FS_TYPE="btrfs" ;; # Valeur par défaut si non spécifié
+        esac
+
+        # Demander le type de fichier avec une suggestion par défaut
+        if [[ "$partition_type" != "swap" ]]; then
+            echo "Types de fichiers disponibles : btrfs, ext4, xfs, fat32"
+            read -rp "Entrez le type de fichier pour $partition_type (par défaut : $DEFAULT_FS_TYPE) : " fs_type
+            fs_type=${fs_type:-$DEFAULT_FS_TYPE}
+        else
+            fs_type="linux-swap" # Forcer linux-swap pour les partitions swap
+        fi
+
+        # Ajouter les détails dans un tableau temporaire pour utilisation ultérieure
+        formatted_partitions+=("$partition_type:$size:$fs_type")
+    done
+
+    # Création des partitions
     # echo
     # echo "Création des partitions sur /dev/$disk..."
     # parted --script "/dev/$disk" mklabel gpt
     # local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
-    # for partition in "${selected_partitions[@]}"; do
+    # for partition in "${formatted_partitions[@]}"; do
     #     IFS=':' read -r name size fs_type <<< "$partition"
-        
+    #     local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
+
     #     if [[ "$size" != "100%" ]]; then
     #         local start_in_mib=$(convert_to_mib "$start")
     #         local size_in_mib=$(convert_to_mib "$size")
@@ -457,7 +476,6 @@ partition_selection_and_creation() {
     #         end="100%"
     #     fi
 
-    #     local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
     #     parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end"
 
     #     case "$name" in
@@ -483,11 +501,12 @@ partition_selection_and_creation() {
     # Résumé des partitions créées
     echo
     echo "Partitions créées avec succès :"
-    for partition in "${selected_partitions[@]}"; do
+    for partition in "${formatted_partitions[@]}"; do
         echo "  - $partition"
     done
     echo "============================================"
 }
+
 
 
 # # Fonction pour préparer le disque création + formatage des partitions
