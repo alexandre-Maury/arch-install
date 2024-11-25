@@ -392,8 +392,7 @@ preparation_disk() {
                     ;;
                 "home")
                     # Home n'est disponible que si racine est choisie et racine_home ne l'est pas
-                    [[ " ${selected_names[*]} " == *" racine "* || 
-                    " ${selected_names[*]} " != *" racine_home "* ]] && can_add=false
+                    [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
                     ;;
                 "racine")
                     # Racine n'est disponible que si racine_home n'est pas choisie
