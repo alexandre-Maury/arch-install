@@ -325,94 +325,43 @@ erase_partition() {
 }
 
 preparation_disk() {
-    # Déclaration des variables locales
     local disk="$1"
-    local partition_types=() filesystem_types=() selected_partitions=() available_types=()
+    local partition_types=() selected_partitions=() available_types=()
     local disk_size disk_size_mib used_space=0 remaining_space partition_number=1
     local partition_prefix start="1MiB" partition_device
 
     # Configuration initiale des types de partitions
     _init_partition_config() {
-        filesystem_types=("btrfs" "ext4" "xfs")
         partition_types=(
             "boot:fat32:512MiB"
             "racine:btrfs:100GiB"
             "racine_home:btrfs:100%"
             "home:xfs:100%"
-            
+            "swap:linux-swap:4GiB"
         )
-
-        [[ "${FILE_SWAP}" == "Off" ]] && partition_types+=("swap:linux-swap:4GiB")
-
-        available_types=("${partition_types[@]}")
+        # Initialiser avec toutes les partitions sauf `home`
+        available_types=($(printf '%s\n' "${partition_types[@]}" | grep -v "home"))
     }
 
-    # Sélection interactive du système de fichiers
-    _select_filesystem() {
-        local default_fs="$1" selected_fs
-        
-        echo -e "\n\e[34mSystèmes de fichiers disponibles :\e[0m"
-        for i in "${!filesystem_types[@]}"; do
-            echo "$((i+1))) ${filesystem_types[$i]}"
-        done
-        
-        while true; do
-            read -p "Sélectionnez le système de fichiers (Entrée pour $default_fs): " fs_choice
-            
-            [[ -z "$fs_choice" ]] && { selected_fs="$default_fs"; break; }
-            
-            if [[ "$fs_choice" =~ ^[0-9]+$ ]] && 
-               ((fs_choice >= 1 && fs_choice <= ${#filesystem_types[@]})); then
-                selected_fs="${filesystem_types[$((fs_choice-1))]}"
-                break
-            fi
-            
-            echo -e "\e[33mSélection invalide, réessayez.\e[0m"
-        done
-        
-        echo "$selected_fs"
-    }
-
+    # Mise à jour des partitions disponibles en fonction de la dernière sélection
     _update_available_partitions() {
         local new_available=()
-        local selected_count=${#selected_partitions[@]}
+        local last_selected=${selected_partitions[-1]%%:*} # Nom de la dernière partition sélectionnée
 
-        # Si aucune partition n'est sélectionnée, c'est le premier tour
-        if [[ $selected_count -eq 0 ]]; then
-            # Exclure la partition home par défaut
-            available_types=(
-                $(printf '%s\n' "${partition_types[@]}" | grep -vE "home")
-            )
-            return
-        fi
-
-        # Récupérer le dernier type de partition sélectionné
-        local last_selected=$(cut -d':' -f1 <<< "${selected_partitions[-1]}")
-
-        # Logique de sélection selon le dernier type choisi
         case "$last_selected" in
             "boot")
-                new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home|swap")
-                )
+                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home|swap"))
                 ;;
             "racine")
-                new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap|home")
-                )
+                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap|home"))
                 ;;
             "racine_home")
-                new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap")
-                )
+                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap"))
                 ;;
             "swap")
-                new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|racine|racine_home")
-                )
+                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|racine|racine_home"))
                 ;;
         esac
-
         available_types=("${new_available[@]}")
     }
 
@@ -442,10 +391,6 @@ preparation_disk() {
             local partition="${available_types[$selected_index]}"
             IFS=':' read -r name type default_size <<< "$partition"
             
-            # Sélection du système de fichiers si nécessaire
-            [[ "$type" != "fat32" && "$type" != "linux-swap" ]] && 
-                type=$(_select_filesystem "$type")
-            
             local custom_size=$(get_partition_size "$default_size")
             selected_partitions+=("$name:$type:$custom_size")
             
@@ -469,7 +414,6 @@ preparation_disk() {
         for partition in "${selected_partitions[@]}"; do
             IFS=':' read -r name type size <<< "$partition"
             
-            # Calcul de la fin de partition
             [[ "$size" == "100%" ]] && end="100%" || {
                 local start_in_miB=$(convert_to_mib "$start")
                 local size_in_miB=$(convert_to_mib "$size")
@@ -477,19 +421,15 @@ preparation_disk() {
                 end="${end_in_miB}MiB"
             }
 
-            # Création de la partition
             local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
             parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end"
 
-            # Configuration des drapeaux
             case "$name" in
                 "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
                 "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
             esac
 
-            # Formatage
             case "$type" in
-                "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
                 "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
                 "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
                 "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
@@ -511,7 +451,6 @@ preparation_disk() {
 
     _configure_partitions
 
-    # Confirmation finale
     clear
     echo "Partitions sélectionnées :"
     for partition in "${selected_partitions[@]}"; do
@@ -522,6 +461,7 @@ preparation_disk() {
     read -p "Confirmer la création des partitions ? (y/n) : " confirm
     [[ "$confirm" == "y" ]] && _create_partitions || exit 1
 }
+
 
 
 
