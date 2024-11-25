@@ -349,12 +349,14 @@ preparation_disk() {
         local boot_selected=false
         local racine_selected=false
         local home_selected=false
+        local swap_selected=false
 
         for selected in "${selected_partitions[@]}"; do
             case "${selected%%:*}" in
                 "boot") boot_selected=true ;;
                 "racine") racine_selected=true ;;
                 "home") home_selected=true ;;
+                "swap") swap_selected=true ;;
             esac
         done
 
@@ -368,7 +370,7 @@ preparation_disk() {
         if $racine_selected && ! $home_selected; then
             available_types+=("home")
         fi
-        if ! $home_selected; then
+        if ! $swap_selected; then
             available_types+=("swap")
         fi
     }
