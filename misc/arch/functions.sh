@@ -376,42 +376,39 @@ preparation_disk() {
     # Mise à jour dynamique des partitions disponibles
     _update_available_partitions() {
         local new_available=()
-        local selected_names=()
+        local selected_count=${#selected_partitions[@]}
 
-        # Extraire les noms des partitions déjà sélectionnées
-        for sel in "${selected_partitions[@]}"; do
-            selected_names+=("$(cut -d':' -f1 <<< "$sel")")
-        done
+        # Première étape de sélection : tous les types initiaux sont disponibles
+        if [[ $selected_count -eq 0 ]]; then
+            available_types=("${partition_types[@]}")
+            return
+        fi
 
-        # Règles de sélection des partitions disponibles
-        for avail in "${partition_types[@]}"; do
-            local avail_name=$(cut -d':' -f1 <<< "$avail")
-            local can_add=true
+        # Récupérer le dernier type de partition sélectionné
+        local last_selected=$(cut -d':' -f1 <<< "${selected_partitions[-1]}")
 
-            case "$avail_name" in
-                "racine_home")
-                    # Racine_home n'est disponible que si racine n'est pas choisie
-                    [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
-                    ;;
-                "home")
-                    # Home n'est disponible que si racine est choisie
-                    [[ " ${selected_names[*]} " != *" racine "* ]] && can_add=false
-                    ;;
-                "racine")
-                    # Racine n'est disponible que si racine_home n'est pas choisie
-                    [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
-                    ;;
-                "swap")
-                    # Swap n'est disponible que s'il n'a pas déjà été choisi
-                    [[ " ${selected_names[*]} " == *" swap "* ]] && can_add=false
-                    ;;
-            esac
-
-            # Exclure les partitions déjà sélectionnées
-            [[ " ${selected_names[*]} " == *" $avail_name "* ]] && can_add=false
-
-            [[ "$can_add" == true ]] && new_available+=("$avail")
-        done
+        # Logique de sélection selon le dernier type choisi
+        case "$last_selected" in
+            "boot")
+                new_available=(
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home|swap")
+                )
+                ;;
+            "swap")
+                new_available=(
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home")
+                )
+                ;;
+            "racine")
+                new_available=(
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine_home|home")
+                )
+                ;;
+            "racine_home")
+                # Ne reste plus rien à sélectionner
+                new_available=()
+                ;;
+        esac
 
         available_types=("${new_available[@]}")
     }
