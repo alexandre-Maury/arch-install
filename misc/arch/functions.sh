@@ -346,7 +346,7 @@ preparation_disk() {
         "xfs"
     )
 
-    # Initialisation des types de partitions de base (sans la partition home au début)
+    # Initialisation des types de partitions de base
     partition_types=(
         "boot:fat32:512MiB"
         "racine:btrfs:100GiB"
@@ -528,13 +528,18 @@ preparation_disk() {
             type=$(select_filesystem "$type")
         fi
             
-        # Demander la taille de la partition
+        # Demander à l'utilisateur de saisir la taille de la partition
+        custom_size=""
         while true; do
-            local custom_size=$(get_partition_size "$default_size")
-            if [[ $? -eq 0 ]]; then
+            log_prompt "INFO" && read -p "Entrez la taille de la partition ($default_size par défaut) : " custom_size && echo ""
+            if [[ -z "$custom_size" ]]; then
+                custom_size="$default_size"
+            fi
+            # Vérifier que la taille est valide
+            if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
                 break
             else
-                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+                log_prompt "WARNING" && echo "Unité de taille invalide, réessayez." && echo ""
             fi
         done
 
@@ -573,6 +578,7 @@ preparation_disk() {
         exit 1
     fi
 }
+
 
 
 
