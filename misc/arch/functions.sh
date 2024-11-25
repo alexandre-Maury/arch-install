@@ -342,29 +342,35 @@ preparation_disk() {
 
     # Fonction pour mettre à jour les types disponibles
     _update_available_partitions() {
-        local last_selected=${selected_partitions[-1]%%:*}
-        local exclusions=()
+        # Initialiser la liste des types disponibles
+        available_types=()
+
+        # Vérifier les types déjà sélectionnés
+        local boot_selected=false
+        local racine_selected=false
+        local home_selected=false
 
         for selected in "${selected_partitions[@]}"; do
-            exclusions+=("${selected%%:*}")
+            case "${selected%%:*}" in
+                "boot") boot_selected=true ;;
+                "racine") racine_selected=true ;;
+                "home") home_selected=true ;;
+            esac
         done
 
-        case "$last_selected" in
-            "boot") available_types=("racine" "racine_home" "swap") ;;
-            "racine") available_types=("swap" "home"); exclusions+=("racine_home") ;;
-            "racine_home") available_types=("swap"); exclusions+=("racine") ;;
-            "swap") available_types=("home") ;;
-            "home") available_types=() ;;
-            *) available_types=("boot" "racine" "racine_home" "swap") ;;
-        esac
-
-        local filtered_types=()
-        for type in "${available_types[@]}"; do
-            if ! printf '%s\n' "${exclusions[@]}" | grep -q "^$type$"; then
-                filtered_types+=("$type")
-            fi
-        done
-        available_types=("${filtered_types[@]}")
+        # Ajouter les types possibles selon la progression logique
+        if ! $boot_selected; then
+            available_types+=("boot")
+        fi
+        if ! $racine_selected; then
+            available_types+=("racine" "racine_home")
+        fi
+        if $racine_selected && ! $home_selected; then
+            available_types+=("home")
+        fi
+        if ! $home_selected; then
+            available_types+=("swap")
+        fi
     }
 
     # Fonction d'affichage du menu
@@ -378,11 +384,6 @@ preparation_disk() {
         for type in "${available_types[@]}"; do
             echo "  $i) $type"
             ((i++))
-        done
-        echo "--------------------------------------------"
-        echo "Partitions déjà sélectionnées :"
-        for partition in "${selected_partitions[@]}"; do
-            echo "  - $partition"
         done
         echo "============================================"
     }
