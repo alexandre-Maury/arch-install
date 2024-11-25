@@ -5,6 +5,7 @@
 # https://github.com/Zelrin/arch-btrfs-install-guide 
 # https://sharafat.pages.dev/archlinux-install/
 # https://chadymorra.github.io/
+# https://forest0923.github.io/memo/en/docs/root/archlinux/base-install-manuals/dual-boot-win11-systemd-boot/
 
 # Configuration générale
 FILE_SWAP="Off"              # Fichier de mémoire virtuelle

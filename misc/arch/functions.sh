@@ -328,7 +328,7 @@ erase_partition() {
 preparation_disk() {
 
     # Déclaration de la liste de partitions pour une installation compléte du systeme
-    local partition_types=("boot:fat32:512MiB" "racine:btrfs:100GiB" "home:btrfs:100%")
+    local partition_types=("boot:fat32:512MiB" "racine:btrfs:100GiB" "home:xfs:100%" "racine_home:btrfs:100%")
 
     # Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
     if [[ "${FILE_SWAP}" == "Off" ]]; then
@@ -369,6 +369,11 @@ preparation_disk() {
         echo "ATTENTION : La partition racine (/) sera celle qui accueillera le système."
         echo "Il est important de ne pas modifier son label (racine), car cela pourrait perturber l'installation."
         echo "Par contre, le type (btrfs, ext4 ...) ou la taille de cette partition peut être modifiée, en particulier si elle occupe l'espace restant disponible."
+        echo ""
+        echo "boot        ==> partition efi."
+        echo "swap        ==> partition swap."
+        echo "racine      ==> partition root :  partition home séparée."
+        echo "racine_home ==> partition root :  partition pour root et home."
         echo ""
 
         # Afficher les types de partitions disponibles
@@ -546,18 +551,21 @@ mount_partitions() {
                         # Créer le sous-volume pour la racine ("/")
                         btrfs subvolume create ${MOUNT_POINT}/@
                     fi
+                    ;;
+
+                "racine_home") 
+                    mount "/dev/$NAME" "${MOUNT_POINT}" 
+
+                    if [[ "$FSTYPE" == "btrfs" ]]; then
+                        # Créer le sous-volume pour la racine ("/")
+                        btrfs subvolume create ${MOUNT_POINT}/@
+                    fi
 
                     ;;
 
                 "home") 
                     mkdir -p "${MOUNT_POINT}/home"  
                     mount "/dev/$NAME" "${MOUNT_POINT}/home"
-
-                    if [[ "$FSTYPE" == "btrfs" ]]; then
-                        # Créer le sous-volume pour home ("/home")
-                        btrfs subvolume create ${MOUNT_POINT}/@home
-                    fi
-
                     ;;
 
                 "swap")  
