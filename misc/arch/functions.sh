@@ -373,14 +373,16 @@ preparation_disk() {
         echo "$selected_fs"
     }
 
-    # Mise à jour dynamique des partitions disponibles
     _update_available_partitions() {
         local new_available=()
         local selected_count=${#selected_partitions[@]}
 
-        # Première étape de sélection : tous les types initiaux sont disponibles
+        # Si aucune partition n'est sélectionnée, c'est le premier tour
         if [[ $selected_count -eq 0 ]]; then
-            available_types=("${partition_types[@]}")
+            # Exclure la partition home par défaut
+            available_types=(
+                $(printf '%s\n' "${partition_types[@]}" | grep -vE "home")
+            )
             return
         fi
 
@@ -394,19 +396,20 @@ preparation_disk() {
                     $(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home|swap")
                 )
                 ;;
-            "swap")
-                new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home")
-                )
-                ;;
             "racine")
                 new_available=(
-                    $(printf '%s\n' "${partition_types[@]}" | grep -E "racine_home|home")
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap|home")
                 )
                 ;;
             "racine_home")
-                # Ne reste plus rien à sélectionner
-                new_available=()
+                new_available=(
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap")
+                )
+                ;;
+            "swap")
+                new_available=(
+                    $(printf '%s\n' "${partition_types[@]}" | grep -E "boot|racine|racine_home")
+                )
                 ;;
         esac
 
