@@ -343,7 +343,6 @@ preparation_disk() {
         available_types=($(printf '%s\n' "${partition_types[@]}" | grep -v "home"))
     }
 
-    # Mise à jour des partitions disponibles en fonction de la dernière sélection
     _update_available_partitions() {
         local new_available=()
         local last_selected=${selected_partitions[-1]%%:*} # Nom de la dernière partition sélectionnée
@@ -362,7 +361,14 @@ preparation_disk() {
                 new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|racine|racine_home"))
                 ;;
         esac
-        available_types=("${new_available[@]}")
+
+        # Exclure les partitions déjà sélectionnées
+        for partition in "${new_available[@]}"; do
+            local name=${partition%%:*} # Extraire le nom
+            if ! printf '%s\n' "${selected_partitions[@]}" | grep -q "^$name:"; then
+                available_types+=("$partition")
+            fi
+        done
     }
 
     # Configuration interactive des partitions
