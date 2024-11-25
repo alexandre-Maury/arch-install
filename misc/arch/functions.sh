@@ -395,20 +395,13 @@ preparation_disk() {
         echo "$selected_fs"
     }
 
-    # Fonction locale pour mettre à jour les partitions disponibles
+    # Fonction pour mettre à jour les partitions disponibles
     update_available_partitions() {
         local new_available=()
-        local found
-        local can_add
-        local avail
-        local avail_name
-        local avail_type
-        local avail_size
-        local sel
-        local sel_name
         local has_racine=false
         local has_racine_home=false
-        
+        local sel
+
         # Vérifier si racine ou racine_home est déjà sélectionné
         for sel in "${selected_partitions[@]}"; do
             IFS=':' read -r sel_name _ _ <<< "$sel"
@@ -422,50 +415,31 @@ preparation_disk() {
         # Parcourir toutes les partitions disponibles
         for avail in "${partition_types[@]}"; do
             IFS=':' read -r avail_name avail_type avail_size <<< "$avail"
-            found=false
-            
-            # Vérifier si la partition est déjà sélectionnée
-            for sel in "${selected_partitions[@]}"; do
-                IFS=':' read -r sel_name _ _ <<< "$sel"
-                if [[ "$avail_name" == "$sel_name" ]]; then
-                    found=true
-                    break
-                fi
-            done
-            
-            # Si la partition n'est pas déjà sélectionnée
-            if [[ "$found" == false ]]; then
-                can_add=true
-                
-                # Logique pour gérer les incompatibilités
-                case "$avail_name" in
-                    "home")
-                        # Home n'est disponible que si racine est sélectionné et racine_home ne l'est pas
-                        if [[ "$has_racine" == false || "$has_racine_home" == true ]]; then
-                            can_add=false
-                        fi
-                        ;;
-                    "racine")
-                        # Racine n'est pas disponible si racine_home est sélectionné
-                        if [[ "$has_racine_home" == true ]]; then
-                            can_add=false
-                        fi
-                        ;;
-                    "racine_home")
-                        # Racine_home n'est pas disponible si racine ou home est sélectionné
-                        if [[ "$has_racine" == true || "$has_racine_home" == true ]]; then
-                            can_add=false
-                        fi
-                        ;;
-                esac
-                
-                # Ajouter la partition si elle est compatible
-                if [[ "$can_add" == true ]]; then
-                    new_available+=("$avail")
+            can_add=true
+
+            # Logique de filtrage : `home` est ajouté seulement si `racine` est sélectionnée
+            if [[ "$avail_name" == "home" ]]; then
+                if [[ "$has_racine" == false || "$has_racine_home" == true ]]; then
+                    can_add=false
                 fi
             fi
+
+            # `racine` n'est pas disponible si `racine_home` est sélectionnée
+            if [[ "$avail_name" == "racine" && "$has_racine_home" == true ]]; then
+                can_add=false
+            fi
+
+            # `racine_home` n'est pas disponible si `racine` est déjà sélectionnée
+            if [[ "$avail_name" == "racine_home" && "$has_racine" == true ]]; then
+                can_add=false
+            fi
+
+            # Ajouter la partition si elle est compatible
+            if [[ "$can_add" == true ]]; then
+                new_available+=("$avail")
+            fi
         done
-        
+
         available_types=("${new_available[@]}")
     }
 
@@ -578,6 +552,7 @@ preparation_disk() {
         exit 1
     fi
 }
+
 
 
 
