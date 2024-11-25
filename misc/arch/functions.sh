@@ -324,13 +324,20 @@ erase_partition() {
     fi
 }
 
+
 preparation_disk() {
-    # Tailles et types de systèmes de fichiers par défaut
+
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="2G"
     local DEFAULT_ROOT_SIZE="20G"
     local DEFAULT_HOME_SIZE="100%"
     local DEFAULT_FS_TYPE="btrfs"  # Système de fichiers par défaut
+
+    local DEFAULT_BOOT_TYPE="fat32"
+    local DEFAULT_RACINE_TYPE="btrfs"
+    local DEFAULT_RACINEHOME_TYPE="btrfs"
+    local DEFAULT_SWAP_TYPE="linux-swap"
+    local DEFAULT_HOME_TYPE="ext4"
 
     local available_types=("boot" "racine" "racine_home" "swap")
     local selected_partitions=()
@@ -340,7 +347,7 @@ preparation_disk() {
     local partition_number=1
     local start="1MiB"
 
-    # Fonction pour mettre à jour les types disponibles
+
     _update_available_partitions() {
         # Initialiser la liste des types disponibles
         available_types=()
@@ -408,56 +415,45 @@ preparation_disk() {
                 "boot")
                     read -rp "Entrez la taille pour boot (par défaut : $DEFAULT_BOOT_SIZE) : " size
                     size=${size:-$DEFAULT_BOOT_SIZE}
+
+                    read -rp "Entrez le type de fichier pour boot (par défaut : $DEFAULT_BOOT_TYPE) : " fs_type
+                    fs_type=${fs_type:-$DEFAULT_BOOT_TYPE}
                     ;;
                 "racine")
                     read -rp "Entrez la taille pour racine (par défaut : $DEFAULT_ROOT_SIZE) : " size
                     size=${size:-$DEFAULT_ROOT_SIZE}
+
+                    read -rp "Entrez le type de fichier pour racine (par défaut : $DEFAULT_RACINE_TYPE) : " fs_type
+                    fs_type=${fs_type:-$DEFAULT_RACINE_TYPE}
                     ;;
                 "racine_home")
                     read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_ROOT_SIZE) : " size
                     size=${size:-$DEFAULT_ROOT_SIZE}
+
+                    read -rp "Entrez le type de fichier pour racine_home (par défaut : $DEFAULT_RACINEHOME_TYPE) : " fs_type
+                    fs_type=${fs_type:-$DEFAULT_RACINEHOME_TYPE}
                     ;;
                 "swap")
                     read -rp "Entrez la taille pour swap (par défaut : $DEFAULT_SWAP_SIZE) : " size
                     size=${size:-$DEFAULT_SWAP_SIZE}
+
+                    read -rp "Entrez le type de fichier pour swap (par défaut : $DEFAULT_SWAP_TYPE) : " fs_type
+                    fs_type=${fs_type:-$DEFAULT_SWAP_TYPE}
                     ;;
                 "home")
                     read -rp "Entrez la taille pour home (par défaut : $DEFAULT_HOME_SIZE) : " size
                     size=${size:-$DEFAULT_HOME_SIZE}
+
+                    read -rp "Entrez le type de fichier pour home (par défaut : $DEFAULT_HOME_TYPE) : " fs_type
+                    fs_type=${fs_type:-$DEFAULT_SWAP_TYPE}
                     ;;
             esac
 
-            selected_partitions+=("$partition_type:$size")
+            selected_partitions+=("$partition_type:$size:$fs_type")
             _update_available_partitions
         else
             echo "Choix invalide. Veuillez entrer un numéro valide."
         fi
-    done
-
-    # Enrichir les partitions avec le système de fichiers
-    for partition in "${selected_partitions[@]}"; do
-        IFS=':' read -r partition_type size <<< "$partition"
-
-        # Définir le système de fichiers par défaut pour chaque type de partition
-        case "$partition_type" in
-            "boot") DEFAULT_FS_TYPE="fat32" ;;
-            "swap") DEFAULT_FS_TYPE="linux-swap" ;;
-            "racine" | "racine_home") DEFAULT_FS_TYPE="btrfs" ;;
-            "home") DEFAULT_FS_TYPE="ext4" ;;
-            *) DEFAULT_FS_TYPE="btrfs" ;; # Valeur par défaut si non spécifié
-        esac
-
-        # Demander le type de fichier avec une suggestion par défaut
-        if [[ "$partition_type" != "swap" ]]; then
-            echo "Types de fichiers disponibles : btrfs, ext4, xfs, fat32"
-            read -rp "Entrez le type de fichier pour $partition_type (par défaut : $DEFAULT_FS_TYPE) : " fs_type
-            fs_type=${fs_type:-$DEFAULT_FS_TYPE}
-        else
-            fs_type="linux-swap" # Forcer linux-swap pour les partitions swap
-        fi
-
-        # Ajouter les détails dans un tableau temporaire pour utilisation ultérieure
-        formatted_partitions+=("$partition_type:$size:$fs_type")
     done
 
     # Création des partitions
@@ -502,12 +498,12 @@ preparation_disk() {
     # done
 
     # Résumé des partitions créées
-    echo
-    echo "Partitions créées avec succès :"
-    for partition in "${formatted_partitions[@]}"; do
-        echo "  - $partition"
-    done
-    echo "============================================"
+    # echo
+    # echo "Partitions créées avec succès :"
+    # for partition in "${formatted_partitions[@]}"; do
+    #     echo "  - $partition"
+    # done
+    # echo "============================================"
 }
 
 
