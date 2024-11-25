@@ -340,7 +340,7 @@ preparation_disk() {
     local start="1MiB"
 
     # Fonction interne pour convertir les tailles en MiB
-    local convert_to_mib() {
+    _convert_to_mib() {
         local size="$1"
         case "$size" in
             *M) echo "${size%M}" ;;
@@ -350,7 +350,7 @@ preparation_disk() {
     }
 
     # Fonction pour mettre à jour les types disponibles
-    local _update_available_partitions() {
+    _update_available_partitions() {
         local last_selected=${selected_partitions[-1]%%:*}
         local exclusions=()
 
@@ -422,8 +422,8 @@ preparation_disk() {
         IFS=':' read -r name size <<< "$partition"
         
         if [[ "$size" != "100%" ]]; then
-            local start_in_mib=$(convert_to_mib "$start")
-            local size_in_mib=$(convert_to_mib "$size")
+            local start_in_mib=$(_convert_to_mib "$start")
+            local size_in_mib=$(_convert_to_mib "$size")
             local end_in_mib=$((start_in_mib + size_in_mib))
             end="${end_in_mib}MiB"
         else
