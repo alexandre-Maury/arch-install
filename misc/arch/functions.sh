@@ -551,6 +551,7 @@ mount_partitions() {
                         # Créer le sous-volume pour la racine ("/")
                         btrfs subvolume create ${MOUNT_POINT}/@
                     fi
+                    
                     ;;
 
                 "racine_home") 
