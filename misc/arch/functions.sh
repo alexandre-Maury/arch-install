@@ -344,32 +344,46 @@ preparation_disk() {
     }
 
     _update_available_partitions() {
-        local new_available=()
-        local last_selected=${selected_partitions[-1]%%:*} # Nom de la dernière partition sélectionnée
+        local last_selected=${selected_partitions[-1]%%:*} # Dernier type sélectionné
+        local exclusions=()                               # Liste des types à exclure
 
+        # Ajouter les types déjà sélectionnés à la liste des exclusions
+        for selected in "${selected_partitions[@]}"; do
+            exclusions+=("${selected%%:*}")
+        done
+
+        # Déterminer les types restants en fonction du dernier choix
         case "$last_selected" in
             "boot")
-                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "racine|racine_home|swap"))
+                available_types=("racine" "racine_home" "swap")
                 ;;
             "racine")
-                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap|home"))
+                available_types=("swap" "home")
                 ;;
             "racine_home")
-                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|swap"))
+                available_types=("swap")
                 ;;
             "swap")
-                new_available=($(printf '%s\n' "${partition_types[@]}" | grep -E "boot|racine|racine_home"))
+                available_types=("racine" "racine_home")
+                ;;
+            *)
+                # Si aucun type n'a été sélectionné, tous les types sont disponibles
+                available_types=("boot" "racine" "racine_home" "swap" "home")
                 ;;
         esac
 
-        # Exclure les partitions déjà sélectionnées
-        for partition in "${new_available[@]}"; do
-            local name=${partition%%:*} # Extraire le nom
-            if ! printf '%s\n' "${selected_partitions[@]}" | grep -q "^$name:"; then
-                available_types+=("$partition")
+        # Filtrer les types déjà exclus
+        local filtered_types=()
+        for type in "${available_types[@]}"; do
+            if ! printf '%s\n' "${exclusions[@]}" | grep -q "^$type$"; then
+                filtered_types+=("$type")
             fi
         done
+
+        # Mettre à jour les types disponibles
+        available_types=("${filtered_types[@]}")
     }
+
 
     # Configuration interactive des partitions
     _configure_partitions() {
