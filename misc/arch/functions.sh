@@ -325,163 +325,140 @@ erase_partition() {
 }
 
 preparation_disk() {
-    local disk="$1"
-    local partition_types=() selected_partitions=() available_types=()
-    local disk_size disk_size_mib used_space=0 remaining_space partition_number=1
-    local partition_prefix start="1MiB" partition_device
+    # Tailles par défaut
+    local DEFAULT_BOOT_SIZE="512M"
+    local DEFAULT_SWAP_SIZE="2G"
+    local DEFAULT_ROOT_SIZE="20G"
+    local DEFAULT_HOME_SIZE="100%"
 
-    # Configuration initiale des types de partitions
-    _init_partition_config() {
-        partition_types=(
-            "boot:fat32:512MiB"
-            "racine:btrfs:100GiB"
-            "racine_home:btrfs:100%"
-            "home:xfs:100%"
-            "swap:linux-swap:4GiB"
-        )
-        # Initialiser avec toutes les partitions sauf `home`
-        available_types=($(printf '%s\n' "${partition_types[@]}" | grep -v "home"))
+    # Initialiser les types disponibles et sélectionnés
+    local available_types=("boot" "racine" "racine_home" "swap")
+    local selected_partitions=()
+    local disk="sda"  # Exemple, à modifier selon vos besoins
+    local disk_type="basic"  # ou "nvme"
+    local partition_number=1
+    local start="1MiB"
+
+    # Fonction interne pour convertir les tailles en MiB
+    local convert_to_mib() {
+        local size="$1"
+        case "$size" in
+            *M) echo "${size%M}" ;;
+            *G) echo $((size%G * 1024)) ;;
+            100%) echo "$size" ;;
+        esac
     }
 
-    _update_available_partitions() {
-        local last_selected=${selected_partitions[-1]%%:*} # Dernier type sélectionné
-        local exclusions=()                               # Liste des types à exclure
+    # Fonction pour mettre à jour les types disponibles
+    local _update_available_partitions() {
+        local last_selected=${selected_partitions[-1]%%:*}
+        local exclusions=()
 
-        # Ajouter les types déjà sélectionnés à la liste des exclusions
         for selected in "${selected_partitions[@]}"; do
             exclusions+=("${selected%%:*}")
         done
 
-        # Déterminer les types restants en fonction du dernier choix
         case "$last_selected" in
-            "boot")
-                available_types=("racine" "racine_home" "swap") # `home` n'est pas disponible ici
-                ;;
-            "racine")
-                available_types=("boot" "swap" "home") # `home` devient disponible après `racine`
-                ;;
-            "racine_home")
-                available_types=("boot" "swap") # Après `racine_home`, seulement `swap` possible
-                ;;
-            "swap")
-                available_types=("boot" "racine" "racine_home") # Swap permet de choisir une racine
-                ;;
-            *)
-                # Si aucun type n'a été sélectionné, seuls les premiers types sont disponibles
-                available_types=("boot" "racine" "racine_home" "swap")
-                ;;
+            "boot") available_types=("racine" "racine_home" "swap") ;;
+            "racine") available_types=("swap" "home"); exclusions+=("racine_home") ;;
+            "racine_home") available_types=("swap"); exclusions+=("racine") ;;
+            "swap") available_types=("racine" "racine_home") ;;
+            "home") available_types=() ;;
+            *) available_types=("boot" "racine" "racine_home" "swap") ;;
         esac
 
-        # Filtrer les types déjà exclus
         local filtered_types=()
         for type in "${available_types[@]}"; do
             if ! printf '%s\n' "${exclusions[@]}" | grep -q "^$type$"; then
                 filtered_types+=("$type")
             fi
         done
-
-        # Mettre à jour les types disponibles
         available_types=("${filtered_types[@]}")
     }
 
+    # Processus interactif pour la sélection des partitions
+    while [[ ${#available_types[@]} -gt 0 ]]; do
+        echo "Partitions disponibles : ${available_types[*]}"
+        read -rp "Choisissez une partition (${available_types[*]}) : " choice
 
+        if [[ ! " ${available_types[*]} " =~ " $choice " ]]; then
+            echo "Choix invalide. Veuillez réessayer."
+            continue
+        fi
 
-    # Configuration interactive des partitions
-    _configure_partitions() {
-        while true; do
-            remaining_space=$((disk_size_mib - used_space))
-            
-            clear
-            echo -e "\e[34mEspace restant : $(format_space $remaining_space)\e[0m\n"
-            echo "Types de partitions disponibles :"
-            
-            for i in "${!available_types[@]}"; do
-                IFS=':' read -r name type default_size <<< "${available_types[$i]}"
-                printf "%d) %s (type: %s, taille: %s)\n" $((i+1)) "$name" "$type" "$default_size"
-            done
-            
-            echo -e "\n0) Terminer la configuration"
-            read -p "Votre choix : " choice
-            
-            [[ "$choice" -eq 0 ]] && break
-            
-            # Validation et traitement du choix
-            [[ "$choice" -lt 1 || "$choice" -gt ${#available_types[@]} ]] && continue
-            
-            local selected_index=$((choice-1))
-            local partition="${available_types[$selected_index]}"
-            IFS=':' read -r name type default_size <<< "$partition"
-            
-            local custom_size=$(get_partition_size "$default_size")
-            selected_partitions+=("$name:$type:$custom_size")
-            
-            _update_available_partitions
-            
-            # Gestion de l'espace
-            [[ "$custom_size" == "100%" ]] && break
-            
-            local size_in_miB=$(convert_to_mib "$custom_size")
-            used_space=$((used_space + size_in_miB))
-        done
-    }
+        local size
+        case "$choice" in
+            "boot")
+                read -rp "Entrez la taille pour boot (par défaut : $DEFAULT_BOOT_SIZE) : " size
+                size=${size:-$DEFAULT_BOOT_SIZE}
+                ;;
+            "racine")
+                read -rp "Entrez la taille pour racine (par défaut : $DEFAULT_ROOT_SIZE) : " size
+                size=${size:-$DEFAULT_ROOT_SIZE}
+                ;;
+            "racine_home")
+                read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_ROOT_SIZE) : " size
+                size=${size:-$DEFAULT_ROOT_SIZE}
+                ;;
+            "swap")
+                read -rp "Entrez la taille pour swap (par défaut : $DEFAULT_SWAP_SIZE) : " size
+                size=${size:-$DEFAULT_SWAP_SIZE}
+                ;;
+            "home")
+                read -rp "Entrez la taille pour home (par défaut : $DEFAULT_HOME_SIZE) : " size
+                size=${size:-$DEFAULT_HOME_SIZE}
+                ;;
+        esac
 
-    # Création et formatage des partitions
-    _create_partitions() {
-        parted --script "/dev/$disk" mklabel gpt
-
-        # Préfixe de partition selon le type de disque
-        partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
-
-        for partition in "${selected_partitions[@]}"; do
-            IFS=':' read -r name type size <<< "$partition"
-            
-            [[ "$size" == "100%" ]] && end="100%" || {
-                local start_in_miB=$(convert_to_mib "$start")
-                local size_in_miB=$(convert_to_mib "$size")
-                local end_in_miB=$((start_in_miB + size_in_miB))
-                end="${end_in_miB}MiB"
-            }
-
-            local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
-            parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end"
-
-            case "$name" in
-                "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
-                "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
-            esac
-
-            case "$type" in
-                "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
-                "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-                "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-                "linux-swap")  
-                    mkswap -L "$name" "$partition_device"
-                    swapon "$partition_device"
-                    ;;
-            esac
-
-            start="$end"
-            ((partition_number++))
-        done
-    }
-
-    # Fonction principale
-    _init_partition_config
-    disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-    disk_size_mib=$(convert_to_mib "$disk_size")
-
-    _configure_partitions
-
-    clear
-    echo "Partitions sélectionnées :"
-    for partition in "${selected_partitions[@]}"; do
-        IFS=':' read -r name type size <<< "$partition"
-        echo "$name ($type): $size"
+        selected_partitions+=("$choice:$size")
+        _update_available_partitions
     done
 
-    read -p "Confirmer la création des partitions ? (y/n) : " confirm
-    [[ "$confirm" == "y" ]] && _create_partitions || exit 1
+    # Création des partitions
+    parted --script "/dev/$disk" mklabel gpt
+    local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
+
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name size <<< "$partition"
+        
+        if [[ "$size" != "100%" ]]; then
+            local start_in_mib=$(convert_to_mib "$start")
+            local size_in_mib=$(convert_to_mib "$size")
+            local end_in_mib=$((start_in_mib + size_in_mib))
+            end="${end_in_mib}MiB"
+        else
+            end="100%"
+        fi
+
+        local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
+        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end"
+
+        case "$name" in
+            "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
+            "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
+        esac
+
+        case "$name" in
+            "boot") mkfs.vfat -F32 -n "BOOT" "$partition_device" ;;
+            "racine"|"racine_home") mkfs.ext4 -L "$name" "$partition_device" ;;
+            "swap")
+                mkswap -L "SWAP" "$partition_device"
+                swapon "$partition_device"
+                ;;
+            "home") mkfs.ext4 -L "HOME" "$partition_device" ;;
+        esac
+
+        start="$end"
+        ((partition_number++))
+    done
+
+    # Résumé des partitions créées
+    echo "Partitions créées :"
+    for partition in "${selected_partitions[@]}"; do
+        echo "  - $partition"
+    done
 }
+
 
 
 
