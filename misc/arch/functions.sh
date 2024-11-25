@@ -329,8 +329,10 @@ preparation_disk() {
 
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="2G"
-    local DEFAULT_ROOT_SIZE="20G"
+    local DEFAULT_ROOT_SIZE="100G"
+    local DEFAULT_ROOTHOME_SIZE="100%"
     local DEFAULT_HOME_SIZE="100%"
+
     local DEFAULT_FS_TYPE="btrfs"  # Système de fichiers par défaut
 
     local DEFAULT_BOOT_TYPE="fat32"
@@ -382,18 +384,39 @@ preparation_disk() {
         fi
     }
 
-    # Fonction d'affichage du menu
+    # # Fonction d'affichage du menu
+    # _display_menu() {
+    #     echo
+    #     echo "============================================"
+    #     echo "         Sélection des partitions"
+    #     echo "============================================"
+    #     echo "Partitions disponibles :"
+    #     local i=1
+    #     for type in "${available_types[@]}"; do
+    #         echo "  $i) $type"
+    #         ((i++))
+    #     done
+    #     echo "============================================"
+    # }
+
     _display_menu() {
         echo
         echo "============================================"
         echo "         Sélection des partitions"
         echo "============================================"
         echo "Partitions disponibles :"
+        
+        # Parcours des partitions sélectionnées et affichage des infos
         local i=1
-        for type in "${available_types[@]}"; do
-            echo "  $i) $type"
+        for partition in "${selected_partitions[@]}"; do
+            # Séparation des informations de la partition
+            IFS=':' read -r name size fs_type <<< "$partition"
+            
+            # Affichage sous le format demandé
+            echo "Partition : $name - Type : $fs_type - Taille : $size"
             ((i++))
         done
+
         echo "============================================"
     }
 
@@ -410,6 +433,7 @@ preparation_disk() {
         if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice > 0 && choice <= ${#available_types[@]} )); then
             local partition_type="${available_types[choice-1]}"
             local size
+            local fs_type
 
             case "$partition_type" in
                 "boot")
