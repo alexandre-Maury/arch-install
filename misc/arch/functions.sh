@@ -325,159 +325,326 @@ erase_partition() {
 }
 
 preparation_disk() {
-    # Initialisation des variables
-    local partition_types=("boot:fat32:512MiB" "racine:btrfs:100GiB" "racine_home:btrfs:100%")
-    local selected_partitions=()  # Liste des partitions sélectionnées
-    local available_partitions=("${partition_types[@]}")  # Partitions disponibles
-    local disk="$1"  # Le disque cible
-    local used_space=0  # Espace utilisé jusqu'à présent
-    local disk_size_mib  # Taille du disque en MiB
-    local remaining_space  # Espace restant
+    # Fonction principale pour la préparation et le partitionnement du disque
+    
+    # Déclaration de toutes les variables en local pour éviter les conflits
+    local partition_types=()  # Tableau pour stocker les types de partitions disponibles
+    local disk="$1"          # Le disque cible passé en paramètre
+    local disk_size          # Taille totale du disque
+    local disk_size_mib      # Taille du disque convertie en MiB
+    local used_space=0       # Espace déjà utilisé par les partitions
+    local selected_partitions=() # Tableau pour stocker les partitions sélectionnées
+    local available_types=()  # Types de partitions encore disponibles
+    local remaining_space    # Espace restant sur le disque
+    local partition_number=1  # Numéro de la partition en cours
+    local partition_prefix    # Préfixe pour les partitions (p pour NVMe)
+    local start="1MiB"       # Point de départ pour la première partition
+
+    # Définition des systèmes de fichiers disponibles pour chaque type de partition
+    local filesystem_types=(
+        "btrfs"
+        "ext4"
+        "xfs"
+    )
+
+    # Initialisation des types de partitions de base
+    # Format: "nom:type_par_defaut:taille_par_defaut"
+    partition_types=(
+        "boot:fat32:512MiB"
+        "racine:btrfs:100GiB"
+        "racine_home:btrfs:100%"
+        "home:xfs:100%"
+    )
+
+    # Ajout conditionnel de la partition swap si FILE_SWAP est "Off"
+    if [[ "${FILE_SWAP}" == "Off" ]]; then
+        partition_types+=("swap:linux-swap:4GiB")
+    fi
 
     # Récupération de la taille du disque
     disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     disk_size_mib=$(convert_to_mib "$disk_size")
-    remaining_space=$disk_size_mib
+    available_types=("${partition_types[@]}")
 
-    # Fonction pour afficher les partitions disponibles et mettre à jour les partitions visibles
-    update_available_partitions() {
-        local new_available=()
-        local has_racine=false
-        local has_racine_home=false
-        local partition
-
-        # Vérification de la présence de "racine" et "racine_home" dans les partitions sélectionnées
-        for partition in "${selected_partitions[@]}"; do
-            IFS=':' read -r name _ _ <<< "$partition"
-            if [[ "$name" == "racine" ]]; then
-                has_racine=true
-            elif [[ "$name" == "racine_home" ]]; then
-                has_racine_home=true
-            fi
-        done
-
-        # Ajout conditionnel des partitions en fonction des sélections
-        for partition in "${partition_types[@]}"; do
-            IFS=':' read -r name type size <<< "$partition"
-            
-            # Si "racine" est sélectionnée, ajouter "home"
-            if [[ "$name" == "home" && "$has_racine" == false ]]; then
-                continue
-            fi
-            
-            # Si "racine_home" est sélectionnée, ne pas ajouter "racine"
-            if [[ "$name" == "racine" && "$has_racine_home" == true ]]; then
-                continue
-            fi
-            
-            # Si "racine" est sélectionnée, "racine_home" ne doit pas être visible
-            if [[ "$name" == "racine_home" && "$has_racine" == true ]]; then
-                continue
-            fi
-            
-            new_available+=("$partition")
-        done
-
-        available_partitions=("${new_available[@]}")
-    }
-
-    # Fonction pour sélectionner le système de fichiers
+    # Fonction locale pour sélectionner le système de fichiers
     select_filesystem() {
         local default_fs="$1"
         local selected_fs
 
-        echo "Systèmes de fichiers disponibles :"
-        echo "1) btrfs"
-        echo "2) ext4"
-        echo "3) xfs"
-        read -p "Sélectionnez un système de fichiers (1 par défaut) : " fs_choice
-
-        case "$fs_choice" in
-            1) selected_fs="btrfs" ;;
-            2) selected_fs="ext4" ;;
-            3) selected_fs="xfs" ;;
-            *) selected_fs="$default_fs" ;;
-        esac
-
-        echo "Système de fichiers sélectionné : $selected_fs"
+        echo ""
+        log_prompt "INFO" && echo "Systèmes de fichiers disponibles :" && echo ""
+        for i in "${!filesystem_types[@]}"; do
+            echo "$((i+1))) ${filesystem_types[$i]}"
+        done
+        
+        while true; do
+            log_prompt "INFO" && read -p "Sélectionnez le système de fichiers (Enter pour $default_fs): " fs_choice
+            
+            # Si aucun choix n'est fait, utiliser le système par défaut
+            if [[ -z "$fs_choice" ]]; then
+                selected_fs="$default_fs"
+                break
+            fi
+            
+            # Vérifier que le choix est valide
+            if [[ "$fs_choice" =~ ^[0-9]+$ ]] && ((fs_choice >= 1 && fs_choice <= ${#filesystem_types[@]})); then
+                selected_fs="${filesystem_types[$((fs_choice-1))]}"
+                break
+            fi
+            
+            log_prompt "WARNING" && echo "Sélection invalide, réessayez."
+        done
+        
         echo "$selected_fs"
     }
 
-    # Fonction pour convertir la taille en MiB
-    convert_to_mib() {
-        local size="$1"
-        # Exemple de conversion pour simplifier (fonction peut être affinée selon les besoins)
-        echo "${size//MiB/}"  # Retirer 'MiB' si nécessaire
-    }
-
-    # Boucle principale pour choisir les partitions
-    while true; do
-        clear
-        # Calcul de l'espace restant
-        remaining_space=$((disk_size_mib - used_space))
-
-        # Mise à jour des partitions disponibles en fonction des choix précédents
-        update_available_partitions
-
-        # Afficher les partitions disponibles
-        echo "Espace restant sur le disque : $remaining_space MiB"
-        echo "Partitions disponibles :"
-        for i in "${!available_partitions[@]}"; do
-            IFS=':' read -r name type size <<< "${available_partitions[$i]}"
-            echo "$((i+1))) $name (type par défaut: $type, taille par défaut: $size)"
+    # Fonction locale pour mettre à jour les partitions disponibles
+    update_available_partitions() {
+        local new_available=()
+        local found
+        local can_add
+        local avail
+        local avail_name
+        local avail_type
+        local avail_size
+        local sel
+        local sel_name
+        local has_racine=false
+        local has_racine_home=false
+        
+        # Vérifier si racine ou racine_home est déjà sélectionné
+        for sel in "${selected_partitions[@]}"; do
+            IFS=':' read -r sel_name _ _ <<< "$sel"
+            if [[ "$sel_name" == "racine" ]]; then
+                has_racine=true
+            elif [[ "$sel_name" == "racine_home" ]]; then
+                has_racine_home=true
+            fi
         done
-        echo "0) Terminer la configuration"
+        
+        # Parcourir toutes les partitions disponibles
+        for avail in "${partition_types[@]}"; do
+            IFS=':' read -r avail_name avail_type avail_size <<< "$avail"
+            found=false
+            
+            # Vérifier si la partition est déjà sélectionnée
+            for sel in "${selected_partitions[@]}"; do
+                IFS=':' read -r sel_name _ _ <<< "$sel"
+                if [[ "$avail_name" == "$sel_name" ]]; then
+                    found=true
+                    break
+                fi
+            done
+            
+            # Si la partition n'est pas déjà sélectionnée
+            if [[ "$found" == false ]]; then
+                can_add=true
+                
+                # Logique pour gérer les incompatibilités
+                case "$avail_name" in
+                    "home")
+                        # Home n'est disponible que si racine est sélectionné et racine_home ne l'est pas
+                        if [[ "$has_racine" == false || "$has_racine_home" == true ]]; then
+                            can_add=false
+                        fi
+                        ;;
+                    "racine")
+                        # Racine n'est pas disponible si racine_home est sélectionné
+                        if [[ "$has_racine_home" == true ]]; then
+                            can_add=false
+                        fi
+                        ;;
+                    "racine_home")
+                        # Racine_home n'est pas disponible si racine ou home est sélectionné
+                        if [[ "$has_racine" == true ]]; then
+                            can_add=false
+                        fi
+                        ;;
+                esac
+                
+                # Ajouter la partition si elle est compatible
+                if [[ "$can_add" == true ]]; then
+                    new_available+=("$avail")
+                fi
+            fi
+        done
+        
+        available_types=("${new_available[@]}")
+    }
+    
+    echo ""
 
-        # Demander à l'utilisateur de sélectionner une partition
-        read -p "Sélectionnez une partition : " choice
+    # Boucle principale pour la configuration des partitions
+    while true; do
+        # Calculer l'espace restant en MiB
+        remaining_space=$((disk_size_mib - used_space))
+        
+        # Afficher les informations sur l'espace disponible
+        log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
+        log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
+
+        # Afficher les messages d'avertissement et d'information
+        echo ""
+        echo "ATTENTION : La partition racine (/) sera celle qui accueillera le système."
+        echo "Il est important de ne pas modifier son label (racine ou racine_home), car cela pourrait perturber l'installation."
+        echo ""
+        echo "boot        ==> partition efi"
+        echo "swap        ==> partition swap"
+        echo "racine      ==> partition root : partition home séparée"
+        echo "racine_home ==> partition root : partition pour root et home"
+        echo "home        ==> partition home (disponible uniquement avec racine)"
+        echo ""
+
+        # Afficher les types de partitions disponibles
+        for i in "${!available_types[@]}"; do
+            IFS=':' read -r name type size <<< "${available_types[$i]}"
+            printf "%d) %s (type par défaut: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
+        done
+
+        echo "0) Terminer la configuration des partitions" && echo ""
+
+        # Demander à l'utilisateur de faire un choix
+        log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
+        
+        # Gestion du choix de l'utilisateur
         if [[ "$choice" -eq 0 ]]; then
             if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-                echo "Vous devez sélectionner au moins une partition."
+                log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition." && echo ""
                 continue
             fi
             break
         fi
-
-        # Validation du choix de l'utilisateur
-        if [[ "$choice" -lt 1 || "$choice" -gt ${#available_partitions[@]} ]]; then
-            echo "Choix invalide, réessayez."
+            
+        # Validation du choix
+        if [[ "$choice" -lt 1 || "$choice" -gt ${#available_types[@]} ]]; then
+            log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
             continue
         fi
-
-        # Récupération de la partition sélectionnée
-        selected_index=$((choice - 1))
-        partition="${available_partitions[$selected_index]}"
+            
+        # Récupération des informations de la partition sélectionnée
+        selected_index=$((choice-1))
+        partition="${available_types[$selected_index]}"
         IFS=':' read -r name type default_size <<< "$partition"
 
-        # Sélection du système de fichiers
-        selected_fs=$(select_filesystem "$type")
-
+        # Sélection du système de fichiers si applicable
+        if [[ "$type" != "fat32" && "$type" != "linux-swap" ]]; then
+            type=$(select_filesystem "$type")
+        fi
+            
         # Demander la taille de la partition
-        read -p "Entrez la taille de la partition ($default_size par défaut) : " custom_size
-        if [[ -z "$custom_size" ]]; then
-            custom_size="$default_size"
+        while true; do
+            local custom_size=$(get_partition_size "$default_size")
+            if [[ $? -eq 0 ]]; then
+                break
+            else
+                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+            fi
+        done
+            
+        # Ajouter la partition sélectionnée
+        selected_partitions+=("$name:$type:$custom_size")
+
+        # Mettre à jour les partitions disponibles
+        update_available_partitions
+
+        # Gérer la dernière partition qui utilise tout l'espace restant
+        if [[ "$custom_size" == "100%" ]]; then
+            size_in_miB=$remaining_space
+            break
+        else
+            size_in_miB=$(convert_to_mib "$custom_size")
         fi
 
-        # Ajouter la partition sélectionnée à la liste
-        selected_partitions+=("$name:$selected_fs:$custom_size")
-
-        # Calculer l'espace utilisé
-        used_space=$((used_space + $(convert_to_mib "$custom_size")))
+        # Mettre à jour l'espace utilisé
+        used_space=$((used_space + size_in_miB))
+        
+        clear
     done
 
-    # Afficher les partitions sélectionnées
-    echo "Partitions sélectionnées :"
+    # Afficher le récapitulatif des partitions sélectionnées
+    clear
+    log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
     for partition in "${selected_partitions[@]}"; do
         IFS=':' read -r name type size <<< "$partition"
-        echo "$name ($type) - $size"
+        echo "$name ($type): $size"
     done
 
-    # Demander confirmation avant la création des partitions
-    read -p "Confirmer la création des partitions (y/n) : " confirm
+    echo ""
+
+    # Demander confirmation avant de créer les partitions
+    log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
     if [[ "$confirm" != "y" ]]; then
         echo "Annulation de la création des partitions."
         exit 1
     fi
+
+    # Création de la table de partition GPT
+    parted --script "/dev/$disk" mklabel gpt || { log_prompt "ERROR" && echo "Impossible de créer la table de partition"; exit 1; }
+
+    # Initialisation des variables pour la création des partitions
+    start="1MiB"
+    partition_number=1
+
+    # Définition du préfixe de partition selon le type de disque
+    if [[ "$disk_type" == "nvme" ]]; then
+        partition_prefix="p"
+    else
+        partition_prefix=""
+    fi
+
+    # Création et formatage des partitions
+    for partition in "${selected_partitions[@]}"; do
+        IFS=':' read -r name type size <<< "$partition"
+        
+        # Calcul de la fin de la partition
+        if [[ "$size" == "100%" ]]; then
+            end="100%"
+        else
+            start_in_miB=$(convert_to_mib "$start")
+            size_in_miB=$(convert_to_mib "$size")
+            end_in_miB=$(($start_in_miB + $size_in_miB))
+            end="${end_in_miB}MiB"
+        fi
+
+        # Création de la partition
+        partition_device="/dev/${disk}${partition_prefix}${partition_number}"
+        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { 
+            log_prompt "ERROR" && echo "Impossible de créer la partition $name"; 
+            exit 1; 
+        }
+
+        # Configuration des drapeaux de partition
+        case "$name" in
+            "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
+            "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
+        esac
+
+        # Formatage de la partition
+        case "$type" in
+            "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
+            "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
+            "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
+            "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
+            "linux-swap")  
+                mkswap -L "$name" "$partition_device" || { 
+                    log_prompt "ERROR" && echo "Erreur lors de la création de la partition swap"; 
+                    exit 1; 
+                } 
+                swapon "$partition_device" || { 
+                    log_prompt "ERROR" && echo "Erreur lors de l'activation de la partition swap"; 
+                    exit 1; 
+                } 
+                ;;
+            *)
+                log_prompt "ERROR" && echo "Système de fichiers non supporté: $type" >&2
+                continue
+                ;;
+        esac
+
+        # Mise à jour de la position de départ pour la prochaine partition
+        start="$end"
+        ((partition_number++))
+    done
 }
 
 
