@@ -576,6 +576,7 @@ preparation_disk() {
 
 
 
+
 # # Fonction pour préparer le disque création + formatage des partitions
 # preparation_disk() {
 
