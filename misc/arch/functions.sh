@@ -355,20 +355,20 @@ preparation_disk() {
         # Déterminer les types restants en fonction du dernier choix
         case "$last_selected" in
             "boot")
-                available_types=("racine" "racine_home" "swap")
+                available_types=("racine" "racine_home" "swap") # `home` n'est pas disponible ici
                 ;;
             "racine")
-                available_types=("swap" "home")
+                available_types=("swap" "home") # `home` devient disponible après `racine`
                 ;;
             "racine_home")
-                available_types=("swap")
+                available_types=("swap") # Après `racine_home`, seulement `swap` possible
                 ;;
             "swap")
-                available_types=("racine" "racine_home")
+                available_types=("racine" "racine_home") # Swap permet de choisir une racine
                 ;;
             *)
-                # Si aucun type n'a été sélectionné, tous les types sont disponibles
-                available_types=("boot" "racine" "racine_home" "swap" "home")
+                # Si aucun type n'a été sélectionné, seuls les premiers types sont disponibles
+                available_types=("boot" "racine" "racine_home" "swap")
                 ;;
         esac
 
@@ -383,6 +383,7 @@ preparation_disk() {
         # Mettre à jour les types disponibles
         available_types=("${filtered_types[@]}")
     }
+
 
 
     # Configuration interactive des partitions
