@@ -329,7 +329,6 @@ preparation_disk() {
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="2G"
     local DEFAULT_ROOT_SIZE="20G"
-    local DEFAULT_ROOT_HOME_SIZE="100%"
     local DEFAULT_HOME_SIZE="100%"
 
     # Initialiser les types disponibles et sélectionnés
@@ -398,8 +397,8 @@ preparation_disk() {
                 size=${size:-$DEFAULT_ROOT_SIZE}
                 ;;
             "racine_home")
-                read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_ROOT_HOME_SIZE) : " size
-                size=${size:-$DEFAULT_ROOT_HOME_SIZE}
+                read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_ROOT_SIZE) : " size
+                size=${size:-$DEFAULT_ROOT_SIZE}
                 ;;
             "swap")
                 read -rp "Entrez la taille pour swap (par défaut : $DEFAULT_SWAP_SIZE) : " size
@@ -459,12 +458,6 @@ preparation_disk() {
         echo "  - $partition"
     done
 }
-
-
-
-
-
-
 
 # # Fonction pour préparer le disque création + formatage des partitions
 # preparation_disk() {
