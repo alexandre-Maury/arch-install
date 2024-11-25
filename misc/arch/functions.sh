@@ -358,13 +358,13 @@ preparation_disk() {
                 available_types=("racine" "racine_home" "swap") # `home` n'est pas disponible ici
                 ;;
             "racine")
-                available_types=("swap" "home") # `home` devient disponible après `racine`
+                available_types=("boot" "swap" "home") # `home` devient disponible après `racine`
                 ;;
             "racine_home")
-                available_types=("swap") # Après `racine_home`, seulement `swap` possible
+                available_types=("boot" "swap") # Après `racine_home`, seulement `swap` possible
                 ;;
             "swap")
-                available_types=("racine" "racine_home") # Swap permet de choisir une racine
+                available_types=("boot" "racine" "racine_home") # Swap permet de choisir une racine
                 ;;
             *)
                 # Si aucun type n'a été sélectionné, seuls les premiers types sont disponibles
