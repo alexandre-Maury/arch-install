@@ -327,7 +327,6 @@ erase_partition() {
 preparation_disk() {
     # Fonction principale pour la préparation et le partitionnement du disque
     
-    # Déclaration de toutes les variables en local pour éviter les conflits
     local partition_types=()  # Tableau pour stocker les types de partitions disponibles
     local disk="$1"          # Le disque cible passé en paramètre
     local disk_size          # Taille totale du disque
@@ -348,12 +347,11 @@ preparation_disk() {
     )
 
     # Initialisation des types de partitions de base
-    # Format: "nom:type_par_defaut:taille_par_defaut"
     partition_types=(
         "boot:fat32:512MiB"
         "racine:btrfs:100GiB"
         "racine_home:btrfs:100%"
-        "home:xfs:100%"
+        "home:xfs:100%"  # Home ne sera disponible que si racine est sélectionnée
     )
 
     # Ajout conditionnel de la partition swap si FILE_SWAP est "Off"
@@ -456,7 +454,7 @@ preparation_disk() {
                         ;;
                     "racine_home")
                         # Racine_home n'est pas disponible si racine ou home est sélectionné
-                        if [[ "$has_racine" == true ]]; then
+                        if [[ "$has_racine" == true || "$has_racine_home" == true ]]; then
                             can_add=false
                         fi
                         ;;
@@ -471,7 +469,7 @@ preparation_disk() {
         
         available_types=("${new_available[@]}")
     }
-    
+
     echo ""
 
     # Boucle principale pour la configuration des partitions
@@ -646,6 +644,7 @@ preparation_disk() {
         ((partition_number++))
     done
 }
+
 
 # # Fonction pour préparer le disque création + formatage des partitions
 # preparation_disk() {
