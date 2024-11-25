@@ -372,36 +372,45 @@ preparation_disk() {
 
     # Mise à jour dynamique des partitions disponibles
     _update_available_partitions() {
-        local new_available=() has_racine=false has_racine_home=false
-        
-        # Vérifier les états existants
+        local new_available=()
+        local selected_names=()
+
+        # Extraire les noms des partitions déjà sélectionnées
         for sel in "${selected_partitions[@]}"; do
-            case "$(cut -d':' -f1 <<< "$sel")" in
-                "racine") has_racine=true ;;
-                "racine_home") has_racine_home=true ;;
-            esac
+            selected_names+=("$(cut -d':' -f1 <<< "$sel")")
         done
-        
-        # Filtrer les partitions
+
+        # Règles de sélection des partitions disponibles
         for avail in "${partition_types[@]}"; do
             local avail_name=$(cut -d':' -f1 <<< "$avail")
             local can_add=true
-            
+
             case "$avail_name" in
+                "racine_home")
+                    # Racine_home n'est disponible que si racine n'est pas choisie
+                    [[ " ${selected_names[*]} " == *" racine "* ]] && can_add=false
+                    ;;
                 "home")
-                    [[ "$has_racine" == false || "$has_racine_home" == true ]] && can_add=false
+                    # Home n'est disponible que si racine est choisie et racine_home ne l'est pas
+                    [[ " ${selected_names[*]} " != *" racine "* || 
+                    " ${selected_names[*]} " == *" racine_home "* ]] && can_add=false
                     ;;
                 "racine")
-                    [[ "$has_racine_home" == true ]] && can_add=false
+                    # Racine n'est disponible que si racine_home n'est pas choisie
+                    [[ " ${selected_names[*]} " == *" racine_home "* ]] && can_add=false
                     ;;
-                "racine_home")
-                    [[ "$has_racine" == true ]] && can_add=false
+                "swap")
+                    # Swap n'est disponible que s'il n'a pas déjà été choisi
+                    [[ " ${selected_names[*]} " == *" swap "* ]] && can_add=false
                     ;;
             esac
-            
+
+            # Exclure les partitions déjà sélectionnées
+            [[ " ${selected_names[*]} " == *" $avail_name "* ]] && can_add=false
+
             [[ "$can_add" == true ]] && new_available+=("$avail")
         done
-        
+
         available_types=("${new_available[@]}")
     }
 
