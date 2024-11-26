@@ -629,201 +629,12 @@ preparation_disk() {
 
     # Résumé des partitions créées
     echo
-    echo "Partitions créées avec succès :"
+    log_prompt "SUCCESS" && echo "Partitions créées avec succès :"
     for partition in "${selected_partitions[@]}"; do
         echo "  - $partition"
     done
-    echo "============================================"
+
 }
-
-
-
-# # Fonction pour préparer le disque création + formatage des partitions
-# preparation_disk() {
-
-#     # Déclaration de la liste de partitions pour une installation compléte du systeme
-#     local partition_types=("boot:fat32:512MiB" "racine:btrfs:100GiB" "home:xfs:100%" "racine_home:btrfs:100%")
-
-#     # Condition pour ajouter la partition swap si FILE_SWAP n'est pas "Off"
-#     if [[ "${FILE_SWAP}" == "Off" ]]; then
-#         partition_types+=("swap:linux-swap:4GiB")  # Ajouter la partition swap
-#     fi
-
-#     local disk="$1"
-#     local remaining_types=("${partition_types[@]}")
-#     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-#     local disk_size_mib=$(convert_to_mib "$disk_size")
-#     local used_space=0  
-#     local selected_partitions=()
-#     local size_in_miB
-#     local remaining_space
-#     local selected_index
-#     local partition
-#     local start
-#     local end
-#     local partition_number
-#     local partition_prefix
-#     local start_in_miB
-#     local size_in_miB
-#     local end_in_miB
-#     local partition_device
-    
-#     echo ""
-
-#     # Boucle pour configurer les partitions
-#     while true; do
-#         # Calculer l'espace restant en MiB
-#         remaining_space=$((disk_size_mib - used_space))
-        
-#         log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) " && echo ""
-#         log_prompt "INFO" && echo "Types de partitions disponibles : " && echo ""
-
-#         echo ""
-#         # Message d'avertissement concernant la partition racine
-#         echo "ATTENTION : La partition racine (/) sera celle qui accueillera le système."
-#         echo "Il est important de ne pas modifier son label (racine), car cela pourrait perturber l'installation."
-#         echo "Par contre, le type (btrfs, ext4 ...) ou la taille de cette partition peut être modifiée, en particulier si elle occupe l'espace restant disponible."
-#         echo ""
-#         echo "boot        ==> partition efi."
-#         echo "swap        ==> partition swap."
-#         echo "racine      ==> partition root :  partition home séparée."
-#         echo "racine_home ==> partition root :  partition pour root et home."
-#         echo ""
-
-#         # Afficher les types de partitions disponibles
-#         for i in "${!remaining_types[@]}"; do
-#             IFS=':' read -r name type size <<< "${remaining_types[$i]}"
-#             printf "%d) %s (type: %s, taille par défaut: %s)\n" $((i+1)) "$name" "$type" "$size"
-#         done
-
-#         echo "0) Terminer la configuration des partitions" && echo ""
-
-#         log_prompt "INFO" && read -p "Sélectionnez un type de partition (0 pour terminer) : " choice && echo ""
-        
-#         # Terminer si l'utilisateur choisit 0
-#         if [[ "$choice" -eq 0 ]]; then
-#             if [[ ${#selected_partitions[@]} -eq 0 ]]; then
-#                 log_prompt "ERROR" && echo "Vous devez sélectionner au moins une partition." && echo ""
-#                 continue
-#             fi
-#             break
-#         fi
-            
-#         if [[ "$choice" -lt 1 || "$choice" -gt ${#remaining_types[@]} ]]; then
-#             log_prompt "WARNING" && echo "Sélection invalide, réessayez." && echo ""
-#             continue
-#         fi
-            
-#         selected_index=$((choice-1))
-#         partition="${remaining_types[$selected_index]}"
-            
-#         IFS=':' read -r name type default_size <<< "$partition"
-            
-#         # Demander la taille de la partition
-#         while true; do
-#             local custom_size=$(get_partition_size "$default_size")
-#             if [[ $? -eq 0 ]]; then
-#                 break  # La taille est valide, on sort de la boucle
-#             else
-#                 log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
-#             fi
-#         done
-            
-#         selected_partitions+=("$name:$type:$custom_size")
-
-#         # Si la taille est "100%", on la considère comme prenant tout l'espace restant
-#         if [[ "$custom_size" == "100%" ]]; then
-#             # La partition prend tout l'espace restant
-#             size_in_miB=$remaining_space
-#             break  # Sortir de la boucle une fois qu'une partition de 100% est ajoutée
-#         else
-#             # Convertir la taille de la partition en MiB
-#             size_in_miB=$(convert_to_mib "$custom_size")
-#         fi
-
-#         used_space=$((used_space + size_in_miB))
-        
-#         # Supprimer le type sélectionné du tableau remaining_types sans créer de "trou"
-#         remaining_types=("${remaining_types[@]:0:$selected_index}" "${remaining_types[@]:$((selected_index+1))}")
-
-#         clear
-#     done
-        
-#     # Afficher les partitions sélectionnées
-#     clear
-#     log_prompt "INFO" && echo "Partitions sélectionnées : " && echo ""
-#     for partition in "${selected_partitions[@]}"; do
-#         IFS=':' read -r name type size <<< "$partition"
-#         echo "$name ($type): $size"
-#     done
-
-#     echo ""
-
-#     # Confirmer la création des partitions
-#     log_prompt "INFO" && read -p "Confirmer la création des partitions (y/n) : " confirm && echo ""
-#     if [[ "$confirm" != "y" ]]; then
-#         echo "Annulation de la création des partitions."
-#         exit 1
-#     fi                                                  
-
-#     # Créer la table de partition GPT
-#     parted --script "/dev/$disk" mklabel gpt || { echo "Erreur: Impossible de créer la table de partition"; exit 1; }
-
-#     start="1MiB"
-#     partition_number=1
-
-#     # Pour les disques NVMe, ajouter un préfixe "p"
-#     if [[ "$disk_type" == "nvme" ]]; then
-#         partition_prefix="p"
-#     else
-#         partition_prefix=""
-#     fi
-
-#     for partition in "${selected_partitions[@]}"; do
-#         IFS=':' read -r name type size <<< "$partition"
-        
-#         if [[ "$size" == "100%" ]]; then
-#             # La partition doit prendre tout l'espace restant
-#             end="100%"
-#         else
-#             # Convertir la taille en MiB avant de faire des calculs
-#             start_in_miB=$(convert_to_mib "$start")
-#             size_in_miB=$(convert_to_mib "$size")
-            
-#             # Calculer la fin de la partition en MiB
-#             end_in_miB=$(($start_in_miB + $size_in_miB))
-#             end="${end_in_miB}MiB"
-#         fi
-
-#         # Créer la partition avec parted
-#         partition_device="/dev/${disk}${partition_prefix}${partition_number}"
-#         parted --script -a optimal "/dev/$disk" mkpart primary "$type" "$start" "$end" || { echo "Erreur: Impossible de créer la partition $name"; exit 1; }
-
-#         # Définir des options supplémentaires selon le type de partition
-#         case "$name" in
-#             "boot") parted --script -a optimal "/dev/$disk" set "$partition_number" esp on ;;
-#             "swap") parted --script -a optimal "/dev/$disk" set "$partition_number" swap on ;;
-#         esac
-
-#         # Formater la partition
-#         case "$type" in
-#             "ext4")  mkfs.ext4 -F -L "$name" "$partition_device" ;;
-#             "xfs")   mkfs.xfs -f -L "$name" "$partition_device" ;;
-#             "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-#             "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-#             "linux-swap")  mkswap -L "$name" "$partition_device" || { echo "Erreur lors de la création de la partition swap"; exit 1; } && swapon "$partition_device" || { echo "Erreur lors de l'activation de la partition swap"; exit 1; } ;;
-#             *)
-#                 echo "Erreur: Système de fichiers non supporté: $type" >&2
-#                 continue
-#                 ;;
-#         esac
-
-#         # Mise à jour de la position de départ pour la prochaine partition
-#         start="$end"
-#         ((partition_number++))
-#     done
-
-# }
 
 # Fonction pour monter les partitions en fonction du system de fichier
 mount_partitions() {
@@ -837,63 +648,77 @@ mount_partitions() {
     local MOUNTPOINT
     local UUID
 
-    mkdir -p "${MOUNT_POINT}"
-
-    # récupération des partition à afficher sur le disque
-    while IFS= read -r partition; do
-        partitions+=("$partition")
-    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+    # Récupération des partitions à afficher sur le disque
+    mapfile -t partitions < <(lsblk -n -o NAME "/dev/$disk" | awk '$0 !~ "^'$disk'$" {print $1}')
 
     # Affiche les informations de chaque partition
-    for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
+    for partition in "${partitions[@]}"; do
         if [ -b "/dev/$partition" ]; then
-            # Récupérer chaque colonne séparément pour éviter toute confusion
-            NAME=$(lsblk "/dev/$partition" -n -o NAME)
-            FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
-            LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
-
-            case "$LABEL" in
-                "boot")      
-                    mkdir -p "${MOUNT_POINT}/boot"
-                    mount "/dev/$NAME" "${MOUNT_POINT}/boot"
-                    ;;
-
-                "racine") 
-                    mount "/dev/$NAME" "${MOUNT_POINT}" 
-
-                    if [[ "$FSTYPE" == "btrfs" ]]; then
-                        # Créer le sous-volume pour la racine ("/")
-                        btrfs subvolume create ${MOUNT_POINT}/@
-                    fi
-                    
-                    ;;
-
-                "racine_home") 
-                    mount "/dev/$NAME" "${MOUNT_POINT}" 
-
-                    if [[ "$FSTYPE" == "btrfs" ]]; then
-                        # Créer le sous-volume pour la racine ("/")
-                        btrfs subvolume create ${MOUNT_POINT}/@
-                    fi
-
-                    ;;
-
-                "home") 
-                    mkdir -p "${MOUNT_POINT}/home"  
-                    mount "/dev/$NAME" "${MOUNT_POINT}/home"
-                    ;;
-
-                "swap")  
-                    log_prompt "INFO" && echo "Partition swap déja monté"
-                    ;;
-
-                *)
-                    echo "Erreur: Label non reconnu: $LABEL"
-                    continue
-                    ;;
-            esac
+            # Récupérer les informations pour chaque partition en un seul appel
+            read -r NAME FSTYPE LABEL SIZE <<< "$(lsblk "/dev/$partition" -n -o NAME,FSTYPE,LABEL,SIZE)"
+            
+            # Afficher les informations récupérées
+            echo "Partition : $NAME"
+            echo "  Type de système de fichiers : ${FSTYPE:-Aucun}"
+            echo "  Étiquette : ${LABEL:-Aucune}"
+            echo "  Taille : $SIZE"
+            echo "---------------------------------"
         fi
     done
+
+    # mkdir -p "${MOUNT_POINT}"
+
+    # _format_fs_type_btrfs() {
+    #     # Créer le sous-volume pour la racine ("/")
+    #     btrfs subvolume create ${MOUNT_POINT}/@
+
+    # }
+
+    # # récupération des partition à afficher sur le disque
+    # while IFS= read -r partition; do
+    #     partitions+=("$partition")
+    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+
+    # # Affiche les informations de chaque partition
+    # for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
+    #     if [ -b "/dev/$partition" ]; then
+    #         # Récupérer chaque colonne séparément pour éviter toute confusion
+    #         NAME=$(lsblk "/dev/$partition" -n -o NAME)
+    #         FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
+    #         LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
+    #         SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
+
+    #         case "$LABEL" in
+    #             "boot")      
+    #                 mkdir -p "${MOUNT_POINT}/boot"
+    #                 mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+    #                 ;;
+
+    #             "root") 
+    #                 mount "/dev/$NAME" "${MOUNT_POINT}" 
+
+    #                 if [[ "$FSTYPE" == "btrfs" ]]; then
+    #                     _format_fs_type_btrfs
+    #                 fi
+                    
+    #                 ;;
+
+    #             "home") 
+    #                 mkdir -p "${MOUNT_POINT}/home"  
+    #                 mount "/dev/$NAME" "${MOUNT_POINT}/home"
+    #                 ;;
+
+    #             "swap")  
+    #                 log_prompt "INFO" && echo "Partition swap déja monté"
+    #                 ;;
+
+    #             *)
+    #                 echo "Erreur: Label non reconnu: $LABEL"
+    #                 continue
+    #                 ;;
+    #         esac
+    #     fi
+    # done
 
 }
 
