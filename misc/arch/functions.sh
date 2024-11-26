@@ -323,7 +323,7 @@ preparation_disk() {
     local selected_partitions=()
     local formatted_partitions=()  
     local disk="$1"  
-    local disk_type="basic"  # ou "nvme"
+    local disk_type=$(_detect_disk_type "$disk")
     local partition_number=1
     local start="1MiB"
     local remaining_space
@@ -335,6 +335,27 @@ preparation_disk() {
     if [[ "${FILE_SWAP}" == "Off" ]]; then
         available_types+=("swap")  # Ajouter la partition swap
     fi
+
+    _detect_disk_type() {
+        local disk="$1"
+        case "$disk" in
+            nvme*)
+                echo "nvme"
+                ;;
+            sd*)
+                # Test supplémentaire pour distinguer SSD/HDD
+                local rotational=$(cat "/sys/block/$disk/queue/rotational" 2>/dev/null)
+                if [[ "$rotational" == "0" ]]; then
+                    echo "ssd"
+                else
+                    echo "hdd"
+                fi
+                ;;
+            *)
+                echo "basic"
+                ;;
+        esac
+    }
 
     # Fonction pour demander à l'utilisateur une taille de partition valide
     _get_partition_size() {
@@ -450,6 +471,7 @@ preparation_disk() {
     while [[ ${#available_types[@]} -gt 0 ]]; do
         clear
         _display_menu
+        
         read -rp "Sélectionnez un type de partition (q pour terminer) : " choice
 
         if [[ "$choice" =~ ^[qQ]$ ]]; then
@@ -508,7 +530,7 @@ preparation_disk() {
     echo
 
     parted --script "/dev/$disk" mklabel gpt
-    
+
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
     for partition in "${formatted_partitions[@]}"; do
