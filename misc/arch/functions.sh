@@ -533,8 +533,9 @@ preparation_disk() {
 
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
-    for partition in "${formatted_partitions[@]}"; do
+    for partition in "${selected_partitions[@]}"; do
         IFS=':' read -r name size fs_type <<< "$partition"
+        
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
 
         if [[ "$size" != "100%" ]]; then
