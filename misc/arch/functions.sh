@@ -384,39 +384,18 @@ preparation_disk() {
         fi
     }
 
-    # # Fonction d'affichage du menu
-    # _display_menu() {
-    #     echo
-    #     echo "============================================"
-    #     echo "         Sélection des partitions"
-    #     echo "============================================"
-    #     echo "Partitions disponibles :"
-    #     local i=1
-    #     for type in "${available_types[@]}"; do
-    #         echo "  $i) $type"
-    #         ((i++))
-    #     done
-    #     echo "============================================"
-    # }
-
+    # Fonction d'affichage du menu
     _display_menu() {
         echo
         echo "============================================"
         echo "         Sélection des partitions"
         echo "============================================"
         echo "Partitions disponibles :"
-        
-        # Parcours des partitions sélectionnées et affichage des infos
         local i=1
-        for partition in "${selected_partitions[@]}"; do
-            # Séparation des informations de la partition
-            IFS=':' read -r name size fs_type <<< "$partition"
-            
-            # Affichage sous le format demandé
-            echo "Partition : $name - Type : $fs_type - Taille : $size"
+        for type in "${available_types[@]}"; do
+            echo "  $i) $type"
             ((i++))
         done
-
         echo "============================================"
     }
 
