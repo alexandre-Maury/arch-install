@@ -487,22 +487,22 @@ preparation_disk() {
             case "$partition_type" in
                 "boot")
                     # Demander la taille de la partition
-                    size=$(get_partition_size "$DEFAULT_BOOT_SIZE")
+                    size=$(_get_partition_size "$DEFAULT_BOOT_SIZE")
                     fs_type=$( _get_fs_type "$DEFAULT_BOOT_TYPE")
                     ;;
                 "root")
                     # Demander la taille de la partition
-                    size=$(get_partition_size "$DEFAULT_ROOT_SIZE")
+                    size=$(_get_partition_size "$DEFAULT_ROOT_SIZE")
                     fs_type=$( _get_fs_type "$DEFAULT_ROOT_TYPE")
                     ;;
                 "swap")
                     # Demander la taille de la partition
-                    size=$(get_partition_size "$DEFAULT_SWAP_SIZE")
+                    size=$(_get_partition_size "$DEFAULT_SWAP_SIZE")
                     fs_type="$DEFAULT_SWAP_TYPE"
                     ;;
                 "home")
                     # Demander la taille de la partition
-                    size=$(get_partition_size "$DEFAULT_HOME_SIZE")
+                    size=$(_get_partition_size "$DEFAULT_HOME_SIZE")
                     fs_type=$( _get_fs_type "$DEFAULT_HOME_TYPE")
                     ;;
             esac
