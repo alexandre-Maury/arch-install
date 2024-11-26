@@ -463,7 +463,8 @@ preparation_disk() {
             ((i++))
         done
         echo
-        echo "q : pour quitter"
+        echo "  0) : Saisir "q" pour quitter"
+        echo
         echo "============================================"
     }
 
@@ -535,7 +536,7 @@ preparation_disk() {
 
     for partition in "${selected_partitions[@]}"; do
         IFS=':' read -r name size fs_type <<< "$partition"
-        
+
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
 
         if [[ "$size" != "100%" ]]; then
