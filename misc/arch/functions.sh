@@ -649,20 +649,22 @@ mount_partitions() {
     local UUID
 
     # Récupération des partitions à afficher sur le disque
-    mapfile -t partitions < <(lsblk -n -o NAME "/dev/$disk" | awk '$0 !~ "^'$disk'$" {print $1}')
+    partitions=($(lsblk -n -o NAME "/dev/$disk" | awk '$0 !~ "^'$disk'$" {print $1}'))
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do
         if [ -b "/dev/$partition" ]; then
             # Récupérer les informations pour chaque partition en un seul appel
-            read -r NAME FSTYPE LABEL SIZE <<< "$(lsblk "/dev/$partition" -n -o NAME,FSTYPE,LABEL,SIZE)"
+            partition_info=($(lsblk "/dev/$partition" -n -o NAME,FSTYPE,LABEL,SIZE))
             
             # Afficher les informations récupérées
-            echo "Partition : $NAME"
-            echo "  Type de système de fichiers : ${FSTYPE:-Aucun}"
-            echo "  Étiquette : ${LABEL:-Aucune}"
-            echo "  Taille : $SIZE"
+            echo "Partition : ${partition_info[0]}"
+            echo "  Type de système de fichiers : ${partition_info[1]:-Aucun}"
+            echo "  Étiquette : ${partition_info[2]:-Aucune}"
+            echo "  Taille : ${partition_info[3]}"
             echo "---------------------------------"
+        else
+            echo "récupération des informations des partitions impossible"
         fi
     done
 
