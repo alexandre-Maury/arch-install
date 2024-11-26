@@ -648,79 +648,61 @@ mount_partitions() {
     local MOUNTPOINT
     local UUID
 
-    # Récupération des partitions à afficher sur le disque
-    partitions=($(lsblk -n -o NAME "/dev/$disk" | awk '$0 !~ "^'$disk'$" {print $1}'))
+    mkdir -p "${MOUNT_POINT}"
+
+    _format_fs_type_btrfs() {
+        echo "volume a créer btrfs à 100%"
+    }
+
+    # récupération des partition à afficher sur le disque
+    while IFS= read -r partition; do
+        partitions+=("$partition")
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
     # Affiche les informations de chaque partition
-    for partition in "${partitions[@]}"; do
+    for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
         if [ -b "/dev/$partition" ]; then
-            # Récupérer les informations pour chaque partition en un seul appel
-            partition_info=($(lsblk "/dev/$partition" -n -o NAME,FSTYPE,LABEL,SIZE))
-            
-            # Afficher les informations récupérées
-            echo "Partition : ${partition_info[0]}"
-            echo "  Type de système de fichiers : ${partition_info[1]:-Aucun}"
-            echo "  Étiquette : ${partition_info[2]:-Aucune}"
-            echo "  Taille : ${partition_info[3]}"
-            echo "---------------------------------"
-        else
-            echo "récupération des informations des partitions impossible"
+            # Récupérer chaque colonne séparément pour éviter toute confusion
+            NAME=$(lsblk "/dev/$partition" -n -o NAME)
+            FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
+            LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
+            SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
+
+            case "$LABEL" in
+                "boot")      
+                    mkdir -p "${MOUNT_POINT}/boot"
+                    mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+                    ;;
+
+                "root") 
+                    mount "/dev/$NAME" "${MOUNT_POINT}" 
+
+                    if [[ "$FSTYPE" == "btrfs" && "$SIZE" == "100%" ]]; then
+                        _format_fs_type_btrfs
+                    fi
+
+                    if [[ "$FSTYPE" == "btrfs" && "$SIZE" != "100%" ]]; then
+                        echo "volume a créer btrfs taille == $SIZE"
+                    fi
+                    
+                    ;;
+
+                "home") 
+                    mkdir -p "${MOUNT_POINT}/home"  
+                    mount "/dev/$NAME" "${MOUNT_POINT}/home"
+                    ;;
+
+                "swap")  
+                    log_prompt "INFO" && echo "Partition swap déja monté"
+                    ;;
+
+                *)
+                    echo "Erreur: Label non reconnu: $LABEL"
+                    continue
+                    ;;
+            esac
         fi
     done
-
-    # mkdir -p "${MOUNT_POINT}"
-
-    # _format_fs_type_btrfs() {
-    #     # Créer le sous-volume pour la racine ("/")
-    #     btrfs subvolume create ${MOUNT_POINT}/@
-
-    # }
-
-    # # récupération des partition à afficher sur le disque
-    # while IFS= read -r partition; do
-    #     partitions+=("$partition")
-    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
-    # # Affiche les informations de chaque partition
-    # for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
-    #     if [ -b "/dev/$partition" ]; then
-    #         # Récupérer chaque colonne séparément pour éviter toute confusion
-    #         NAME=$(lsblk "/dev/$partition" -n -o NAME)
-    #         FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
-    #         LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
-    #         SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
-
-    #         case "$LABEL" in
-    #             "boot")      
-    #                 mkdir -p "${MOUNT_POINT}/boot"
-    #                 mount "/dev/$NAME" "${MOUNT_POINT}/boot"
-    #                 ;;
-
-    #             "root") 
-    #                 mount "/dev/$NAME" "${MOUNT_POINT}" 
-
-    #                 if [[ "$FSTYPE" == "btrfs" ]]; then
-    #                     _format_fs_type_btrfs
-    #                 fi
-                    
-    #                 ;;
-
-    #             "home") 
-    #                 mkdir -p "${MOUNT_POINT}/home"  
-    #                 mount "/dev/$NAME" "${MOUNT_POINT}/home"
-    #                 ;;
-
-    #             "swap")  
-    #                 log_prompt "INFO" && echo "Partition swap déja monté"
-    #                 ;;
-
-    #             *)
-    #                 echo "Erreur: Label non reconnu: $LABEL"
-    #                 continue
-    #                 ;;
-    #         esac
-    #     fi
-    # done
 
 }
 

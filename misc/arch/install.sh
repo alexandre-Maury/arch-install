@@ -147,7 +147,8 @@ else
         case $choice in
             1)
                 clear
-                erase_disk "$disk"
+                mount_partitions "$disk"
+                # erase_disk "$disk"
                 break
                 ;;
             2)
