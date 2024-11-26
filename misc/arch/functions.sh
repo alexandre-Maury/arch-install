@@ -332,7 +332,7 @@ preparation_disk() {
     # MANQUE 
 
     local DEFAULT_BOOT_SIZE="512M"
-    local DEFAULT_SWAP_SIZE="2G"
+    local DEFAULT_SWAP_SIZE="4G"
     local DEFAULT_ROOT_SIZE="100G"
     local DEFAULT_ROOTHOME_SIZE="100%"
     local DEFAULT_HOME_SIZE="100%"
@@ -414,6 +414,7 @@ preparation_disk() {
 
     # Processus interactif pour la sélection des partitions
     while [[ ${#available_types[@]} -gt 0 ]]; do
+        clear
         _display_menu
         read -rp "Choisissez une partition (numéro ou quitter) : " choice
 
