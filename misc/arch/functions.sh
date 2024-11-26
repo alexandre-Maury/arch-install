@@ -327,6 +327,10 @@ erase_partition() {
 
 preparation_disk() {
 
+    #  TODO /
+    # REVOIR LES NOM DE PARTITION
+    # MANQUE 
+
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="2G"
     local DEFAULT_ROOT_SIZE="100G"
@@ -359,11 +363,13 @@ preparation_disk() {
         local racine_selected=false
         local home_selected=false
         local swap_selected=false
+        local racine_home_selected=false
 
         for selected in "${selected_partitions[@]}"; do
             case "${selected%%:*}" in
                 "boot") boot_selected=true ;;
                 "racine") racine_selected=true ;;
+                "racine_home") racine_home_selected=true ;;
                 "home") home_selected=true ;;
                 "swap") swap_selected=true ;;
             esac
@@ -373,12 +379,19 @@ preparation_disk() {
         if ! $boot_selected; then
             available_types+=("boot")
         fi
-        if ! $racine_selected; then
-            available_types+=("racine" "racine_home")
+
+        if ! $racine_home_selected; then
+            available_types+=("racine_home")
         fi
+
+        if ! $racine_selected; then
+            available_types+=("racine")
+        fi
+
         if $racine_selected && ! $home_selected; then
             available_types+=("home")
         fi
+
         if ! $swap_selected; then
             available_types+=("swap")
         fi
