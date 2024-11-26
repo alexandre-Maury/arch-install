@@ -503,7 +503,7 @@ preparation_disk() {
     # Résumé des partitions créées
     echo
     echo "Partitions créées avec succès :"
-    for partition in "${formatted_partitions[@]}"; do
+    for partition in "${selected_partitions[@]}"; do
         echo "  - $partition"
     done
     echo "============================================"
