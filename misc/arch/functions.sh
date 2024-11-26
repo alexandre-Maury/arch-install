@@ -6,7 +6,7 @@
 if [ -d /sys/firmware/efi ]; then
     MODE="UEFI"
 else
-    MODE="BIOS"
+    MODE="LEGACY"
 fi
 
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
@@ -460,11 +460,11 @@ preparation_disk() {
         echo
         local i=1
         for type in "${available_types[@]}"; do
-            echo "  $i) partition : $type"
+            echo "  $i ) partition : $type"
             ((i++))
         done
         echo
-        echo "  0) : Saisir "q" pour quitter"
+        echo "  exit ) : Saisir "q" pour quitter"
         echo
     }
 
@@ -530,7 +530,16 @@ preparation_disk() {
     log_prompt "INFO" && echo "Création des partitions sur /dev/$disk..."
     echo
 
-    parted --script "/dev/$disk" mklabel gpt
+    if [[ "$MODE" == "UEFI" ]]; then
+        log_prompt "INFO" && echo "Création de la table GPT" && echo
+        parted --script -a optimal /dev/$disk mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo ""
+    else
+        log_prompt "INFO" && echo "Création de la table MBR"
+        parted --script -a optimal /dev/$disk mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }   
+        log_prompt "SUCCESS" && echo "OK" && echo               
+    fi
+    
 
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
@@ -548,23 +557,71 @@ preparation_disk() {
             end="100%"
         fi
 
-        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end"
+        log_prompt "INFO" && echo "Création de la partition $partition_device"
+        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { echo "Erreur lors de la création de la partition $partition_device"; exit 1; }
+        log_prompt "SUCCESS" && echo "OK" && echo
 
         case "$name" in
-            "boot") parted --script "/dev/$disk" set "$partition_number" esp on ;;
-            "swap") parted --script "/dev/$disk" set "$partition_number" swap on ;;
-        esac
+            "boot") 
+                if [[ "$MODE" == "UEFI" ]]; then
+                    log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode UEFI"
+                    parted --script -a optimal "/dev/$disk" set "$partition_number" esp on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
+                    log_prompt "SUCCESS" && echo "OK" && echo ""
+                else
+                    log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode LEGACY"
+                    parted --script -a optimal /dev/$disk set "$partition_number" boot on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
+                    log_prompt "SUCCESS" && echo "OK" && echo ""
+                fi
+                ;;
 
-        case "$fs_type" in
-            "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" ;;
-            "ext4") mkfs.ext4 -L "$name" "$partition_device" ;;
-            "xfs") mkfs.xfs -f -L "$name" "$partition_device" ;;
-            "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" ;;
-            "linux-swap")
-                mkswap -L "$name" "$partition_device"
-                swapon "$partition_device"
+            "swap") 
+                log_prompt "INFO" && echo "Activation de la partition swap $partition_device"
+                parted --script -a optimal "/dev/$disk" set "$partition_number" swap on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
+                log_prompt "SUCCESS" && echo "OK" && echo ""
                 ;;
         esac
+
+        log_prompt "INFO" && echo "Formatage de la partition $partition_device en $fs_type"
+
+        case "$fs_type" in
+            "btrfs")
+                mkfs.btrfs -f -L "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "ext4")
+                mkfs.ext4 -L "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "xfs")
+                mkfs.xfs -f -L "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "fat32")
+                mkfs.vfat -F32 -n "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "linux-swap")
+                mkswap -L "$name" "$partition_device" && swapon "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage ou de l'activation de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            *)
+                log_prompt "ERROR" && echo "$fs_type : type de fichier non reconnu"
+                exit 1
+                ;;
+        esac
+
+        log_prompt "SUCCESS" && echo "OK" && echo
+
 
         start="$end"
         ((partition_number++))

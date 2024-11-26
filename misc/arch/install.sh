@@ -16,6 +16,14 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# # Vérification du mode de démarrage
+# if [ ! -d "/sys/firmware/efi" ]; then
+#     log_prompt "ERROR" && echo "Ce script nécessite un système démarré en mode UEFI."
+#     exit 1
+# fi
+
+# echo "Le système est en mode UEFI. Le script peut continuer."
+
 
 ##############################################################################
 ## Récupération des disques disponibles                                                      
