@@ -333,8 +333,8 @@ preparation_disk() {
 
     local DEFAULT_BOOT_SIZE="512M"
     local DEFAULT_SWAP_SIZE="4G"
-    local DEFAULT_ROOT_SIZE="100G"
-    local DEFAULT_ROOTHOME_SIZE="100%"
+    local DEFAULT_RACINE_SIZE="100G"
+    local DEFAULT_RACINEHOME_SIZE="100%"
     local DEFAULT_HOME_SIZE="100%"
 
     local DEFAULT_FS_TYPE="btrfs"  # Système de fichiers par défaut
@@ -347,8 +347,8 @@ preparation_disk() {
 
     local available_types=("boot" "racine" "racine_home" "swap")
     local selected_partitions=()
-    local formatted_partitions=()  # Tableau pour stocker les partitions enrichies
-    local disk="sda"  # Exemple, à modifier selon vos besoins
+    local formatted_partitions=()  
+    local disk="$1"  
     local disk_type="basic"  # ou "nvme"
     local partition_number=1
     local start="1MiB"
@@ -437,15 +437,15 @@ preparation_disk() {
                     fs_type=${fs_type:-$DEFAULT_BOOT_TYPE}
                     ;;
                 "racine")
-                    read -rp "Entrez la taille pour racine (par défaut : $DEFAULT_ROOT_SIZE) : " size
-                    size=${size:-$DEFAULT_ROOT_SIZE}
+                    read -rp "Entrez la taille pour racine (par défaut : $DEFAULT_RACINE_SIZE) : " size
+                    size=${size:-$DEFAULT_RACINE_SIZE}
 
                     read -rp "Entrez le type de fichier pour racine (par défaut : $DEFAULT_RACINE_TYPE) : " fs_type
                     fs_type=${fs_type:-$DEFAULT_RACINE_TYPE}
                     ;;
                 "racine_home")
-                    read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_ROOT_SIZE) : " size
-                    size=${size:-$DEFAULT_ROOT_SIZE}
+                    read -rp "Entrez la taille pour racine_home (par défaut : $DEFAULT_RACINEHOME_SIZE) : " size
+                    size=${size:-$DEFAULT_RACINEHOME_SIZE}
 
                     read -rp "Entrez le type de fichier pour racine_home (par défaut : $DEFAULT_RACINEHOME_TYPE) : " fs_type
                     fs_type=${fs_type:-$DEFAULT_RACINEHOME_TYPE}
