@@ -659,6 +659,19 @@ mount_partitions() {
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
+
+    local create_home_btrfs=false
+    for part in "${partitions[@]}"; do
+        local part_label=$(lsblk "/dev/$part" -n -o LABEL)
+        local part_fstype=$(lsblk "/dev/$part" -n -o FSTYPE)
+        if [[ "$part_label" == "home" && "$part_fstype" != "btrfs" ]]; then
+            create_home_btrfs=false
+            break
+        elif [[ "$part_label" == "home" && "$part_fstype" == "btrfs" ]]; then
+            create_home_btrfs=true
+        fi
+    done
+
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
         if [ -b "/dev/$partition" ]; then
@@ -668,8 +681,6 @@ mount_partitions() {
             LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
             SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
 
-            echo $SIZE
-
             case "$LABEL" in
                 "boot")      
                     mkdir -p "${MOUNT_POINT}/boot"
@@ -677,18 +688,8 @@ mount_partitions() {
                     ;;
 
                 "root") 
-                    # Vérifier si c'est un système de fichiers Btrfs avec taille à 100%
+                    # Vérifier si c'est un système de fichiers Btrfs
                     if [[ "$FSTYPE" == "btrfs" ]]; then
-                        # Vérifier si une partition home existe dans le tableau des partitions
-                        local home_exists=false
-                        for part in "${partitions[@]}"; do
-                            local part_label=$(lsblk "/dev/$part" -n -o LABEL)
-                            if [[ "$part_label" == "home" ]]; then
-                                home_exists=true
-                                break
-                            fi
-                        done
-
                         # Monter temporairement la partition
                         mount "/dev/$NAME" "${MOUNT_POINT}"
                         
@@ -697,7 +698,7 @@ mount_partitions() {
                         btrfs subvolume create "${MOUNT_POINT}/@snapshots"
                         
                         # Si aucune partition home n'existe, créer @home
-                        if [ "$home_exists" = false ]; then
+                        if [ "$create_home_btrfs" = false ]; then
                             btrfs subvolume create "${MOUNT_POINT}/@home"
                         fi
                         
@@ -710,11 +711,12 @@ mount_partitions() {
                         mount -o subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
                         
                         # Si @home a été créé (pas de partition home), le monter
-                        if [ "$home_exists" = false ]; then
+                        if [ "$create_home_btrfs" = false ]; then
                             mkdir -p "${MOUNT_POINT}/home"
                             mount -o subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
                         fi
-                    else
+
+                    elif [[ "$FSTYPE" == "ext4" ]]; then
                         # Pour les autres systèmes de fichiers
                         mount "/dev/$NAME" "${MOUNT_POINT}"
                     fi
@@ -722,8 +724,17 @@ mount_partitions() {
                     ;;
 
                 "home") 
-                    mkdir -p "${MOUNT_POINT}/home"  
-                    mount "/dev/$NAME" "${MOUNT_POINT}/home"
+
+                    # Vérifier si c'est un système de fichiers Btrfs
+                    if [[ "$FSTYPE" == "btrfs" && "$create_home_btrfs" = true ]]; then
+                        btrfs subvolume create "${MOUNT_POINT}/@home"
+                        mkdir -p "${MOUNT_POINT}/home"
+                        mount -o subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+
+                    elif [[ "$FSTYPE" == "ext4" ]]; then
+                        mkdir -p "${MOUNT_POINT}/home"  
+                        mount "/dev/$NAME" "${MOUNT_POINT}/home"
+                    fi
                     ;;
 
                 "swap")  
