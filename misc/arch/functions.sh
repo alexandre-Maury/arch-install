@@ -670,7 +670,7 @@ mount_partitions() {
     done
 
 
-
+    #♀ Voir comment faire pour btrfs
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
