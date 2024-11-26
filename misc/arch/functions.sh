@@ -467,6 +467,12 @@ preparation_disk() {
             esac
 
             selected_partitions+=("$partition_type:$size:$fs_type")
+
+            if [[ "$size" == "100%" ]]; then
+                echo "Arrêt de la sélection. Espace disque insufisant pour une autres partition"
+                break
+            fi
+
             _update_available_partitions
         else
             echo "Choix invalide. Veuillez entrer un numéro valide."
