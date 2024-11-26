@@ -386,7 +386,7 @@ preparation_disk() {
             custom_fs=${custom_fs:-$default_fs}
             
             # Vérification que le type de système de fichiers est valide
-            if [[ "$custom_fs" =~ ^(ext4|btrfs|xfs|vfat)$ ]]; then
+            if [[ "$custom_fs" =~ ^(ext4|btrfs|xfs|fat32)$ ]]; then
                 echo "$custom_fs"
                 break  # Retourne une valeur valide
             else
