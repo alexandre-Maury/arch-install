@@ -668,6 +668,8 @@ mount_partitions() {
             LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
             SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
 
+            echo $SIZE
+
             case "$LABEL" in
                 "boot")      
                     mkdir -p "${MOUNT_POINT}/boot"
