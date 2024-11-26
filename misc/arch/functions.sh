@@ -522,12 +522,12 @@ preparation_disk() {
     # done
 
     # Résumé des partitions créées
-    # echo
-    # echo "Partitions créées avec succès :"
-    # for partition in "${formatted_partitions[@]}"; do
-    #     echo "  - $partition"
-    # done
-    # echo "============================================"
+    echo
+    echo "Partitions créées avec succès :"
+    for partition in "${formatted_partitions[@]}"; do
+        echo "  - $partition"
+    done
+    echo "============================================"
 }
 
 
