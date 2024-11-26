@@ -135,25 +135,30 @@ else
 
         log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
 
-        echo "1) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
-        echo "2) Réinstallation de Arch Linux ==> Partition Racine"
-        echo "3) Installation en double boot  ==> Windows - Arch Linux"
-        echo "4) Annuler"
+        echo "1) Nettoyage du disque          ==> Suppression des données sur /dev/$disk"
+        echo "2) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
+        echo "3) Réinstallation de Arch Linux ==> Partition Racine"
+        echo "4) Installation en double boot  ==> Windows - Arch Linux"
+        echo "5) Annuler"
         echo
 
-        log_prompt "INFO" && read -p "Votre Choix (1-4) " choice && echo "" 
+        log_prompt "INFO" && read -p "Votre Choix (1-5) " choice && echo "" 
 
         case $choice in
             1)
                 clear
                 erase_disk "$disk"
+                break
+                ;;
+            2)
+                clear
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
                 # mount_partitions "$disk" 
                 # show_disk_partitions "Montage des partitions" "$disk"
                 break
                 ;;
-            2)
+            3)
                 log_prompt "INFO" && read -p "Entrez le nom de la partition racine à effacer (ex: sda3) : " partition && echo ""
                 if [ -b "/dev/$partition" ]; then
                     erase_partition "$partition"
@@ -165,11 +170,11 @@ else
 
                 break
                 ;;
-            3)
+            4)
                 log_prompt "INFO" && echo "A venir" && echo ""
                 break
                 ;;
-            4)
+            5)
                 echo "Opération annulée"
                 exit 0
                 ;;
