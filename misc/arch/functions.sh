@@ -466,7 +466,6 @@ preparation_disk() {
         echo
         echo "  0) : Saisir "q" pour quitter"
         echo
-        echo "============================================"
     }
 
     # Processus interactif pour la sélection des partitions
@@ -474,7 +473,7 @@ preparation_disk() {
         clear
         _display_menu
         
-        read -rp "Sélectionnez un type de partition (q pour terminer) : " choice
+        log_prompt "INFO" && read -rp "Sélectionnez un type de partition (q pour terminer) : " choice
 
         if [[ "$choice" =~ ^[qQ]$ ]]; then
             log_prompt "INFO" && echo "Arrêt de la sélection."
