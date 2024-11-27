@@ -2,6 +2,73 @@
 
 # script functions_disk.sh
 
+# Fonction pour convertir les tailles en MiB
+convert_to_mib() {
+    local size="$1"
+    local numeric_size
+
+    echo $size
+
+    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
+    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
+        numeric_size=$(echo "$size" | sed 's/GiB//')
+        echo $(($numeric_size * 1024))  # Convertir en MiB
+    # Si la taille est en GiB avec "G", convertir aussi en MiB
+    elif [[ "$size" =~ ^[0-9]+G$ ]]; then
+        numeric_size=$(echo "$size" | sed 's/G//')
+        echo $(($numeric_size * 1024))  # Convertir en MiB
+    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
+        # Si la taille est déjà en MiB, on la garde telle quelle
+        echo "$size" | sed 's/MiB//'
+    elif [[ "$size" =~ ^[0-9]+M$ ]]; then
+        # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
+        numeric_size=$(echo "$size" | sed 's/M//')
+        echo "$numeric_size"
+    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
+        # Si la taille est un pourcentage, retourner "100%" directement
+        echo "$size"
+    else
+        echo "0"  # Retourne 0 si l'unité est mal définie
+    fi
+}
+
+detect_disk_type() {
+    local disk="$1"
+    case "$disk" in
+        nvme*)
+            echo "nvme"
+            ;;
+        sd*)
+            # Test supplémentaire pour distinguer SSD/HDD
+            local rotational=$(cat "/sys/block/$disk/queue/rotational" 2>/dev/null)
+            if [[ "$rotational" == "0" ]]; then
+                echo "ssd"
+            else
+                echo "hdd"
+            fi
+            ;;
+        *)
+            echo "basic"
+            ;;
+    esac
+}
+
+# Fonction pour formater l'affichage de la taille d'une partition en GiB ou MiB
+format_space() {
+    local space=$1
+    local space_in_gib
+
+    # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
+    if (( space >= 1024 )); then
+        # Convertion en GiB
+        space_in_gib=$(echo "scale=2; $space / 1024" | bc)
+        echo "${space_in_gib} GiB"
+    else
+        # Si la taille est inférieur à 1 GiB, afficher en MiB
+        echo "${space} MiB"
+    fi
+}
+
 # Fonction pour afficher les informations des partitions
 show_disk_partitions() {
     
@@ -232,85 +299,18 @@ preparation_disk() {
     local selected_partitions=()
     local formatted_partitions=()  
     local disk="$1"  
-    local disk_type=$(_detect_disk_type "$disk")
+    local disk_type=$(detect_disk_type "$disk")
     local partition_number=1
     local start="1MiB"
     local remaining_space
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-    local disk_size_mib=$(_convert_to_mib "$disk_size")
+    local disk_size_mib=$(convert_to_mib "$disk_size")
     local used_space=0
 
     # Condition pour ajouter la partition swap
     if [[ "${FILE_SWAP}" == "Off" ]]; then
         available_types+=("swap")  # Ajouter la partition swap
     fi
-
-    # Fonction pour formater l'affichage de la taille d'une partition en GiB ou MiB
-    _format_space() {
-        local space=$1
-        local space_in_gib
-
-        # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
-        if (( space >= 1024 )); then
-            # Convertion en GiB
-            space_in_gib=$(echo "scale=2; $space / 1024" | bc)
-            echo "${space_in_gib} GiB"
-        else
-            # Si la taille est inférieur à 1 GiB, afficher en MiB
-            echo "${space} MiB"
-        fi
-    }
-
-    # Fonction pour convertir les tailles en MiB
-    _convert_to_mib() {
-        local size="$1"
-        local numeric_size
-
-        echo $size
-
-        # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
-        if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
-            numeric_size=$(echo "$size" | sed 's/GiB//')
-            echo $(($numeric_size * 1024))  # Convertir en MiB
-        # Si la taille est en GiB avec "G", convertir aussi en MiB
-        elif [[ "$size" =~ ^[0-9]+G$ ]]; then
-            numeric_size=$(echo "$size" | sed 's/G//')
-            echo $(($numeric_size * 1024))  # Convertir en MiB
-        elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
-            # Si la taille est déjà en MiB, on la garde telle quelle
-            echo "$size" | sed 's/MiB//'
-        elif [[ "$size" =~ ^[0-9]+M$ ]]; then
-            # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
-            numeric_size=$(echo "$size" | sed 's/M//')
-            echo "$numeric_size"
-        elif [[ "$size" =~ ^[0-9]+%$ ]]; then
-            # Si la taille est un pourcentage, retourner "100%" directement
-            echo "$size"
-        else
-            echo "0"  # Retourne 0 si l'unité est mal définie
-        fi
-    }
-
-    _detect_disk_type() {
-        local disk="$1"
-        case "$disk" in
-            nvme*)
-                echo "nvme"
-                ;;
-            sd*)
-                # Test supplémentaire pour distinguer SSD/HDD
-                local rotational=$(cat "/sys/block/$disk/queue/rotational" 2>/dev/null)
-                if [[ "$rotational" == "0" ]]; then
-                    echo "ssd"
-                else
-                    echo "hdd"
-                fi
-                ;;
-            *)
-                echo "basic"
-                ;;
-        esac
-    }
 
     # Fonction pour demander à l'utilisateur une taille de partition valide
     _get_partition_size() {
@@ -394,7 +394,7 @@ preparation_disk() {
         # Calculer l'espace restant en MiB
         remaining_space=$((disk_size_mib - used_space))
         echo
-        log_prompt "INFO" && echo "Espace restant sur le disque : $(_format_space $remaining_space) "
+        log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
 
         echo ""
         # Message d'avertissement concernant la partition racine
@@ -468,7 +468,7 @@ preparation_disk() {
             if [[ "$size" == "100%" ]]; then
                 break
             else
-                size_in_miB=$(_convert_to_mib "$size")
+                size_in_miB=$(convert_to_mib "$size")
             fi
 
             used_space=$((used_space + size_in_miB))
@@ -504,8 +504,8 @@ preparation_disk() {
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
 
         if [[ "$size" != "100%" ]]; then
-            local start_in_mib=$(_convert_to_mib "$start")
-            local size_in_mib=$(_convert_to_mib "$size")
+            local start_in_mib=$(convert_to_mib "$start")
+            local size_in_mib=$(convert_to_mib "$size")
             local end_in_mib=$((start_in_mib + size_in_mib))
             end="${end_in_mib}MiB"
         else
