@@ -8,7 +8,8 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 source $SCRIPT_DIR/config.sh # Inclure le fichier de configuration.
 source $SCRIPT_DIR/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
-
+source $SCRIPT_DIR/functions_disk.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
+source $SCRIPT_DIR/functions_install.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
 
 # Vérifier les privilèges root
 if [ "$EUID" -ne 0 ]; then
@@ -16,7 +17,17 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# # Vérification du mode de démarrage
+##############################################################################
+## Valide la connexion internet                                                          
+##############################################################################
+log_prompt "INFO" && echo "Vérification de la connexion Internet"
+$(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo "")
+log_prompt "SUCCESS" && echo "OK" && echo "" && sleep 3
+
+
+##############################################################################
+## Vérification du mode de démarrage                                                         
+##############################################################################
 # if [ ! -d "/sys/firmware/efi" ]; then
 #     log_prompt "ERROR" && echo "Ce script nécessite un système démarré en mode UEFI."
 #     exit 1
@@ -102,7 +113,7 @@ if [ -z "$partitions" ]; then
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
-
+                install_system
                 break
                 ;;
             2)

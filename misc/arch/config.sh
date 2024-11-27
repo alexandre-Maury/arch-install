@@ -13,7 +13,8 @@ BOOTLOADER="systemd-boot"
 MOUNT_POINT="/mnt"
 
 # Options avancées
-TIMEZONE="Europe/Paris"
-LOCALE="fr_FR.UTF-8"
-USERNAME="archuser"
+LOCALE="fr_FR"
+KEYMAP="fr"
+HOSTNAME="archlinux-alexandre"
+PAYS="France"
 

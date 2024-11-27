@@ -288,7 +288,6 @@ pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dk
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Génération du fstab" 
 genfstab -U -p ${MOUNT_POINT} >> ${MOUNT_POINT}/etc/fstab
-# cat ${MOUNT_POINT}/etc/fstab
 log_prompt "SUCCESS" && echo "OK" && echo ""
 
 ##############################################################################
@@ -316,7 +315,7 @@ arch-chroot ${MOUNT_POINT} locale-gen
 log_prompt "SUCCESS" && echo "OK" && echo ""
 
 ##############################################################################
-## arch-chroot Modification pacman.cof                                                  
+## arch-chroot Modification pacman.conf                                                  
 ##############################################################################
 log_prompt "INFO" && echo "arch-chroot - Modification du fichier pacman.conf"
 sed -i 's/^#Para/Para/' ${MOUNT_POINT}/etc/pacman.conf
