@@ -7,8 +7,6 @@ convert_to_mib() {
     local size="$1"
     local numeric_size
 
-    echo $size
-
     # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
     if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
         numeric_size=$(echo "$size" | sed 's/GiB//')
@@ -392,9 +390,9 @@ preparation_disk() {
     _display_menu() {
 
         # Calculer l'espace restant en MiB
-        remaining_space=$((disk_size_mib - used_space))
-        echo $remaining_space
-        # echo
+        # remaining_space=$((disk_size_mib - used_space))
+        echo $disk_size
+        echo
         # log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
 
         echo ""
