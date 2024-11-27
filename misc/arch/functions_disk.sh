@@ -238,7 +238,9 @@ preparation_disk() {
     local remaining_space
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(_convert_to_mib "$disk_size")
-    local used_space=0  
+    local used_space=0
+
+    echo $disk_size_mib
 
     # Condition pour ajouter la partition swap
     if [[ "${FILE_SWAP}" == "Off" ]]; then
@@ -391,7 +393,7 @@ preparation_disk() {
 
         # Calculer l'espace restant en MiB
         remaining_space=$((disk_size_mib - used_space))
-        echo $remaining_space
+        echo
         log_prompt "INFO" && echo "Espace restant sur le disque : $(_format_space $remaining_space) "
 
         echo ""
