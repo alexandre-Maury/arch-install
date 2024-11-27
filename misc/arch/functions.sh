@@ -718,12 +718,12 @@ mount_partitions() {
                         mkdir -p "${MOUNT_POINT}/tmp" 
                         mkdir -p "${MOUNT_POINT}/var/log" 
                         mkdir -p "${MOUNT_POINT}/var/cache/pacman/pkg" 
-                        mkdir -p "${MOUNT_POINT}/.snapshots"
+                        mkdir -p "${MOUNT_POINT}/snapshots"
 
                         mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
                         mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
                         mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@pkg "/dev/$NAME" "${MOUNT_POINT}/var/cache/pacman/pkg"
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/.snapshots"
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
                         
                         # Si @home a été créé (pas de partition home), le monter
                         if [ "$create_home" = false ]; then
