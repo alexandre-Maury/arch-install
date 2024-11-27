@@ -240,8 +240,6 @@ preparation_disk() {
     local disk_size_mib=$(_convert_to_mib "$disk_size")
     local used_space=0
 
-    echo $disk_size_mib
-
     # Condition pour ajouter la partition swap
     if [[ "${FILE_SWAP}" == "Off" ]]; then
         available_types+=("swap")  # Ajouter la partition swap
@@ -267,6 +265,8 @@ preparation_disk() {
     _convert_to_mib() {
         local size="$1"
         local numeric_size
+
+        echo $size
 
         # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
         if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
