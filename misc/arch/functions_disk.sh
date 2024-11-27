@@ -391,10 +391,9 @@ preparation_disk() {
     # Fonction d'affichage du menu
     _display_menu() {
 
-        echo $disk_size_mib
-
         # Calculer l'espace restant en MiB
-        # remaining_space=$((disk_size_mib - used_space))
+        remaining_space=$((disk_size_mib - used_space))
+        echo $remaining_space
         # echo
         # log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
 
