@@ -681,6 +681,8 @@ mount_partitions() {
             LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
             SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
 
+            log_prompt "INFO" && echo "Traitement de la partition : /dev/$NAME (Label: $LABEL, FS: $FSTYPE)"
+
             case "$LABEL" in
                 "boot")      
                     mkdir -p "${MOUNT_POINT}/boot"
@@ -695,25 +697,38 @@ mount_partitions() {
                         
                         # Créer les sous-volumes de base
                         btrfs subvolume create "${MOUNT_POINT}/@"
+                        btrfs subvolume create "${MOUNT_POINT}/@tmp"
+                        btrfs subvolume create "${MOUNT_POINT}/@log"
+                        btrfs subvolume create "${MOUNT_POINT}/@pkg"
                         btrfs subvolume create "${MOUNT_POINT}/@snapshots"
                         
-                        # Si aucune partition home n'existe, créer @home
+                        # Créer @home si nécessaire
                         if [ "$create_home" = false ]; then
                             btrfs subvolume create "${MOUNT_POINT}/@home"
+                            log_prompt "INFO" && echo "Sous-volume @home créé car aucune partition home n'existe."
                         fi
                         
                         # Démonter la partition temporaire
                         umount "${MOUNT_POINT}"
 
-                        # Monter les sous-volumes
-                        mount -o subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
-                        mkdir -p "${MOUNT_POINT}/snapshots"
-                        mount -o subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
+                        # Remonter les sous-volumes avec des options spécifiques
+                        echo "Montage des sous-volumes Btrfs avec options optimisées..."
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
+                        
+                        mkdir -p "${MOUNT_POINT}/tmp" 
+                        mkdir -p "${MOUNT_POINT}/var/log" 
+                        mkdir -p "${MOUNT_POINT}/var/cache/pacman/pkg" 
+                        mkdir -p "${MOUNT_POINT}/.snapshots"
+
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@pkg "/dev/$NAME" "${MOUNT_POINT}/var/cache/pacman/pkg"
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/.snapshots"
                         
                         # Si @home a été créé (pas de partition home), le monter
                         if [ "$create_home" = false ]; then
                             mkdir -p "${MOUNT_POINT}/home"
-                            mount -o subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+                            mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
                         fi
 
                     elif [[ "$FSTYPE" == "ext4" ]]; then
@@ -727,9 +742,9 @@ mount_partitions() {
 
                     # Vérifier si c'est un système de fichiers Btrfs
                     if [[ "$FSTYPE" == "btrfs" ]]; then
-                        btrfs subvolume create "${MOUNT_POINT}/@home"
                         mkdir -p "${MOUNT_POINT}/home"
-                        mount -o subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+                        btrfs subvolume create "${MOUNT_POINT}/@home"
+                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
 
                     elif [[ "$FSTYPE" == "ext4" ]]; then
                         mkdir -p "${MOUNT_POINT}/home"  
