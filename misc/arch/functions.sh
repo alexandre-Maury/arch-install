@@ -49,50 +49,6 @@ log_prompt() {
 
 }
 
-# Fonction pour convertir les tailles en MiB
-convert_to_mib() {
-    local size="$1"
-    local numeric_size
-
-    # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
-    if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
-        numeric_size=$(echo "$size" | sed 's/GiB//')
-        echo $(($numeric_size * 1024))  # Convertir en MiB
-    # Si la taille est en GiB avec "G", convertir aussi en MiB
-    elif [[ "$size" =~ ^[0-9]+G$ ]]; then
-        numeric_size=$(echo "$size" | sed 's/G//')
-        echo $(($numeric_size * 1024))  # Convertir en MiB
-    elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
-        # Si la taille est déjà en MiB, on la garde telle quelle
-        echo "$size" | sed 's/MiB//'
-    elif [[ "$size" =~ ^[0-9]+M$ ]]; then
-        # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
-        numeric_size=$(echo "$size" | sed 's/M//')
-        echo "$numeric_size"
-    elif [[ "$size" =~ ^[0-9]+%$ ]]; then
-        # Si la taille est un pourcentage, retourner "100%" directement
-        echo "$size"
-    else
-        echo "0"  # Retourne 0 si l'unité est mal définie
-    fi
-}
-
-# Fonction pour formater l'affichage de la taille d'une partition en GiB ou MiB
-format_space() {
-    local space=$1
-    local space_in_gib
-
-    # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
-    if (( space >= 1024 )); then
-        # Convertion en GiB
-        space_in_gib=$(echo "scale=2; $space / 1024" | bc)
-        echo "${space_in_gib} GiB"
-    else
-        # Si la taille est inférieur à 1 GiB, afficher en MiB
-        echo "${space} MiB"
-    fi
-}
-
 # Fonction pour afficher les informations des partitions
 show_disk_partitions() {
     
@@ -328,13 +284,57 @@ preparation_disk() {
     local start="1MiB"
     local remaining_space
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
-    local disk_size_mib=$(convert_to_mib "$disk_size")
+    local disk_size_mib=$(_convert_to_mib "$disk_size")
     local used_space=0  
 
     # Condition pour ajouter la partition swap
     if [[ "${FILE_SWAP}" == "Off" ]]; then
         available_types+=("swap")  # Ajouter la partition swap
     fi
+
+    # Fonction pour formater l'affichage de la taille d'une partition en GiB ou MiB
+    _format_space() {
+        local space=$1
+        local space_in_gib
+
+        # Si la taille est supérieur ou égal à 1 Go (1024 MiB), afficher en GiB
+        if (( space >= 1024 )); then
+            # Convertion en GiB
+            space_in_gib=$(echo "scale=2; $space / 1024" | bc)
+            echo "${space_in_gib} GiB"
+        else
+            # Si la taille est inférieur à 1 GiB, afficher en MiB
+            echo "${space} MiB"
+        fi
+    }
+
+    # Fonction pour convertir les tailles en MiB
+    _convert_to_mib() {
+        local size="$1"
+        local numeric_size
+
+        # Si la taille est en GiB, on la convertit en MiB (1GiB = 1024MiB)
+        if [[ "$size" =~ ^[0-9]+GiB$ ]]; then
+            numeric_size=$(echo "$size" | sed 's/GiB//')
+            echo $(($numeric_size * 1024))  # Convertir en MiB
+        # Si la taille est en GiB avec "G", convertir aussi en MiB
+        elif [[ "$size" =~ ^[0-9]+G$ ]]; then
+            numeric_size=$(echo "$size" | sed 's/G//')
+            echo $(($numeric_size * 1024))  # Convertir en MiB
+        elif [[ "$size" =~ ^[0-9]+MiB$ ]]; then
+            # Si la taille est déjà en MiB, on la garde telle quelle
+            echo "$size" | sed 's/MiB//'
+        elif [[ "$size" =~ ^[0-9]+M$ ]]; then
+            # Si la taille est en Mo (en utilisant 'M'), convertir en MiB (1 Mo = 1 MiB dans ce contexte)
+            numeric_size=$(echo "$size" | sed 's/M//')
+            echo "$numeric_size"
+        elif [[ "$size" =~ ^[0-9]+%$ ]]; then
+            # Si la taille est un pourcentage, retourner "100%" directement
+            echo "$size"
+        else
+            echo "0"  # Retourne 0 si l'unité est mal définie
+        fi
+    }
 
     _detect_disk_type() {
         local disk="$1"
@@ -439,7 +439,7 @@ preparation_disk() {
         # Calculer l'espace restant en MiB
         remaining_space=$((disk_size_mib - used_space))
         echo
-        log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
+        log_prompt "INFO" && echo "Espace restant sur le disque : $(_format_space $remaining_space) "
 
         echo ""
         # Message d'avertissement concernant la partition racine
@@ -513,7 +513,7 @@ preparation_disk() {
             if [[ "$size" == "100%" ]]; then
                 break
             else
-                size_in_miB=$(convert_to_mib "$size")
+                size_in_miB=$(_convert_to_mib "$size")
             fi
 
             used_space=$((used_space + size_in_miB))
@@ -549,8 +549,8 @@ preparation_disk() {
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
 
         if [[ "$size" != "100%" ]]; then
-            local start_in_mib=$(convert_to_mib "$start")
-            local size_in_mib=$(convert_to_mib "$size")
+            local start_in_mib=$(_convert_to_mib "$start")
+            local size_in_mib=$(_convert_to_mib "$size")
             local end_in_mib=$((start_in_mib + size_in_mib))
             end="${end_in_mib}MiB"
         else
@@ -713,22 +713,22 @@ mount_partitions() {
 
                         # Remonter les sous-volumes avec des options spécifiques
                         echo "Montage des sous-volumes Btrfs avec options optimisées..."
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
                         
                         mkdir -p "${MOUNT_POINT}/tmp" 
                         mkdir -p "${MOUNT_POINT}/var/log" 
                         mkdir -p "${MOUNT_POINT}/var/cache/pacman/pkg" 
                         mkdir -p "${MOUNT_POINT}/snapshots"
 
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@pkg "/dev/$NAME" "${MOUNT_POINT}/var/cache/pacman/pkg"
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@pkg "/dev/$NAME" "${MOUNT_POINT}/var/cache/pacman/pkg"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
                         
                         # Si @home a été créé (pas de partition home), le monter
                         if [ "$create_home" = false ]; then
                             mkdir -p "${MOUNT_POINT}/home"
-                            mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+                            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
                         fi
 
                     elif [[ "$FSTYPE" == "ext4" ]]; then
@@ -744,7 +744,7 @@ mount_partitions() {
                     if [[ "$FSTYPE" == "btrfs" ]]; then
                         mkdir -p "${MOUNT_POINT}/home"
                         btrfs subvolume create "${MOUNT_POINT}/@home"
-                        mount -o relatime,space_cache=v2,ssd,compress=zstd:19,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
 
                     elif [[ "$FSTYPE" == "ext4" ]]; then
                         mkdir -p "${MOUNT_POINT}/home"  
