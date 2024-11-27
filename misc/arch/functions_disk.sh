@@ -391,9 +391,8 @@ preparation_disk() {
 
         # Calculer l'espace restant en MiB
         remaining_space=$((disk_size_mib - used_space))
-        echo $remaining_space
         echo
-        # log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
+        log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
 
         echo ""
         # Message d'avertissement concernant la partition racine
