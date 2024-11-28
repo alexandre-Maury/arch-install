@@ -11,6 +11,12 @@
 FILE_SWAP="Off"              # Fichier de mémoire virtuelle
 BOOTLOADER="systemd-boot"
 MOUNT_POINT="/mnt"
+PAYS="France"
+LOCALE="fr_FR"
+KEYMAP="fr"
+DNS_SERVERS="1.1.1.1 9.9.9.9"
+FALLBACK_DNS="8.8.8.8"
+HOSTNAME="archlinux-alexandre"
 
 
 
