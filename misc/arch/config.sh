@@ -12,9 +12,7 @@ FILE_SWAP="Off"              # Fichier de mémoire virtuelle
 BOOTLOADER="systemd-boot"
 MOUNT_POINT="/mnt"
 
-# Options avancées
-LOCALE="fr_FR"
-KEYMAP="fr"
-HOSTNAME="archlinux-alexandre"
-PAYS="France"
+
+
+
 

@@ -3,7 +3,12 @@
 # script functions_install.sh
 
 install_base() {
-    ## Installation du système de base                                                
+    
+    local PAYS="France"
+    local LOCALE="fr_FR"
+    local KEYMAP="fr"
+
+                                             
     clear
     log_prompt "INFO" && echo "Installation du système de base"
     reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
@@ -53,6 +58,7 @@ install_base_network() {
     local MAC_ADDRESS=$(ip link | awk '/ether/ {print $2; exit}')
     local DNS_SERVERS="1.1.1.1 9.9.9.9"
     local FALLBACK_DNS="8.8.8.8"
+    local HOSTNAME="archlinux-alexandre"
 
     log_prompt "INFO" && echo "Génération du hostname" 
     echo "${HOSTNAME}" > ${MOUNT_POINT}/etc/hostname
