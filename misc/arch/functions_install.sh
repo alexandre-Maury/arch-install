@@ -5,22 +5,20 @@
 install_system() {
 
     _base() {
-        ##############################################################################
+
         ## Installation du système de base                                                
-        ##############################################################################
+        clear
+        log_prompt "INFO" && echo "Installation du système de base"
         reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
         pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dkms
+        log_prompt "SUCCESS" && echo "OK" && echo ""
 
-        ##############################################################################
         ## Generating the fstab                                                 
-        ##############################################################################
         log_prompt "INFO" && echo "Génération du fstab" 
         genfstab -U -p ${MOUNT_POINT} >> ${MOUNT_POINT}/etc/fstab
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
-        ##############################################################################
         ## Configuration du system                                                    
-        ##############################################################################
         nc=$(grep -c ^processor /proc/cpuinfo)  # Compte le nombre de cœurs de processeur
         log_prompt "INFO" && echo "Vous avez " $nc " coeurs." 
         log_prompt "INFO" && echo "Changement des makeflags pour " $nc " coeurs."
@@ -33,18 +31,14 @@ install_system() {
             log_prompt "SUCCESS" && echo "OK" && echo ""
         fi
 
-        ##############################################################################
         ## Définir le fuseau horaire + local                                                  
-        ##############################################################################
         log_prompt "INFO" && echo "Configuration des locales"
         echo "KEYMAP=${KEYMAP}" > ${MOUNT_POINT}/etc/vconsole.conf
         sed -i "/^#$LOCALE/s/^#//g" ${MOUNT_POINT}/etc/locale.gen
         arch-chroot ${MOUNT_POINT} locale-gen
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
-        ##############################################################################
         ## Modification pacman.conf                                                  
-        ##############################################################################
         log_prompt "INFO" && echo "Modification du fichier pacman.conf"
         sed -i 's/^#Para/Para/' ${MOUNT_POINT}/etc/pacman.conf
         sed -i "/\[multilib\]/,/Include/"'s/^#//' ${MOUNT_POINT}/etc/pacman.conf
