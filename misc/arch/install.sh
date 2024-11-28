@@ -114,16 +114,16 @@ if [ -z "$partitions" ]; then
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
                 install_base
-                install_base_network
-                install_base_chroot_paquages
-                install_base_chroot_cpu
-                install_base_chroot_gpu
-                install_base_chroot_bootloader
-                install_base_chroot_pam
-                install_base_chroot_root
-                install_base_chroot_user
-                install_base_chroot_ssh
-                install_base_activate_service
+                # install_base_network
+                # install_base_chroot_paquages
+                # install_base_chroot_cpu
+                # install_base_chroot_gpu
+                # install_base_chroot_bootloader
+                # install_base_chroot_pam
+                # install_base_chroot_root
+                # install_base_chroot_user
+                # install_base_chroot_ssh
+                # install_base_activate_service
                 break
                 ;;
             2)

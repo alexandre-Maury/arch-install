@@ -155,7 +155,7 @@ install_base_chroot_gpu() {
     local GPU_VENDOR=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
 
     # Détection du type de processeur
-    iflscpu | awk '{print $3}' | grep -E "GenuineIntel"; then
+    if lscpu | awk '{print $3}' | grep -E "GenuineIntel"; then
         log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel"
         arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
         proc_ucode="intel-ucode.img"
