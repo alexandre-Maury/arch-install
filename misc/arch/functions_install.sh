@@ -248,26 +248,6 @@ install_system() {
             arch-chroot "${MOUNT_POINT}" mkinitcpio -P
             log_prompt "SUCCESS" && echo "OK" && echo ""
 
-        elif [[ "$GPU_VENDOR" == *"virtualbox"* ]]; then
-            log_prompt "INFO" && echo "arch-chroot - Configuration pour VirtualBox"
-            MODULES="vboxvideo"
-            KERNEL_OPTION="video=virtualbox"
-            arch-chroot "${MOUNT_POINT}" pacman -S virtualbox-guest-utils mesa --noconfirm 
-            modprobe $MODULES
-            sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-            arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-            log_prompt "SUCCESS" && echo "OK" && echo ""
-
-        elif [[ "$GPU_VENDOR" == *"vmware"* ]]; then
-            log_prompt "INFO" && echo "arch-chroot - Configuration pour VMware"
-            MODULES="vmwgfx"
-            KERNEL_OPTION="video=vmwgfx"
-            arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vmware mesa --noconfirm 
-            modprobe $MODULES
-            sed -i "s/^MODULES=.*/MODULES=($MODULES)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-            arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-            log_prompt "SUCCESS" && echo "OK" && echo ""
-
         else
             log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, installation des pilottes générique : xf86-video-vesa mesa"
             arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vesa mesa --noconfirm
