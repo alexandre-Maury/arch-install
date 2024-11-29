@@ -451,7 +451,7 @@ preparation_disk() {
                     ;;
                 "swap")
                     # Demander la taille de la partition
-                    size=$(_get_partition_size "$DEFAULT_SWAP_SIZE")
+                    size=$(_get_partition_size "$DEFAULT_SWAP_SIZE") 
                     fs_type="$DEFAULT_SWAP_TYPE"
                     ;;
                 "home")
@@ -603,10 +603,6 @@ mount_partitions() {
 
     mkdir -p "${MOUNT_POINT}"
 
-    _format_fs_type_btrfs() {
-        echo "volume a créer btrfs à 100%"
-    }
-
     # récupération des partition à afficher sur le disque
     while IFS= read -r partition; do
         partitions+=("$partition")
@@ -621,9 +617,6 @@ mount_partitions() {
             break
         fi
     done
-
-
-    #♀ Voir comment faire pour btrfs
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
@@ -692,7 +685,6 @@ mount_partitions() {
                     ;;
 
                 "home") 
-
                     # Vérifier si c'est un système de fichiers Btrfs
                     if [[ "$FSTYPE" == "btrfs" ]]; then
                         mkdir -p "${MOUNT_POINT}/home"

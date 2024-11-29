@@ -14,11 +14,15 @@ MOUNT_POINT="/mnt"
 PAYS="France"
 LOCALE="fr_FR"
 KEYMAP="fr"
-DNS_SERVERS="1.1.1.1 9.9.9.9"
-FALLBACK_DNS="8.8.8.8"
 HOSTNAME="archlinux-alexandre"
+SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 
-
+# Détection automatique du mode de démarrage
+if [ -d /sys/firmware/efi ]; then
+    MODE="UEFI"
+else
+    MODE="LEGACY"
+fi
 
 
 

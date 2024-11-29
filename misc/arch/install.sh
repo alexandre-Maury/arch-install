@@ -26,17 +26,6 @@ log_prompt "SUCCESS" && echo "OK" && echo "" && sleep 3
 
 
 ##############################################################################
-## Vérification du mode de démarrage                                                         
-##############################################################################
-# if [ ! -d "/sys/firmware/efi" ]; then
-#     log_prompt "ERROR" && echo "Ce script nécessite un système démarré en mode UEFI."
-#     exit 1
-# fi
-
-# echo "Le système est en mode UEFI. Le script peut continuer."
-
-
-##############################################################################
 ## Récupération des disques disponibles                                                      
 ##############################################################################
 list="$(lsblk -d -n | grep -v -e "loop" -e "sr" | awk '{print $1, $4}' | nl -s") ")" 
@@ -114,16 +103,8 @@ if [ -z "$partitions" ]; then
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
                 install_base
-                install_base_network
-                # install_base_chroot_paquages
-                # install_base_chroot_cpu
-                # install_base_chroot_gpu
-                # install_base_chroot_bootloader
-                # install_base_chroot_pam
-                # install_base_chroot_root
-                # install_base_chroot_user
-                # install_base_chroot_ssh
-                # install_base_activate_service
+                install_base_chroot "$disk"
+                activate_service
                 break
                 ;;
             2)
@@ -169,17 +150,9 @@ else
             1)
                 clear
                 # erase_disk "$disk"
-                show_disk_partitions "Montage des partitions" "$disk"
-                install_base_network
-                # install_base_chroot_paquages
-                # install_base_chroot_cpu
-                # install_base_chroot_gpu
-                # install_base_chroot_bootloader
-                # install_base_chroot_pam
-                # install_base_chroot_root
-                # install_base_chroot_user
-                # install_base_chroot_ssh
-                # install_base_activate_service
+                # install_base
+                install_base_chroot "$disk"
+                activate_service
                 break
                 ;;
             2)

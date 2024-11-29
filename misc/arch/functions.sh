@@ -2,13 +2,6 @@
 
 # script functions.sh
 
-# Détection automatique du mode de démarrage
-if [ -d /sys/firmware/efi ]; then
-    MODE="UEFI"
-else
-    MODE="LEGACY"
-fi
-
 # Fonction pour loguer les informations (niveau: INFO, ERROR)
 log_prompt() {
     local log_level="$1" # INFO - WARNING - ERROR - SUCCESS
