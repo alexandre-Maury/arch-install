@@ -151,7 +151,7 @@ else
             1)
                 clear
                 # erase_disk "$disk"
-                # install_base
+                install_base
                 install_base_chroot "$disk"
                 activate_service
                 break
