@@ -141,7 +141,7 @@ install_base_chroot() {
         echo "Depends=mkinitcpio" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
         echo "When=PostTransaction" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
         echo "Exec=/usr/bin/mkinitcpio -P" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
     elif [[ "$gpu_vendor" == *"amd"* || "$gpu_vendor" == *"radeon"* ]]; then
@@ -151,7 +151,7 @@ install_base_chroot() {
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu xf86-video-ati mesa --noconfirm 
         modprobe $modules
         sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-        arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
     elif [[ "$gpu_vendor" == *"intel"* ]]; then
@@ -161,7 +161,7 @@ install_base_chroot() {
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-intel mesa --noconfirm 
         modprobe $modules
         sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-        arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
         log_prompt "SUCCESS" && echo "OK" && echo ""
 
     else
@@ -194,6 +194,7 @@ install_base_chroot() {
             fi
 
             arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
+            
             if [[ -n "${proc_ucode}" ]]; then
                 echo "initrd /boot/$proc_ucode" >> ${MOUNT_POINT}/boot/grub/grub.cfg
             fi

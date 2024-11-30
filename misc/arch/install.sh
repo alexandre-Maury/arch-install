@@ -63,7 +63,7 @@ clear
 ##############################################################################
 ## Sélection & Création des partitions                                                     
 ##############################################################################
-# partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') 
+
 partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
 
 
@@ -153,11 +153,7 @@ else
         case $choice in
             1)
                 clear
-                # erase_disk "$disk"
-                install_base
-                install_base_chroot "$disk"
-                install_base_secu
-                activate_service
+                erase_disk "$disk"
                 break
                 ;;
             2)

@@ -425,7 +425,7 @@ preparation_disk() {
         clear
         _display_menu
         
-        log_prompt "INFO" && read -rp "Sélectionnez un type de partition (q pour terminer) : " choice
+        log_prompt "INFO" && read -rp "Sélectionnez un type de partition : " choice
 
         if [[ "$choice" =~ ^[qQ]$ ]]; then
             log_prompt "INFO" && echo "Arrêt de la sélection."
@@ -600,10 +600,6 @@ mount_partitions() {
     mkdir -p "${MOUNT_POINT}"
 
     # Récupération des partitions du disque
-    # while IFS= read -r partition; do
-    #     partitions+=("$partition")
-    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
