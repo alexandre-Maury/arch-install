@@ -4,15 +4,31 @@
 
 install_base() {
 
+    local disk="$1"
     local interface="$(ip link show | awk -F': ' '/^[0-9]+: / && !/lo/ {print $2; exit}')"
     local mac_address=$(ip link | awk '/ether/ {print $2; exit}')
     local nc=$(grep -c ^processor /proc/cpuinfo)  # Compte le nombre de cœurs de processeur
     local total_mem=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')  # Récupère la mémoire totale
+
+        # Récupération des partitions du disque
+    while IFS= read -r partition; do
+        partitions+=("$partition")
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
                                       
     clear
     log_prompt "INFO" && echo "Installation du système de base"
     reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
     pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dkms
+
+    for part in "${partitions[@]}"; do
+        local part_fstype=$(lsblk "/dev/$part" -n -o FSTYPE)
+        case "$part_fstype" in
+            "btrfs") 
+                pacstrap -K ${MOUNT_POINT} btrfs-progs
+                ;;
+        esac
+    done
+
     log_prompt "SUCCESS" && echo "OK" && echo ""
 
     ## Generating the fstab                                                 

@@ -103,7 +103,7 @@ if [ -z "$partitions" ]; then
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
                 show_disk_partitions "Montage des partitions terminée" "$disk"
-                install_base
+                install_base "$disk"
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
