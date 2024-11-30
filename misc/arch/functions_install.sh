@@ -88,21 +88,7 @@ install_base_chroot() {
     local disk="$1"
     local gpu_vendor=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
     local root_part=$(lsblk -n -o NAME,LABEL | grep "root" | awk '{print $1}' | sed "s/.*\(${disk}[0-9]*\)/\1/")
-    local passwdqc_conf="/etc/security/passwdqc.conf"
-    local min_simple="4"     # Valeurs : disabled : Longueur minimale pour un mot de passe simple, c'est-à-dire uniquement des lettres minuscules (ex. : "abcdef").
-    local min_2classes="4"   # Longueur minimale pour un mot de passe avec deux classes de caractères, par exemple minuscules + majuscules ou minuscules + chiffres (ex. : "Abcdef" ou "abc123").
-    local min_3classes="4"   # Longueur minimale pour un mot de passe avec trois classes de caractères, comme minuscules + majuscules + chiffres (ex. : "Abc123").
-    local min_4classes="4"   # Longueur minimale pour un mot de passe avec quatre classes de caractères, incluant minuscules + majuscules + chiffres + caractères spéciaux (ex. : "Abc123!").
-    local min_phrase="4"     # Longueur minimale pour une phrase de passe, qui est généralement une suite de plusieurs mots ou une longue chaîne de caractères (ex. : "monmotdepassecompliqué").
-    local min="$min_simple,$min_2classes,$min_3classes,$min_4classes,$min_phrase"
-    local max="72"           # Définit la longueur maximale autorisée pour un mot de passe. Dans cet exemple, un mot de passe ne peut pas dépasser 72 caractères.
-    local passphrase="3"     # Définit la longueur minimale pour une phrase de passe en termes de nombre de mots. Ici, une phrase de passe doit comporter au moins 3 mots distincts pour être considérée comme valide.
-    local match="4"          # Ce paramètre détermine la longueur minimale des segments de texte qui doivent correspondre entre deux chaînes pour être considérées comme similaires.
-    local similar="permit"   # Valeurs : permit ou deny : Définit la politique en matière de similitude entre le mot de passe et d'autres informations (par exemple, le nom de l'utilisateur).
-    local random="47"
-    local enforce="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
-    local retry="3"          # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé. 
-    local ssh_config_file="/etc/ssh/sshd_config"
+
     local proc_ucode
     local modules
     local kernel_option
@@ -272,9 +258,32 @@ install_base_chroot() {
 
     log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
     arch-chroot ${MOUNT_POINT} mkinitcpio -p linux
+    
     log_prompt "SUCCESS" && echo "OK" && echo ""
          
+
+}
+
+install_base_secu() {
+
+    local passwdqc_conf="/etc/security/passwdqc.conf"
+    local min_simple="4"     # Valeurs : disabled : Longueur minimale pour un mot de passe simple, c'est-à-dire uniquement des lettres minuscules (ex. : "abcdef").
+    local min_2classes="4"   # Longueur minimale pour un mot de passe avec deux classes de caractères, par exemple minuscules + majuscules ou minuscules + chiffres (ex. : "Abcdef" ou "abc123").
+    local min_3classes="4"   # Longueur minimale pour un mot de passe avec trois classes de caractères, comme minuscules + majuscules + chiffres (ex. : "Abc123").
+    local min_4classes="4"   # Longueur minimale pour un mot de passe avec quatre classes de caractères, incluant minuscules + majuscules + chiffres + caractères spéciaux (ex. : "Abc123!").
+    local min_phrase="4"     # Longueur minimale pour une phrase de passe, qui est généralement une suite de plusieurs mots ou une longue chaîne de caractères (ex. : "monmotdepassecompliqué").
+    local min="$min_simple,$min_2classes,$min_3classes,$min_4classes,$min_phrase"
+    local max="72"           # Définit la longueur maximale autorisée pour un mot de passe. Dans cet exemple, un mot de passe ne peut pas dépasser 72 caractères.
+    local passphrase="3"     # Définit la longueur minimale pour une phrase de passe en termes de nombre de mots. Ici, une phrase de passe doit comporter au moins 3 mots distincts pour être considérée comme valide.
+    local match="4"          # Ce paramètre détermine la longueur minimale des segments de texte qui doivent correspondre entre deux chaînes pour être considérées comme similaires.
+    local similar="permit"   # Valeurs : permit ou deny : Définit la politique en matière de similitude entre le mot de passe et d'autres informations (par exemple, le nom de l'utilisateur).
+    local random="47"
+    local enforce="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
+    local retry="3"          # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé. 
+    local ssh_config_file="/etc/ssh/sshd_config"
+
     log_prompt "INFO" && echo "Configuration de passwdqc.conf" && echo ""
+
     if [ -f "${MOUNT_POINT}$passwdqc_conf" ]; then
         cp "${MOUNT_POINT}$passwdqc_conf" "${MOUNT_POINT}$passwdqc_conf.bak"
     fi
@@ -367,6 +376,9 @@ install_base_chroot() {
     log_prompt "SUCCESS" && echo "OK" && echo ""
 }
 
+
+
+
 activate_service() {
     log_prompt "INFO" && echo "arch-chroot - Activation des services"
     arch-chroot ${MOUNT_POINT} systemctl enable sshd
@@ -375,9 +387,4 @@ activate_service() {
     arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
     log_prompt "SUCCESS" && echo "OK" && echo ""
 }
-
-
-
-
-
 

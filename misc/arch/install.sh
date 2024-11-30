@@ -103,9 +103,10 @@ if [ -z "$partitions" ]; then
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
                 show_disk_partitions "Montage des partitions terminée" "$disk"
-                # install_base
-                # install_base_chroot "$disk"
-                # activate_service
+                install_base
+                install_base_chroot "$disk"
+                install_base_secu
+                activate_service
                 break
                 ;;
             2)
@@ -153,6 +154,7 @@ else
                 # erase_disk "$disk"
                 install_base
                 install_base_chroot "$disk"
+                install_base_secu
                 activate_service
                 break
                 ;;
