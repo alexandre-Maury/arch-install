@@ -90,6 +90,8 @@ install_base_chroot() {
     local disk="$1"
     local gpu_vendor=$(lspci | grep -i "VGA\|3D" | awk '{print tolower($0)}')
     local root_part=$(lsblk -n -o NAME,LABEL | grep "root" | awk '{print $1}' | sed "s/.*\(${disk}[0-9]*\)/\1/")
+    local root_fs=$(blkid -s TYPE -o value /dev/${root_part})
+    local cpu_vendor=$(grep -m1 "vendor_id" /proc/cpuinfo | awk '{print $3}')
 
     local proc_ucode
     local modules
@@ -102,44 +104,21 @@ install_base_chroot() {
     log_prompt "SUCCESS" && echo "OK" && echo ""
 
     # Détection du type de processeur
-    if lscpu | awk '{print $3}' | grep -E "GenuineIntel"; then
-        log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel"
-        arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
-        proc_ucode="intel-ucode.img"
-        log_prompt "SUCCESS" && echo "OK" && echo ""
+    case "$cpu_vendor" in
+        "GenuineIntel")
+            proc_ucode="intel-ucode.img"
+            arch-chroot ${MOUNT_POINT} pacman -S intel-ucode --noconfirm
+            ;;
+        "AuthenticAMD")
+            proc_ucode="amd-ucode.img"
+            arch-chroot ${MOUNT_POINT} pacman -S amd-ucode --noconfirm
+            ;;
+        *)
+            log_prompt "ERROR" && echo "Vendor CPU non reconnu: $cpu_vendor"
+            proc_ucode=""
+            ;;
+    esac
 
-    elif lscpu | awk '{print $3}' | grep -E "AuthenticAMD"; then
-        log_prompt "INFO" && echo "arch-chroot - Installation du microcode AMD"
-        arch-chroot "${MOUNT_POINT}" pacman -S amd-ucode --noconfirm
-        proc_ucode="amd-ucode.img"
-        log_prompt "SUCCESS" && echo "OK" && echo ""
-
-    else
-        log_prompt "WARNING" && echo "arch-chroot - Processeur non reconnu" && echo ""
-        read -p "Quel microcode installer (Intel/AMD/ignorer) ? " proctype && echo ""
-            
-        case "$proctype" in
-            Intel|intel)
-                log_prompt "INFO" && echo "arch-chroot - Installation du microcode Intel" 
-                arch-chroot "${MOUNT_POINT}" pacman -S intel-ucode --noconfirm
-                proc_ucode="intel-ucode.img"
-                log_prompt "SUCCESS" && echo "OK" && echo ""
-                ;;
-            AMD|amd)
-                log_prompt "INFO" && echo "arch-chroot - Installation du microcode AMD" 
-                arch-chroot "${MOUNT_POINT}" pacman -S amd-ucode --noconfirm
-                proc_ucode="amd-ucode.img"
-                log_prompt "SUCCESS" && echo "OK" && echo ""
-                ;;
-            ignore|Ignore)
-                log_prompt "WARNING" && echo "arch-chroot - L'utilisateur a choisi de ne pas installer de microcode" 
-                log_prompt "SUCCESS" && echo "OK" && echo ""
-                ;;
-            *)
-                log_prompt "ERROR" && echo "Option invalide. Aucun microcode installé." && echo ""
-                ;;
-        esac
-    fi
 
     ## Installation des pilotes GPU                                          
     if [[ "$gpu_vendor" == *"nvidia"* ]]; then
@@ -224,29 +203,82 @@ install_base_chroot() {
             break  # Sort de la boucle après une installation réussie
 
         elif [[ "${BOOTLOADER}" == "systemd-boot" && "$MODE" == "UEFI" ]]; then
+
+            # Préparer les options
+            case "$root_fs" in
+                "ext4")
+                    root_options="root=/dev/${root_part} rw"
+                    ;;
+                "btrfs")
+                    root_uuid=$(blkid -s UUID -o value /dev/${root_part})
+                    root_options="root=UUID=${root_uuid} rootflags=subvol=@ rw"
+                    ;;
+                *)
+                    log_prompt "ERROR" && echo "Système de fichiers non pris en charge : ${root_fs}" && exit 1
+                    ;;
+            esac
+
             log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot"
             arch-chroot ${MOUNT_POINT} pacman -S efibootmgr os-prober --noconfirm 
             arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
             log_prompt "SUCCESS" && echo "OK" && echo ""
 
-            log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf"
-            echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # Créer le fichier de configuration arch.conf
+            {
+                echo "title   Arch Linux"
+                echo "linux   /vmlinuz-linux"
+                echo "initrd  /${proc_ucode}"
+                echo "initrd  /initramfs-linux.img"
 
-            if [[ -n "${kernel_option}" ]]; then
-                echo "options root=/dev/${root_part} rw $kernel_option" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            else
-                echo "options root=/dev/${root_part} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            fi
+                if [[ -n "${kernel_option}" ]]; then
+                    echo "options ${root_options} $kernel_option"
+                else
+                    echo "options ${root_options}"
+                fi
+            } > ${MOUNT_POINT}/boot/loader/entries/arch.conf
+
+            {
+                echo "title   Arch Linux"
+                echo "linux   /vmlinuz-linux"
+                echo "initrd  /${proc_ucode}"
+                echo "initrd  /initramfs-linux-fallback.img"
+
+                if [[ -n "${kernel_option}" ]]; then
+                    echo "options ${root_options} $kernel_option"
+                else
+                    echo "options ${root_options}"
+                fi
+            } > ${MOUNT_POINT}/boot/loader/entries/arch-fallback.conf
+
+            # log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf"
+            # echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+
+            # if [[ -n "${kernel_option}" ]]; then
+            #     echo "options root=/dev/${root_part} rw $kernel_option" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # else
+            #     echo "options root=/dev/${root_part} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
+            # fi
+
             log_prompt "SUCCESS" && echo "OK" && echo ""
 
             log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf"
-            echo "default arch.conf" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            echo "timeout 4" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            echo "console-mode max" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            echo "editor no" >> ${MOUNT_POINT}/boot/loader/loader.conf
+            # echo "default arch.conf" >> ${MOUNT_POINT}/boot/loader/loader.conf
+            # echo "timeout 4" >> ${MOUNT_POINT}/boot/loader/loader.conf
+            # echo "console-mode max" >> ${MOUNT_POINT}/boot/loader/loader.conf
+            # echo "editor no" >> ${MOUNT_POINT}/boot/loader/loader.conf
+
+            {
+                echo "default arch.conf"
+                echo "timeout 4"
+                echo "console-mode max"
+                echo "editor no"
+
+            } > ${MOUNT_POINT}/boot/loader/loader.conf
+
+
             log_prompt "SUCCESS" && echo "OK" && echo ""
 
             break  # Sort de la boucle après une installation réussie
