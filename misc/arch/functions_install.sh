@@ -170,7 +170,6 @@ install_base_chroot() {
         log_prompt "SUCCESS" && echo "OK" && echo ""
     fi
 
-    ## arch-chroot Installation du bootloader (GRUB ou systemd-boot) en mode UEFI ou BIOS
     while true; do
         if [[ "${BOOTLOADER}" == "grub" ]]; then
             log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" 
@@ -221,9 +220,7 @@ install_base_chroot() {
             log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot"
             arch-chroot ${MOUNT_POINT} pacman -S efibootmgr os-prober --noconfirm 
             arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
-            log_prompt "SUCCESS" && echo "OK" && echo ""
 
-            # Créer le fichier de configuration arch.conf
             {
                 echo "title   Arch Linux"
                 echo "linux   /vmlinuz-linux"
@@ -250,26 +247,6 @@ install_base_chroot() {
                 fi
             } > ${MOUNT_POINT}/boot/loader/entries/arch-fallback.conf
 
-            # log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : arch.conf"
-            # echo "title   Arch Linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            # echo "linux   /vmlinuz-linux" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            # echo "initrd  /${proc_ucode}" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            # echo "initrd  /initramfs-linux.img" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-
-            # if [[ -n "${kernel_option}" ]]; then
-            #     echo "options root=/dev/${root_part} rw $kernel_option" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            # else
-            #     echo "options root=/dev/${root_part} rw" >> ${MOUNT_POINT}/boot/loader/entries/arch.conf
-            # fi
-
-            log_prompt "SUCCESS" && echo "OK" && echo ""
-
-            log_prompt "INFO" && echo "arch-chroot - Configuration de systemd-boot : loader.conf"
-            # echo "default arch.conf" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            # echo "timeout 4" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            # echo "console-mode max" >> ${MOUNT_POINT}/boot/loader/loader.conf
-            # echo "editor no" >> ${MOUNT_POINT}/boot/loader/loader.conf
-
             {
                 echo "default arch.conf"
                 echo "timeout 4"
@@ -278,8 +255,6 @@ install_base_chroot() {
 
             } > ${MOUNT_POINT}/boot/loader/loader.conf
 
-
-            log_prompt "SUCCESS" && echo "OK" && echo ""
 
             break  # Sort de la boucle après une installation réussie
 
@@ -291,11 +266,8 @@ install_base_chroot() {
     done
 
     log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-    arch-chroot ${MOUNT_POINT} mkinitcpio -p linux
-    
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
     log_prompt "SUCCESS" && echo "OK" && echo ""
-         
-
 }
 
 install_base_secu() {
@@ -317,19 +289,29 @@ install_base_secu() {
     local ssh_config_file="/etc/ssh/sshd_config"
 
     log_prompt "INFO" && echo "Configuration de passwdqc.conf" && echo ""
-
     if [ -f "${MOUNT_POINT}$passwdqc_conf" ]; then
         cp "${MOUNT_POINT}$passwdqc_conf" "${MOUNT_POINT}$passwdqc_conf.bak"
     fi
 
     log_prompt "INFO" && echo "Création ou modification du fichier passwdqc.conf dans ${MOUNT_POINT}${passwdqc_conf}" && echo ""
-    echo "min=$min" > "${MOUNT_POINT}${passwdqc_conf}"
-    echo "max=$max" >> "${MOUNT_POINT}${passwdqc_conf}"
-    echo "passphrase=$passphrase" >> "${MOUNT_POINT}${passwdqc_conf}"
-    echo "match=$match" >> "${MOUNT_POINT}${passwdqc_conf}"
-    echo "similar=$similar" >> "${MOUNT_POINT}${passwdqc_conf}"
-    echo "enforce=$enforce" >> "${MOUNT_POINT}${passwdqc_conf}"
-    echo "retry=$retry" >> "${MOUNT_POINT}${passwdqc_conf}"
+
+    {
+        echo "min=$min"
+        echo "max=$max"
+        echo "console-mode max"
+        echo "editor no"
+        echo "passphrase=$passphrase"
+        echo "match=$match"
+        echo "similar=$similar"
+        echo "enforce=$enforce"
+        echo "retry=$retry"
+
+    } > ${MOUNT_POINT}${passwdqc_conf}
+
+
+
+
+
     log_prompt "SUCCESS" && echo "Fichier passwdqc.conf créé ou modifié avec succès !" && echo ""  
 
     ## arch-chroot Création d'un mot de passe root                                             
@@ -408,10 +390,8 @@ install_base_secu() {
     sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' "${MOUNT_POINT}$ssh_config_file"
     sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/' "${MOUNT_POINT}$ssh_config_file"
     log_prompt "SUCCESS" && echo "OK" && echo ""
+
 }
-
-
-
 
 activate_service() {
     log_prompt "INFO" && echo "arch-chroot - Activation des services"

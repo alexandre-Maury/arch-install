@@ -94,9 +94,13 @@ show_disk_partitions() {
 
 
     # récupération des partition à afficher sur le disque
+    # while IFS= read -r partition; do
+    #     partitions+=("$partition")
+    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+
     while IFS= read -r partition; do
         partitions+=("$partition")
-    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
 
     # Affiche les informations de chaque partition
     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
@@ -339,11 +343,11 @@ preparation_disk() {
             custom_fs=${custom_fs:-$default_fs}
             
             # Vérification que le type de système de fichiers est valide
-            if [[ "$custom_fs" =~ ^(ext4|btrfs|xfs|fat32)$ ]]; then
+            if [[ "$custom_fs" =~ ^(ext4|btrfs|fat32)$ ]]; then
                 echo "$custom_fs"
                 break  # Retourne une valeur valide
             else
-                log_prompt "WARNING" && echo "Type de système de fichiers invalide. Choisissez parmi: ext4, btrfs, xfs, f2fs, vfat."
+                log_prompt "WARNING" && echo "Type de système de fichiers invalide. Choisissez parmi: ext4, btrfs, vfat."
             fi
         done
     }
@@ -399,11 +403,6 @@ preparation_disk() {
         echo "ATTENTION : La partition root (/) sera celle qui accueillera le système."
         echo "Il est important de ne pas modifier son label (root), car cela pourrait perturber l'installation."
         echo "Par contre, le type (btrfs, ext4 ...) ou la taille de cette partition peut être modifiée, en particulier si elle occupe l'espace restant disponible."
-        echo
-        echo "boot ==> partition efi"
-        echo "swap ==> partition swap"
-        echo "root ==> partition root"
-        echo "home ==> partition home"
         echo
         echo "============================================"
         echo "         Sélection des partitions"
@@ -601,9 +600,13 @@ mount_partitions() {
     mkdir -p "${MOUNT_POINT}"
 
     # Récupération des partitions du disque
+    # while IFS= read -r partition; do
+    #     partitions+=("$partition")
+    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+
     while IFS= read -r partition; do
         partitions+=("$partition")
-    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+    done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
 
     # Trier et organiser les partitions
     for part in "${partitions[@]}"; do

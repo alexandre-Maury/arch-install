@@ -63,7 +63,9 @@ clear
 ##############################################################################
 ## Sélection & Création des partitions                                                     
 ##############################################################################
-partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') # Récupère les partitions du disque
+# partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─') 
+partitions=$(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
+
 
 # Vérifie si des partitions existent
 if [ -z "$partitions" ]; then
