@@ -102,6 +102,7 @@ if [ -z "$partitions" ]; then
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
+                show_disk_partitions "Montage des partitions terminée" "$disk"
                 # install_base
                 # install_base_chroot "$disk"
                 # activate_service
