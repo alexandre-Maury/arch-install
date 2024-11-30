@@ -293,7 +293,7 @@ preparation_disk() {
     local DEFAULT_SWAP_TYPE="linux-swap"
     local DEFAULT_HOME_TYPE="ext4"
 
-    local available_types=("boot" "root")
+    local available_types=("boot" "root" "home")
     local selected_partitions=()
     local formatted_partitions=()  
     local disk="$1"  
@@ -377,7 +377,7 @@ preparation_disk() {
             available_types+=("root")
         fi
 
-        if $root_selected && ! $home_selected; then
+        if ! $home_selected; then # $root_selected && ! $home_selected; then
             available_types+=("home")
         fi
 
