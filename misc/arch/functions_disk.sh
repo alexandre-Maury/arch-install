@@ -640,12 +640,14 @@ mount_partitions() {
                     if [[ "$FSTYPE" == "btrfs" ]]; then
                         # Monter temporairement la partition
                         mount "/dev/$NAME" "${MOUNT_POINT}"
-                        
+
                         # Créer les sous-volumes de base
                         btrfs subvolume create "${MOUNT_POINT}/@"
-                        btrfs subvolume create "${MOUNT_POINT}/@tmp"
+                        btrfs subvolume create "${MOUNT_POINT}/@root"
+                        btrfs subvolume create "${MOUNT_POINT}/@srv"
                         btrfs subvolume create "${MOUNT_POINT}/@log"
-                        btrfs subvolume create "${MOUNT_POINT}/@pkg"
+                        btrfs subvolume create "${MOUNT_POINT}/@cache"
+                        btrfs subvolume create "${MOUNT_POINT}/@tmp"
                         btrfs subvolume create "${MOUNT_POINT}/@snapshots"
                         
                         # Créer @home si nécessaire
@@ -655,20 +657,24 @@ mount_partitions() {
                         fi
                         
                         # Démonter la partition temporaire
-                        # umount "${MOUNT_POINT}"
+                        umount "${MOUNT_POINT}"
 
                         # Remonter les sous-volumes avec des options spécifiques
                         echo "Montage des sous-volumes Btrfs avec options optimisées..."
                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
-                        
-                        mkdir -p "${MOUNT_POINT}/tmp" 
-                        mkdir -p "${MOUNT_POINT}/var/log" 
-                        mkdir -p "${MOUNT_POINT}/var/cache/pacman/pkg" 
+
+                        mkdir -p "${MOUNT_POINT}/root"
+                        mkdir -p "${MOUNT_POINT}/srv"
+                        mkdir -p "${MOUNT_POINT}/var/log"
+                        mkdir -p "${MOUNT_POINT}/var/cache/"
+                        mkdir -p "${MOUNT_POINT}/tmp"
                         mkdir -p "${MOUNT_POINT}/snapshots"
 
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$NAME" "${MOUNT_POINT}/root"
                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$NAME" "${MOUNT_POINT}/srv"
                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@pkg "/dev/$NAME" "${MOUNT_POINT}/var/cache/pacman/pkg"
+                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$NAME" "${MOUNT_POINT}/var/cache"
                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
                         
                         # Si @home a été créé (pas de partition home), le monter
