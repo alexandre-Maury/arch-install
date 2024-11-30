@@ -655,7 +655,7 @@ mount_partitions() {
                         fi
                         
                         # Démonter la partition temporaire
-                        umount "${MOUNT_POINT}"
+                        # umount "${MOUNT_POINT}"
 
                         # Remonter les sous-volumes avec des options spécifiques
                         echo "Montage des sous-volumes Btrfs avec options optimisées..."
