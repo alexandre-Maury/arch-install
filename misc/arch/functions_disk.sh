@@ -589,133 +589,275 @@ preparation_disk() {
 
 }
 
-# Fonction pour monter les partitions en fonction du system de fichier
 mount_partitions() {
-
+    
     local disk="$1"
-    local partitions
-    local NAME
-    local SIZE
-    local FSTYPE
-    local LABEL
-    local MOUNTPOINT
-    local UUID
+    local partitions=()
+    local root_partition=""
+    local boot_partition=""
+    local home_partition=""
+    local other_partitions=()
 
     mkdir -p "${MOUNT_POINT}"
 
-    # récupération des partition à afficher sur le disque
+    # Récupération des partitions du disque
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
 
-
-    local create_home=false
+    # Trier et organiser les partitions
     for part in "${partitions[@]}"; do
         local part_label=$(lsblk "/dev/$part" -n -o LABEL)
-        if [[ "$part_label" == "home" ]]; then
-            create_home=true
-            break
-        fi
+        case "$part_label" in
+            "root") 
+                root_partition="$part"
+                ;;
+            "boot") 
+                boot_partition="$part"
+                ;;
+            "home")
+                home_partition="$part"
+                ;;
+            *)
+                other_partitions+=("$part")
+                ;;
+        esac
     done
 
-    # Affiche les informations de chaque partition
-    for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
-        if [ -b "/dev/$partition" ]; then
-            # Récupérer chaque colonne séparément pour éviter toute confusion
-            NAME=$(lsblk "/dev/$partition" -n -o NAME)
-            FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
-            LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
-            SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
+    # Vérifier s'il faut créer @home
+    local create_home=false
+    if [[ -z "$home_partition" ]]; then
+        create_home=true
+    fi
 
-            log_prompt "INFO" && echo "Traitement de la partition : /dev/$NAME (Label: $LABEL, FS: $FSTYPE)"
+    # Monter la partition root EN PREMIER
+    if [[ -n "$root_partition" ]]; then
+        local NAME=$(lsblk "/dev/$root_partition" -n -o NAME)
+        local FSTYPE=$(lsblk "/dev/$root_partition" -n -o FSTYPE)
+        local LABEL=$(lsblk "/dev/$root_partition" -n -o LABEL)
+        local SIZE=$(lsblk "/dev/$root_partition" -n -o SIZE)
 
-            case "$LABEL" in
-                "boot")      
-                    mkdir -p "${MOUNT_POINT}/boot"
-                    mount "/dev/$NAME" "${MOUNT_POINT}/boot"
-                    ;;
+        log_prompt "INFO" && echo "Traitement de la partition : /dev/$NAME (Label: $LABEL, FS: $FSTYPE)"
 
-                "root") 
-                    # Vérifier si c'est un système de fichiers Btrfs
-                    if [[ "$FSTYPE" == "btrfs" ]]; then
-                        # Monter temporairement la partition
-                        mount "/dev/$NAME" "${MOUNT_POINT}"
+        # Logique de montage de la partition root (identique à votre script original)
+        if [[ "$FSTYPE" == "btrfs" ]]; then
+            # Monter temporairement la partition
+            mount "/dev/$NAME" "${MOUNT_POINT}"
 
-                        # Créer les sous-volumes de base
-                        btrfs subvolume create "${MOUNT_POINT}/@"
-                        btrfs subvolume create "${MOUNT_POINT}/@root"
-                        btrfs subvolume create "${MOUNT_POINT}/@srv"
-                        btrfs subvolume create "${MOUNT_POINT}/@log"
-                        btrfs subvolume create "${MOUNT_POINT}/@cache"
-                        btrfs subvolume create "${MOUNT_POINT}/@tmp"
-                        btrfs subvolume create "${MOUNT_POINT}/@snapshots"
-                        
-                        # Créer @home si nécessaire
-                        if [ "$create_home" = false ]; then
-                            btrfs subvolume create "${MOUNT_POINT}/@home"
-                            log_prompt "INFO" && echo "Sous-volume @home créé car aucune partition home n'existe."
-                        fi
-                        
-                        # Démonter la partition temporaire
-                        umount "${MOUNT_POINT}"
+            # Créer les sous-volumes de base
+            btrfs subvolume create "${MOUNT_POINT}/@"
+            btrfs subvolume create "${MOUNT_POINT}/@root"
+            btrfs subvolume create "${MOUNT_POINT}/@srv"
+            btrfs subvolume create "${MOUNT_POINT}/@log"
+            btrfs subvolume create "${MOUNT_POINT}/@cache"
+            btrfs subvolume create "${MOUNT_POINT}/@tmp"
+            btrfs subvolume create "${MOUNT_POINT}/@snapshots"
+            
+            # Créer @home si nécessaire
+            if [ "$create_home" = true ]; then
+                btrfs subvolume create "${MOUNT_POINT}/@home"
+                log_prompt "INFO" && echo "Sous-volume @home créé car aucune partition home n'existe."
+            fi
+            
+            # Démonter la partition temporaire
+            umount "${MOUNT_POINT}"
 
-                        # Remonter les sous-volumes avec des options spécifiques
-                        echo "Montage des sous-volumes Btrfs avec options optimisées..."
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
+            # Remonter les sous-volumes avec des options spécifiques
+            echo "Montage des sous-volumes Btrfs avec options optimisées..."
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
 
-                        mkdir -p "${MOUNT_POINT}/root"
-                        mkdir -p "${MOUNT_POINT}/srv"
-                        mkdir -p "${MOUNT_POINT}/var/log"
-                        mkdir -p "${MOUNT_POINT}/var/cache/"
-                        mkdir -p "${MOUNT_POINT}/tmp"
-                        mkdir -p "${MOUNT_POINT}/snapshots"
+            mkdir -p "${MOUNT_POINT}/root"
+            mkdir -p "${MOUNT_POINT}/srv"
+            mkdir -p "${MOUNT_POINT}/var/log"
+            mkdir -p "${MOUNT_POINT}/var/cache/"
+            mkdir -p "${MOUNT_POINT}/tmp"
+            mkdir -p "${MOUNT_POINT}/snapshots"
 
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$NAME" "${MOUNT_POINT}/root"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$NAME" "${MOUNT_POINT}/srv"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$NAME" "${MOUNT_POINT}/var/cache"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
-                        
-                        # Si @home a été créé (pas de partition home), le monter
-                        if [ "$create_home" = false ]; then
-                            mkdir -p "${MOUNT_POINT}/home"
-                            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
-                        fi
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$NAME" "${MOUNT_POINT}/root"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$NAME" "${MOUNT_POINT}/srv"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$NAME" "${MOUNT_POINT}/var/cache"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
+            
+            # Si @home a été créé, le monter
+            if [ "$create_home" = true ]; then
+                mkdir -p "${MOUNT_POINT}/home"
+                mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+            fi
 
-                    elif [[ "$FSTYPE" == "ext4" ]]; then
-                        # Pour les autres systèmes de fichiers
-                        mount "/dev/$NAME" "${MOUNT_POINT}"
-                    fi
-                    
-                    ;;
-
-                "home") 
-                    # Vérifier si c'est un système de fichiers Btrfs
-                    if [[ "$FSTYPE" == "btrfs" ]]; then
-                        mkdir -p "${MOUNT_POINT}/home"
-                        btrfs subvolume create "${MOUNT_POINT}/@home"
-                        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
-
-                    elif [[ "$FSTYPE" == "ext4" ]]; then
-                        mkdir -p "${MOUNT_POINT}/home"  
-                        mount "/dev/$NAME" "${MOUNT_POINT}/home"
-                    fi
-                    ;;
-
-                "swap")  
-                    log_prompt "INFO" && echo "Partition swap déja monté"
-                    ;;
-
-                *)
-                    echo "Erreur: Label non reconnu: $LABEL"
-                    continue
-                    ;;
-            esac
+        elif [[ "$FSTYPE" == "ext4" ]]; then
+            # Pour les autres systèmes de fichiers
+            mount "/dev/$NAME" "${MOUNT_POINT}"
         fi
-    done
+    fi
 
+    # Monter la partition boot EN SECOND
+    if [[ -n "$boot_partition" ]]; then
+        local NAME=$(lsblk "/dev/$boot_partition" -n -o NAME)
+        mkdir -p "${MOUNT_POINT}/boot"
+        mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+    fi
+
+    # Monter la partition home (si existante)
+    if [[ -n "$home_partition" ]]; then
+        local NAME=$(lsblk "/dev/$home_partition" -n -o NAME)
+        local FSTYPE=$(lsblk "/dev/$home_partition" -n -o FSTYPE)
+
+        # Vérifier si c'est un système de fichiers Btrfs
+        if [[ "$FSTYPE" == "btrfs" ]]; then
+            mkdir -p "${MOUNT_POINT}/home"
+            btrfs subvolume create "${MOUNT_POINT}/@home"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+
+        elif [[ "$FSTYPE" == "ext4" ]]; then
+            mkdir -p "${MOUNT_POINT}/home"  
+            mount "/dev/$NAME" "${MOUNT_POINT}/home"
+        fi
+    fi
+
+    # Monter les autres partitions
+    for partition in "${other_partitions[@]}"; do
+        local part_label=$(lsblk "/dev/$partition" -n -o LABEL)
+        
+        # Ignorer la partition swap
+        if [[ "$part_label" == "swap" ]]; then
+            log_prompt "INFO" && echo "Partition swap déjà monté"
+            continue
+        fi
+
+        # Ajouter ici toute logique supplémentaire pour d'autres partitions étiquetées différemment
+        log_prompt "WARN" && echo "Partition non traitée : /dev/$partition (Label: $part_label)"
+    done
 }
+
+# # Fonction pour monter les partitions en fonction du system de fichier
+# mount_partitions() {
+
+#     local disk="$1"
+#     local partitions
+#     local NAME
+#     local SIZE
+#     local FSTYPE
+#     local LABEL
+#     local MOUNTPOINT
+#     local UUID
+
+#     mkdir -p "${MOUNT_POINT}"
+
+#     # récupération des partition à afficher sur le disque
+#     while IFS= read -r partition; do
+#         partitions+=("$partition")
+#     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
+
+
+#     local create_home=false
+#     for part in "${partitions[@]}"; do
+#         local part_label=$(lsblk "/dev/$part" -n -o LABEL)
+#         if [[ "$part_label" == "home" ]]; then
+#             create_home=true
+#             break
+#         fi
+#     done
+
+#     # Affiche les informations de chaque partition
+#     for partition in "${partitions[@]}"; do  # itérer sur le tableau des partitions
+#         if [ -b "/dev/$partition" ]; then
+#             # Récupérer chaque colonne séparément pour éviter toute confusion
+#             NAME=$(lsblk "/dev/$partition" -n -o NAME)
+#             FSTYPE=$(lsblk "/dev/$partition" -n -o FSTYPE)
+#             LABEL=$(lsblk "/dev/$partition" -n -o LABEL)
+#             SIZE=$(lsblk "/dev/$partition" -n -o SIZE)
+
+#             log_prompt "INFO" && echo "Traitement de la partition : /dev/$NAME (Label: $LABEL, FS: $FSTYPE)"
+
+#             case "$LABEL" in
+#                 "boot")      
+#                     mkdir -p "${MOUNT_POINT}/boot"
+#                     mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+#                     ;;
+
+#                 "root") 
+#                     # Vérifier si c'est un système de fichiers Btrfs
+#                     if [[ "$FSTYPE" == "btrfs" ]]; then
+#                         # Monter temporairement la partition
+#                         mount "/dev/$NAME" "${MOUNT_POINT}"
+
+#                         # Créer les sous-volumes de base
+#                         btrfs subvolume create "${MOUNT_POINT}/@"
+#                         btrfs subvolume create "${MOUNT_POINT}/@root"
+#                         btrfs subvolume create "${MOUNT_POINT}/@srv"
+#                         btrfs subvolume create "${MOUNT_POINT}/@log"
+#                         btrfs subvolume create "${MOUNT_POINT}/@cache"
+#                         btrfs subvolume create "${MOUNT_POINT}/@tmp"
+#                         btrfs subvolume create "${MOUNT_POINT}/@snapshots"
+                        
+#                         # Créer @home si nécessaire
+#                         if [ "$create_home" = false ]; then
+#                             btrfs subvolume create "${MOUNT_POINT}/@home"
+#                             log_prompt "INFO" && echo "Sous-volume @home créé car aucune partition home n'existe."
+#                         fi
+                        
+#                         # Démonter la partition temporaire
+#                         umount "${MOUNT_POINT}"
+
+#                         # Remonter les sous-volumes avec des options spécifiques
+#                         echo "Montage des sous-volumes Btrfs avec options optimisées..."
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
+
+#                         mkdir -p "${MOUNT_POINT}/root"
+#                         mkdir -p "${MOUNT_POINT}/srv"
+#                         mkdir -p "${MOUNT_POINT}/var/log"
+#                         mkdir -p "${MOUNT_POINT}/var/cache/"
+#                         mkdir -p "${MOUNT_POINT}/tmp"
+#                         mkdir -p "${MOUNT_POINT}/snapshots"
+
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$NAME" "${MOUNT_POINT}/root"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$NAME" "${MOUNT_POINT}/srv"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$NAME" "${MOUNT_POINT}/var/cache"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
+                        
+#                         # Si @home a été créé (pas de partition home), le monter
+#                         if [ "$create_home" = false ]; then
+#                             mkdir -p "${MOUNT_POINT}/home"
+#                             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+#                         fi
+
+#                     elif [[ "$FSTYPE" == "ext4" ]]; then
+#                         # Pour les autres systèmes de fichiers
+#                         mount "/dev/$NAME" "${MOUNT_POINT}"
+#                     fi
+                    
+#                     ;;
+
+#                 "home") 
+#                     # Vérifier si c'est un système de fichiers Btrfs
+#                     if [[ "$FSTYPE" == "btrfs" ]]; then
+#                         mkdir -p "${MOUNT_POINT}/home"
+#                         btrfs subvolume create "${MOUNT_POINT}/@home"
+#                         mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
+
+#                     elif [[ "$FSTYPE" == "ext4" ]]; then
+#                         mkdir -p "${MOUNT_POINT}/home"  
+#                         mount "/dev/$NAME" "${MOUNT_POINT}/home"
+#                     fi
+#                     ;;
+
+#                 "swap")  
+#                     log_prompt "INFO" && echo "Partition swap déja monté"
+#                     ;;
+
+#                 *)
+#                     echo "Erreur: Label non reconnu: $LABEL"
+#                     continue
+#                     ;;
+#             esac
+#         fi
+#     done
+
+# }
 
 # Fonction pour gérer le swap (activation, désactivation, création, etc.)
 manage_swap() {
