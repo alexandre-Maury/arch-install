@@ -266,9 +266,7 @@ install_base_chroot() {
         fi
     done
 
-    log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+
 }
 
 install_base_secu() {
@@ -288,6 +286,10 @@ install_base_secu() {
     local enforce="everyone" #  Valeurs : none ou users ou everyone : Ce paramètre applique les règles de complexité définies à tous les utilisateurs.
     local retry="3"          # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé. 
     local ssh_config_file="/etc/ssh/sshd_config"
+
+    log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     log_prompt "INFO" && echo "Configuration de passwdqc.conf" && echo ""
     if [ -f "${MOUNT_POINT}$passwdqc_conf" ]; then
