@@ -109,6 +109,10 @@ if [ -z "$partitions" ]; then
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
+
+                log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
+                arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+                log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
                 ;;
             2)

@@ -287,10 +287,6 @@ install_base_secu() {
     local retry="3"          # Ce paramètre permet à l'utilisateur de réessayer jusqu'à 3 fois pour entrer un mot de passe conforme si le mot de passe initial proposé est refusé. 
     local ssh_config_file="/etc/ssh/sshd_config"
 
-    log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-    arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-
     log_prompt "INFO" && echo "Configuration de passwdqc.conf" && echo ""
     if [ -f "${MOUNT_POINT}$passwdqc_conf" ]; then
         cp "${MOUNT_POINT}$passwdqc_conf" "${MOUNT_POINT}$passwdqc_conf.bak"
@@ -310,10 +306,6 @@ install_base_secu() {
         echo "retry=$retry"
 
     } > ${MOUNT_POINT}${passwdqc_conf}
-
-
-
-
 
     log_prompt "SUCCESS" && echo "Fichier passwdqc.conf créé ou modifié avec succès !" && echo ""  
 
