@@ -164,8 +164,16 @@ else
                 clear
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
-                # mount_partitions "$disk" 
-                # show_disk_partitions "Montage des partitions" "$disk"
+                mount_partitions "$disk"
+                show_disk_partitions "Montage des partitions terminée" "$disk"
+                install_base "$disk"
+                install_base_chroot "$disk"
+                install_base_secu
+                activate_service
+
+                log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
+                arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+                log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
                 ;;
             3)
