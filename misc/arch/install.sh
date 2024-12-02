@@ -108,8 +108,8 @@ if [ -z "$partitions" ]; then
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
-                
-                log_prompt "INFO" && echo "Installation terminée ==> redémarrage du system"
+
+                log_prompt "INFO" && echo "Installation terminée ==> redémarrer votre systeme"
 
                 break
                 ;;
@@ -175,7 +175,7 @@ else
                 break
                 ;;
             3)
-                log_prompt "INFO" && read -p "Entrez le nom de la partition racine à effacer (ex: sda3) : " partition && echo ""
+                log_prompt "INFO" && read -p "Entrez le nom de la partition root à effacer (ex: sda3) : " partition && echo ""
                 if [ -b "/dev/$partition" ]; then
                     erase_partition "$partition"
                 else
