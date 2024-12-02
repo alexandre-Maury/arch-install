@@ -111,7 +111,7 @@ if [ -z "$partitions" ]; then
                 activate_service
 
                 log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-                arch-chroot "${MOUNT_POINT}" mkinitcpio -P
+                arch-chroot "${MOUNT_POINT}" mkinitcpio -P || true
                 log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
                 ;;
