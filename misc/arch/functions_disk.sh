@@ -193,7 +193,7 @@ erase_disk() {
     echo "ATTENTION: Vous êtes sur le point d'effacer TOUT le disque /dev/$disk"
     echo "Cette opération est IRRÉVERSIBLE !"
     echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
-    echo ""
+    echo 
     log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
 
     if [[ "$response" =~ ^[yY]$ ]]; then
@@ -204,9 +204,6 @@ erase_disk() {
         # Utilisation de dd avec la taille exacte du disque
         dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
         sync
-        echo ""
-        log_prompt "SUCCESS" && echo "Effacement du disque terminé" && echo ""
-        
     else
         log_prompt "WARNING" && echo "Opération annulée" && echo ""
         return 1
@@ -242,9 +239,9 @@ erase_partition() {
 
     # Vérifier si la partition est montée
     if mountpoint -q "/dev/$partition" 2>/dev/null || grep -q "^/dev/$partition" /proc/mounts; then
-        log_prompt "INFO" && echo "La partition /dev/$partition est montée !" && echo ""
+        log_prompt "INFO" && echo "La partition /dev/$partition est montée !" && echo 
 
-        log_prompt "INFO" && read -p "Voulez-vous la démonter ? (y/n) : " response && echo ""
+        log_prompt "INFO" && read -p "Voulez-vous la démonter ? (y/n) : " response && echo 
 
         if [[ "$response" =~ ^[yY]$ ]]; then
             log_prompt "INFO" && echo "Démontage de la partition..." && echo ""
@@ -262,22 +259,20 @@ erase_partition() {
     echo "Cette opération est IRRÉVERSIBLE !"
     echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
     echo ""
-    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
+    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo 
 
     if [[ "$response" =~ ^[yY]$ ]]; then
 
-        log_prompt "INFO" && echo "Effacement de la partition /dev/$partition en cours ..." && echo ""
+        log_prompt "INFO" && echo "Effacement de la partition /dev/$partition en cours ..." && echo 
         
         # Obtenir la taille exacte de la partition en blocs
         part_size=$(blockdev --getsz "/dev/$partition")
         # Utilisation de dd avec la taille exacte
         dd if=/dev/zero of="/dev/$partition" bs=512 count=$part_size status=progress
         sync
-        echo ""
-        log_prompt "SUCCESS" && echo "Effacement de la partition terminé avec succès" && echo ""
 
     else
-        log_prompt "WARNING" && echo "Opération annulée" && echo ""
+        log_prompt "WARNING" && echo "Opération annulée" && echo 
         return 1
     fi
 }
@@ -398,7 +393,7 @@ preparation_disk() {
         echo
         log_prompt "INFO" && echo "Espace restant sur le disque : $(format_space $remaining_space) "
 
-        echo ""
+        echo
         # Message d'avertissement concernant la partition racine
         echo "ATTENTION : La partition root (/) sera celle qui accueillera le système."
         echo "Il est important de ne pas modifier son label (root), car cela pourrait perturber l'installation."
@@ -485,11 +480,9 @@ preparation_disk() {
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "Création de la table GPT" && echo
         parted --script -a optimal /dev/$disk mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo ""
     else
         log_prompt "INFO" && echo "Création de la table MBR"
-        parted --script -a optimal /dev/$disk mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }   
-        log_prompt "SUCCESS" && echo "OK" && echo               
+        parted --script -a optimal /dev/$disk mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }              
     fi
     
 
@@ -511,25 +504,22 @@ preparation_disk() {
 
         log_prompt "INFO" && echo "Création de la partition $partition_device"
         parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { echo "Erreur lors de la création de la partition $partition_device"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo
+
 
         case "$name" in
             "boot") 
                 if [[ "$MODE" == "UEFI" ]]; then
                     log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode UEFI"
                     parted --script -a optimal "/dev/$disk" set "$partition_number" esp on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
-                    log_prompt "SUCCESS" && echo "OK" && echo ""
                 else
                     log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode LEGACY"
                     parted --script -a optimal /dev/$disk set "$partition_number" boot on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
-                    log_prompt "SUCCESS" && echo "OK" && echo ""
                 fi
                 ;;
 
             "swap") 
                 log_prompt "INFO" && echo "Activation de la partition swap $partition_device"
                 parted --script -a optimal "/dev/$disk" set "$partition_number" swap on || { echo "Erreur lors de l'activation de la partition $partition_device"; exit 1; }
-                log_prompt "SUCCESS" && echo "OK" && echo ""
                 ;;
         esac
 
@@ -572,18 +562,8 @@ preparation_disk() {
                 ;;
         esac
 
-        log_prompt "SUCCESS" && echo "OK" && echo
-
-
         start="$end"
         ((partition_number++))
-    done
-
-    # Résumé des partitions créées
-    echo
-    log_prompt "SUCCESS" && echo "Partitions créées avec succès :"
-    for partition in "${selected_partitions[@]}"; do
-        echo "  - $partition"
     done
 
 }
@@ -726,7 +706,7 @@ mount_partitions() {
         fi
 
         # Ajouter ici toute logique supplémentaire pour d'autres partitions étiquetées différemment
-        log_prompt "WARN" && echo "Partition non traitée : /dev/$partition (Label: $part_label)"
+        log_prompt "WARNING" && echo "Partition non traitée : /dev/$partition (Label: $part_label)"
     done
 }
 
@@ -734,19 +714,15 @@ mount_partitions() {
 manage_swap() {
     
     if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
-        # Création d'un fichier swap si FILE_SWAP="On"
         log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" 
         mkdir -p $MOUNT_POINT/swap
-        log_prompt "SUCCESS" && echo "OK" && echo ""
 
         log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" 
         dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo ""
 
         log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" 
         chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
         mkswap "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
         swapon "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors de l'activation du fichier swap"; exit 1; }
-        log_prompt "SUCCESS" && echo "OK" && echo ""
     fi
 }
