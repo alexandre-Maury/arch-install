@@ -171,6 +171,16 @@ install_base_chroot() {
             log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" 
             arch-chroot ${MOUNT_POINT} pacman -S grub os-prober --noconfirm
 
+            case "$root_fs" in
+
+                "btrfs")
+                    arch-chroot ${MOUNT_POINT} pacman -S btrfs-progs --noconfirm 
+                    ;;
+                *)
+                    log_prompt "ERROR" && echo "Système de fichiers non pris en charge : ${root_fs}" && exit 1
+                    ;;
+            esac
+
             if [[ "$MODE" == "UEFI" ]]; then
                 arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
                 arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
@@ -203,6 +213,7 @@ install_base_chroot() {
                     root_options="root=/dev/${root_part} rw"
                     ;;
                 "btrfs")
+                    arch-chroot ${MOUNT_POINT} pacman -S btrfs-progs --noconfirm 
                     root_uuid=$(blkid -s UUID -o value /dev/${root_part})
                     root_options="root=UUID=${root_uuid} rootflags=subvol=@ rw"
                     ;;
@@ -278,7 +289,7 @@ install_base_secu() {
         cp "${MOUNT_POINT}$passwdqc_conf" "${MOUNT_POINT}$passwdqc_conf.bak"
     fi
 
-    log_prompt "INFO" && echo "Création ou modification du fichier passwdqc.conf dans ${MOUNT_POINT}${passwdqc_conf}" && echo ""
+    log_prompt "INFO" && echo "Création ou modification du fichier passwdqc.conf dans ${MOUNT_POINT}${passwdqc_conf}" && echo 
 
     {
         echo "min=$min"
@@ -291,8 +302,6 @@ install_base_secu() {
         echo "enforce=$enforce"
         echo "retry=$retry"
     } > ${MOUNT_POINT}${passwdqc_conf}
-
-    log_prompt "SUCCESS" && echo "Fichier passwdqc.conf créé ou modifié avec succès !" && echo ""  
 
     ## arch-chroot Création d'un mot de passe root                                             
     while true; do
@@ -317,7 +326,6 @@ install_base_secu() {
             if [[ "$new_pass" == "$confirm_pass" ]]; then
                 log_prompt "INFO" && echo "arch-chroot - Configuration du compte root"
                 echo -e "$new_pass\n$new_pass" | arch-chroot ${MOUNT_POINT} passwd "root"
-                log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
             else
                 log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
@@ -355,7 +363,6 @@ install_base_secu() {
             if [[ "$new_pass" == "$confirm_pass" ]]; then
                 log_prompt "INFO" && echo "arch-chroot - Configuration du compte $sudo_user"
                 echo -e "$new_pass\n$new_pass" | arch-chroot ${MOUNT_POINT} passwd $sudo_user
-                log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
             else
                 log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
@@ -369,7 +376,6 @@ install_base_secu() {
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' "${MOUNT_POINT}$ssh_config_file"
     sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' "${MOUNT_POINT}$ssh_config_file"
     sed -i 's/#PermitEmptyPasswords no/PermitEmptyPasswords no/' "${MOUNT_POINT}$ssh_config_file"
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
 }
 
@@ -379,6 +385,5 @@ activate_service() {
     arch-chroot ${MOUNT_POINT} systemctl enable systemd-homed
     arch-chroot ${MOUNT_POINT} systemctl enable systemd-networkd 
     arch-chroot ${MOUNT_POINT} systemctl enable systemd-resolved 
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 }
 
