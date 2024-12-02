@@ -15,17 +15,13 @@ install_base() {
     reflector --country ${PAYS} --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
     pacstrap -K ${MOUNT_POINT} base base-devel linux linux-headers linux-firmware dkms
 
-    log_prompt "SUCCESS" && echo "OK" && echo ""
-
     ## Generating the fstab                                                 
     log_prompt "INFO" && echo "Génération du fstab" 
     genfstab -U -p ${MOUNT_POINT} >> ${MOUNT_POINT}/etc/fstab
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     ## Configuration du system                                                    
     log_prompt "INFO" && echo "Changement des makeflags pour " $nc " coeurs."
 
-    
     if [[  $total_mem -gt 8000000 ]]; then  # Vérifie si la mémoire totale est supérieure à 8 Go
         log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " coeurs."
         sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
@@ -38,51 +34,54 @@ install_base() {
     echo "KEYMAP=${KEYMAP}" > ${MOUNT_POINT}/etc/vconsole.conf
     sed -i "/^#$LOCALE/s/^#//g" ${MOUNT_POINT}/etc/locale.gen
     arch-chroot ${MOUNT_POINT} locale-gen
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     ## Modification pacman.conf                                                  
     log_prompt "INFO" && echo "Modification du fichier pacman.conf"
     sed -i 's/^#Para/Para/' ${MOUNT_POINT}/etc/pacman.conf
     sed -i "/\[multilib\]/,/Include/"'s/^#//' ${MOUNT_POINT}/etc/pacman.conf
     arch-chroot ${MOUNT_POINT} pacman -Sy --noconfirm
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     ## Configuration du réseau                                             
     log_prompt "INFO" && echo "Génération du hostname" 
     echo "${HOSTNAME}" > ${MOUNT_POINT}/etc/hostname
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     log_prompt "INFO" && echo "Génération du Host" 
-    echo "127.0.0.1 localhost" >> ${MOUNT_POINT}/etc/hosts
-    echo "::1 localhost" >> ${MOUNT_POINT}/etc/hosts
-    echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME" >> ${MOUNT_POINT}/etc/hosts
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
-    # Créer le fichier 20-wired.network
-    log_prompt "INFO" && echo "Configuration du fichier 20-wired.network dans ${MOUNT_POINT}/etc/systemd/network" && echo ""
-    echo "[Match]" > "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "Name=${interface}" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "MACAddress=${mac_address}" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "[Network]" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "DHCP=yes" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "[DHCPv4]" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "RouteMetric=10" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    echo "UseDNS=false" >> "${MOUNT_POINT}/etc/systemd/network/20-wired.network"
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+    {
+        echo "127.0.0.1 localhost"
+        echo "::1 localhost"
+        echo "127.0.1.1 $HOSTNAME.localdomain $HOSTNAME"
+    } > ${MOUNT_POINT}/etc/hosts
 
-    # Configurer /etc/resolv.conf
-    log_prompt "INFO" && echo "Configuration de /etc/resolv.conf pour utiliser systemd-resolved" && echo ""
+
+    log_prompt "INFO" && echo "Configuration du fichier 20-wired.network dans ${MOUNT_POINT}/etc/systemd/network" && echo
+
+    {
+        echo "[Match]"
+        echo "Name=${interface}"
+        echo "MACAddress=${mac_address}"
+        echo
+        echo "[Network]" 
+        echo "DHCP=yes" 
+        echo 
+        echo "[DHCPv4]" 
+        echo "RouteMetric=10" 
+        echo "UseDNS=false" 
+    } > ${MOUNT_POINT}/etc/systemd/network/20-wired.network
+
+    
+    log_prompt "INFO" && echo "Configuration de /etc/resolv.conf pour utiliser systemd-resolved" && echo 
     ln -sf /run/systemd/resolve/stub-resolv.conf "${MOUNT_POINT}/etc/resolv.conf"
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
-    # Configurer /etc/systemd/resolved.conf
-    log_prompt "INFO" && echo "Écrire la configuration DNS dans /etc/systemd/resolved.conf" && echo ""
-    echo "[Resolve]" > "${MOUNT_POINT}/etc/systemd/resolved.conf"
-    echo "DNS=1.1.1.1 9.9.9.9" >> "${MOUNT_POINT}/etc/systemd/resolved.conf"
-    echo "FallbackDNS=8.8.8.8" >> "${MOUNT_POINT}/etc/systemd/resolved.conf"
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+    log_prompt "INFO" && echo "Écrire la configuration DNS dans /etc/systemd/resolved.conf" && echo 
+
+    {
+        echo "[Resolve]" 
+        echo "DNS=1.1.1.1 9.9.9.9" 
+        echo "FallbackDNS=8.8.8.8"
+    } > ${MOUNT_POINT}/etc/systemd/resolved.conf
+
+
 }
 
 install_base_chroot() {
@@ -126,23 +125,25 @@ install_base_chroot() {
         modules="nvidia nvidia_modeset nvidia_uvm nvidia_drm"
         kernel_option="nvidia_drm.modeset=1"
         arch-chroot "${MOUNT_POINT}" pacman -S nvidia mesa --noconfirm
-        # xf86-video-nouveau
         modprobe $modules
         sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+
         [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && mkdir -p ${MOUNT_POINT}/etc/pacman.d/hooks
-        echo "[Trigger]" > ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Operation=Install" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Operation=Upgrade" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Operation=Remove" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Type=Package" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Target=nvidia" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "[Action]" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Depends=mkinitcpio" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "When=PostTransaction" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        echo "Exec=/usr/bin/mkinitcpio -P" >> ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
-        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-        log_prompt "SUCCESS" && echo "OK" && echo ""
+
+        {
+            echo "[Trigger]" 
+            echo "Operation=Install" 
+            echo "Operation=Upgrade" 
+            echo "Operation=Remove" 
+            echo "Type=Package" 
+            echo "Target=nvidia" 
+            echo 
+            echo "[Action]"
+            echo "Depends=mkinitcpio" 
+            echo "When=PostTransaction"
+            echo "Exec=/usr/bin/mkinitcpio -P" 
+        } > ${MOUNT_POINT}/etc/pacman.d/hooks/nvidia.hook
+
 
     elif [[ "$gpu_vendor" == *"amd"* || "$gpu_vendor" == *"radeon"* ]]; then
         log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU AMD/Radeon"
@@ -151,8 +152,6 @@ install_base_chroot() {
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu xf86-video-ati mesa --noconfirm 
         modprobe $modules
         sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-        log_prompt "SUCCESS" && echo "OK" && echo ""
 
     elif [[ "$gpu_vendor" == *"intel"* ]]; then
         log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU Intel"
@@ -161,13 +160,10 @@ install_base_chroot() {
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-intel mesa --noconfirm 
         modprobe $modules
         sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
-        # arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-        log_prompt "SUCCESS" && echo "OK" && echo ""
 
     else
         log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, installation des pilottes générique : xf86-video-vesa mesa"
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vesa mesa --noconfirm
-        log_prompt "SUCCESS" && echo "OK" && echo ""
     fi
 
     while true; do
@@ -178,17 +174,16 @@ install_base_chroot() {
             if [[ "$MODE" == "UEFI" ]]; then
                 arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
                 arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
-                log_prompt "SUCCESS" && echo "OK" && echo ""
 
             elif [[ "$MODE" == "LEGACY" ]]; then
                 arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${disk}"
-                log_prompt "SUCCESS" && echo "OK" && echo ""
 
             else
                 log_prompt "ERROR" && echo "Une erreur est survenue : $MODE non reconnu." && exit 1
             fi
             
             log_prompt "INFO" && echo "arch-chroot - configuration de grub"
+
             if [[ -n "${kernel_option}" ]]; then
                 sed -i "s/^GRUB_CMDLINE_LINUX_DEFAULT=\"/&$kernel_option /" /etc/default/grub
             fi
@@ -198,13 +193,11 @@ install_base_chroot() {
             if [[ -n "${proc_ucode}" ]]; then
                 echo "initrd /boot/$proc_ucode" >> ${MOUNT_POINT}/boot/grub/grub.cfg
             fi
-            log_prompt "SUCCESS" && echo "OK" && echo ""
 
-            break  # Sort de la boucle après une installation réussie
+            break  
 
         elif [[ "${BOOTLOADER}" == "systemd-boot" && "$MODE" == "UEFI" ]]; then
 
-            # Préparer les options
             case "$root_fs" in
                 "ext4")
                     root_options="root=/dev/${root_part} rw"
@@ -240,11 +233,10 @@ install_base_chroot() {
                 echo "timeout 4"
                 echo "console-mode max"
                 echo "editor no"
-
             } > ${MOUNT_POINT}/boot/loader/loader.conf
 
 
-            break  # Sort de la boucle après une installation réussie
+            break
 
         else
             log_prompt "ERROR" && echo "Bootloader ${BOOTLOADER} non reconnu."
@@ -254,8 +246,6 @@ install_base_chroot() {
     done
 
     log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-    # arch-chroot "${MOUNT_POINT}" mkinitcpio -P || true
-    # arch-chroot "${MOUNT_POINT}" mkinitcpio -P && echo "Statut de mkinitcpio : $?"
 
     arch-chroot "${MOUNT_POINT}" mkinitcpio -p linux | while IFS= read -r line; do
         echo "$line"
@@ -300,7 +290,6 @@ install_base_secu() {
         echo "similar=$similar"
         echo "enforce=$enforce"
         echo "retry=$retry"
-
     } > ${MOUNT_POINT}${passwdqc_conf}
 
     log_prompt "SUCCESS" && echo "Fichier passwdqc.conf créé ou modifié avec succès !" && echo ""  

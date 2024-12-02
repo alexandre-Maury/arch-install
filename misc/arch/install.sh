@@ -76,7 +76,6 @@ if [ -z "$partitions" ]; then
 
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
-    # Ex. formatage des partitions ==> OK (test à effectuer)
 
     echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
@@ -109,7 +108,8 @@ if [ -z "$partitions" ]; then
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
-
+                
+                log_prompt "INFO" && echo "Installation terminée ==> redémarrage du system"
 
                 break
                 ;;
