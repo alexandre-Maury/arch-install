@@ -236,19 +236,6 @@ install_base_chroot() {
             } > ${MOUNT_POINT}/boot/loader/entries/arch.conf
 
             {
-                echo "title   Arch Linux"
-                echo "linux   /vmlinuz-linux"
-                echo "initrd  /${proc_ucode}"
-                echo "initrd  /initramfs-linux-fallback.img"
-
-                if [[ -n "${kernel_option}" ]]; then
-                    echo "options ${root_options} $kernel_option"
-                else
-                    echo "options ${root_options}"
-                fi
-            } > ${MOUNT_POINT}/boot/loader/entries/arch-fallback.conf
-
-            {
                 echo "default arch.conf"
                 echo "timeout 4"
                 echo "console-mode max"
@@ -265,6 +252,11 @@ install_base_chroot() {
             continue  # Revient au début de la boucle pour recommencer avec le nouveau choix
         fi
     done
+
+    log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
+    # arch-chroot "${MOUNT_POINT}" mkinitcpio -P || true
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P && echo "Statut de mkinitcpio : $?"
+    log_prompt "SUCCESS" && echo "OK" && echo ""
 
 
 }
