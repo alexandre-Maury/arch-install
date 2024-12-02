@@ -133,7 +133,6 @@ else
 
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
-    # Ex. formatage d'une partition en particulier pour réinstallation du systeme
 
     echo "$(show_disk_partitions "Le disque n'est pas vierge" "$disk")"
     echo ""
