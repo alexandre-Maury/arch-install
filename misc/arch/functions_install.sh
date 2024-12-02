@@ -255,9 +255,13 @@ install_base_chroot() {
 
     log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
     # arch-chroot "${MOUNT_POINT}" mkinitcpio -P || true
-    arch-chroot "${MOUNT_POINT}" mkinitcpio -P && echo "Statut de mkinitcpio : $?"
-    log_prompt "SUCCESS" && echo "OK" && echo ""
+    # arch-chroot "${MOUNT_POINT}" mkinitcpio -P && echo "Statut de mkinitcpio : $?"
 
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P | while IFS= read -r line; do
+        echo "$line"
+    done
+
+    echo "mkinitcpio terminé avec succès."
 
 }
 
