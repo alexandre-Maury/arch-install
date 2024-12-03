@@ -21,8 +21,8 @@ fi
 ## Valide la connexion internet                                                          
 ##############################################################################
 log_prompt "INFO" && echo "Vérification de la connexion Internet"
-$(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo "")
-log_prompt "SUCCESS" && echo "OK" && echo "" && sleep 3
+$(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo)
+sleep 2
 
 
 ##############################################################################
@@ -35,8 +35,8 @@ if [[ -z "${list}" ]]; then
     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
 else
     clear
-    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) " && echo ""
-    echo "${list}" && echo ""
+    log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) " && echo
+    echo "${list}" && echo
 fi
 
 # Boucle pour que l'utilisateur puisse choisir un disque ou en entrer un manuellement
@@ -86,17 +86,17 @@ if [ -z "$partitions" ]; then
     # Afficher le menu
     while true; do
 
-        log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
+        log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo
 
         echo "1) Installation de Arch Linux"
         echo "2) Annuler"
         echo
 
-        log_prompt "INFO" && read -p "Votre Choix (1-2) " choice && echo "" 
+        log_prompt "INFO" && read -p "Votre Choix (1-2) " choice && echo 
 
         case $choice in
             1)
-                log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo ""
+                log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo
                 if [[ "$choice" =~ ^[yY]$ ]]; then
                     erase_disk "$disk"                    
                 fi
@@ -135,12 +135,12 @@ else
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
 
     echo "$(show_disk_partitions "Le disque n'est pas vierge" "$disk")"
-    echo ""
+    echo
 
     # Afficher le menu
     while true; do
 
-        log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo ""
+        log_prompt "INFO" && echo "Que souhaitez-vous faire : " && echo
 
         echo "1) Nettoyage du disque          ==> Suppression des données sur /dev/$disk"
         echo "2) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
@@ -149,7 +149,7 @@ else
         echo "5) Annuler"
         echo
 
-        log_prompt "INFO" && read -p "Votre Choix (1-5) " choice && echo "" 
+        log_prompt "INFO" && read -p "Votre Choix (1-5) " choice && echo
 
         case $choice in
             1)
@@ -167,26 +167,22 @@ else
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
-
-                log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-                arch-chroot "${MOUNT_POINT}" mkinitcpio -P
-                log_prompt "SUCCESS" && echo "OK" && echo ""
                 break
                 ;;
             3)
-                log_prompt "INFO" && read -p "Entrez le nom de la partition root à effacer (ex: sda3) : " partition && echo ""
+                log_prompt "INFO" && read -p "Entrez le nom de la partition root à effacer (ex: sda3) : " partition && echo
                 if [ -b "/dev/$partition" ]; then
                     erase_partition "$partition"
                 else
                     echo "Partition invalide !"
                 fi
 
-                log_prompt "INFO" && echo "A venir" && echo ""
+                log_prompt "INFO" && echo "A venir" && echo
 
                 break
                 ;;
             4)
-                log_prompt "INFO" && echo "A venir" && echo ""
+                log_prompt "INFO" && echo "A venir" && echo
                 break
                 ;;
             5)

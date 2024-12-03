@@ -92,12 +92,6 @@ show_disk_partitions() {
         "PARTITION" "TAILLE" "TYPE FS" "LABEL" "POINT MONT." "UUID"
     echo "----------------------------------------"
 
-
-    # récupération des partition à afficher sur le disque
-    # while IFS= read -r partition; do
-    #     partitions+=("$partition")
-    # done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | tr -d '└─├─')
-
     while IFS= read -r partition; do
         partitions+=("$partition")
     done < <(lsblk -n -o NAME "/dev/$disk" | grep -v "^$disk$" | sed -n "s/^[[:graph:]]*${disk}\([0-9]*\)$/${disk}\1/p")
@@ -150,42 +144,42 @@ erase_disk() {
     
     # Gérer les partitions montées (non-swap)
     if [ -n "$mounted_parts" ]; then
-        log_prompt "INFO" && echo "ATTENTION: Certaines partitions sont montées :" && echo ""
+        log_prompt "INFO" && echo "ATTENTION: Certaines partitions sont montées :" && echo
         echo "$mounted_parts"
         echo ""
-        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo ""
+        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo
 
         if [[ "$response" =~ ^[yY]$ ]]; then
             while read -r part mountpoint; do
                 log_prompt "INFO" && echo "Démontage de /dev/$part" && echo ""
                 umount "/dev/$part" 
                 if [ $? -ne 0 ]; then
-                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo ""
+                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo
                 fi
             done <<< "$mounted_parts"
         else
-            log_prompt "WARNING" && echo "Opération annulée" && echo ""
+            log_prompt "WARNING" && echo "Opération annulée" && echo
             return 1
         fi
     fi
     
     # Gérer les partitions swap séparément
     if [ -n "$swap_parts" ]; then
-        log_prompt "INFO" && echo "ATTENTION: Certaines partitions swap sont activées :" && echo ""
+        log_prompt "INFO" && echo "ATTENTION: Certaines partitions swap sont activées :" && echo
         echo "$swap_parts"
-        echo ""
-        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo ""
+        echo
+        log_prompt "INFO" && read -p "Voulez-vous les démonter ? (y/n) : " response && echo
 
         if [[ "$response" =~ ^[yY]$ ]]; then
             while read -r part _; do
-                log_prompt "INFO" && echo "Démontage de /dev/$part" && echo ""
+                log_prompt "INFO" && echo "Démontage de /dev/$part" && echo
                 swapoff "/dev/$part"
                 if [ $? -ne 0 ]; then
-                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo ""
+                    log_prompt "ERROR" && echo "Démontage de /dev/$part impossible" && echo
                 fi
             done <<< "$swap_parts"
         else
-            log_prompt "WARNING" && echo "Opération annulée" && echo ""
+            log_prompt "WARNING" && echo "Opération annulée" && echo
             return 1
         fi
     fi
@@ -194,10 +188,10 @@ erase_disk() {
     echo "Cette opération est IRRÉVERSIBLE !"
     echo "Toutes les données seront DÉFINITIVEMENT PERDUES !"
     echo 
-    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo ""
+    log_prompt "INFO" && read -p "Êtes-vous vraiment sûr ? (y/n) : " response && echo
 
     if [[ "$response" =~ ^[yY]$ ]]; then
-        log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours ..." && echo ""
+        log_prompt "INFO" && echo "Effacement du disque /dev/$disk en cours ..." && echo
 
         # Obtenir la taille exacte du disque en blocs
         disk_size=$(blockdev --getsz "/dev/$disk")
@@ -205,7 +199,7 @@ erase_disk() {
         dd if=/dev/zero of="/dev/$disk" bs=512 count=$disk_size status=progress
         sync
     else
-        log_prompt "WARNING" && echo "Opération annulée" && echo ""
+        log_prompt "WARNING" && echo "Opération annulée" && echo
         return 1
     fi
 }
@@ -220,20 +214,20 @@ erase_partition() {
 
     # Vérifier si la partition existe
     if [ ! -e "/dev/$partition" ]; then
-        log_prompt "ERROR" && echo "La partition /dev/$partition n'existe pas." && echo ""
+        log_prompt "ERROR" && echo "La partition /dev/$partition n'existe pas." && echo
         return 1
     fi
 
     # Vérifier si c'est une partition swap
     if grep -q "/dev/$partition" /proc/swaps; then
-        log_prompt "ERROR" && echo "L'effacement des partitions swap n'est pas autorisé." && echo ""
+        log_prompt "ERROR" && echo "L'effacement des partitions swap n'est pas autorisé." && echo
         return 1
     fi
 
     # Vérifier si c'est une partition boot
     mount_point=$(lsblk -no MOUNTPOINT "/dev/$partition" 2>/dev/null)
     if [[ "$mount_point" == "/boot" || "$mount_point" == "/boot/efi" ]]; then
-        log_prompt "ERROR" && echo "L'effacement des partitions boot n'est pas autorisé." && echo ""
+        log_prompt "ERROR" && echo "L'effacement des partitions boot n'est pas autorisé." && echo
         return 1
     fi
 
@@ -244,13 +238,13 @@ erase_partition() {
         log_prompt "INFO" && read -p "Voulez-vous la démonter ? (y/n) : " response && echo 
 
         if [[ "$response" =~ ^[yY]$ ]]; then
-            log_prompt "INFO" && echo "Démontage de la partition..." && echo ""
+            log_prompt "INFO" && echo "Démontage de la partition..." && echo
             umount "/dev/$partition" || {
-                log_prompt "ERROR" && echo "Erreur lors du démontage !" && echo ""
+                log_prompt "ERROR" && echo "Erreur lors du démontage !" && echo
                 return 1
             }
         else
-            log_prompt "WARNING" && echo "Opération annulée" && echo ""
+            log_prompt "WARNING" && echo "Opération annulée" && echo
             return 1
         fi
     fi
@@ -323,7 +317,7 @@ preparation_disk() {
                 echo "$custom_size"
                 break  # Retourne une valeur valide, pas de problème
             else
-                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo ""
+                log_prompt "WARNING" && echo "Unité de taille invalide, [ MiB | GiB| % ] réessayez." && echo
             fi
         done
     }
