@@ -34,6 +34,14 @@ install_base() {
     echo "KEYMAP=${KEYMAP}" > ${MOUNT_POINT}/etc/vconsole.conf
     sed -i "/^#$LOCALE/s/^#//g" ${MOUNT_POINT}/etc/locale.gen
     arch-chroot ${MOUNT_POINT} locale-gen
+    
+    echo "Configuration de la timezone..."
+    ln -sf /usr/share/zoneinfo/Europe/Paris ${MOUNT_POINT}/etc/localtime # AJOUT
+    hwclock --systohc # AJOUT
+
+    echo "LANG=fr_FR.UTF-8" > ${MOUNT_POINT}/etc/locale.conf # AJOUT
+
+    
 
     ## Modification pacman.conf                                                  
     log_prompt "INFO" && echo "Modification du fichier pacman.conf"
