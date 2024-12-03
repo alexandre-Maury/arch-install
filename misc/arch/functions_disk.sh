@@ -706,13 +706,18 @@ mount_partitions() {
 
 # Fonction pour gérer le swap (activation, désactivation, création, etc.)
 manage_swap() {
-    
-    if [[ "${ENABLE_SWAP}" == "On" ]] && [[ "${FILE_SWAP}" == "On" ]]; then
-        log_prompt "INFO" && echo "création du dossier $MOUNT_POINT/swap" 
-        mkdir -p $MOUNT_POINT/swap
 
+    # Obtenir la taille exacte de la partition en blocs
+    # part_size=$(blockdev --getsz "/dev/$partition")        
+    
+    if [[ "${FILE_SWAP}" == "On" ]]; then
+
+        log_prompt "INFO" && read -rp "Taille du fichier swap : " size_swap
+
+        mkdir -p $MOUNT_POINT/swap
         log_prompt "INFO" && echo "création du fichier $MOUNT_POINT/swap/swapfile" 
-        dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=1G count="${SIZE_SWAP}" || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+        dd if=/dev/zero of="$MOUNT_POINT/swap/swapfile" bs=512 count="${size_swap}" status=progress || { echo "Erreur lors de la création du fichier swap"; exit 1; }
+        sync
 
         log_prompt "INFO" && echo "Permission + activation du fichier $MOUNT_POINT/swap/swapfile" 
         chmod 600 "$MOUNT_POINT/swap/swapfile" || { echo "Erreur lors du changement des permissions du fichier swap"; exit 1; }
