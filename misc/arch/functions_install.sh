@@ -36,12 +36,10 @@ install_base() {
     arch-chroot ${MOUNT_POINT} locale-gen
     
     echo "Configuration de la timezone..."
-    ln -sf /usr/share/zoneinfo/Europe/Paris ${MOUNT_POINT}/etc/localtime # AJOUT
-    hwclock --systohc # AJOUT
+    ln -sf /usr/share/zoneinfo/${ZONE}/${CITY} ${MOUNT_POINT}/etc/localtime
+    hwclock --systohc
 
-    echo "LANG=fr_FR.UTF-8" > ${MOUNT_POINT}/etc/locale.conf # AJOUT
-
-    
+    echo "LANG=${LANG}" > ${MOUNT_POINT}/etc/locale.conf # AJOUT
 
     ## Modification pacman.conf                                                  
     log_prompt "INFO" && echo "Modification du fichier pacman.conf"

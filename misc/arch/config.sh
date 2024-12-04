@@ -8,10 +8,13 @@
 # https://forest0923.github.io/memo/en/docs/root/archlinux/base-install-manuals/dual-boot-win11-systemd-boot/
 
 # Configuration générale
-FILE_SWAP="Off"              # Fichier de mémoire virtuelle
-BOOTLOADER="systemd-boot"
+FILE_SWAP="On"  # Fichier de mémoire virtuelle - On | Off
+BOOTLOADER="systemd-boot" # systemd-boot | grub
 MOUNT_POINT="/mnt"
+ZONE="Europe"
 PAYS="France"
+CITY="Paris"
+LANG="fr_FR.UTF-8"
 LOCALE="fr_FR"
 KEYMAP="fr"
 HOSTNAME="archlinux-alexandre"
