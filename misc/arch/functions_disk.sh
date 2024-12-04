@@ -702,14 +702,7 @@ mount_partitions() {
         # Ajouter ici toute logique supplémentaire pour d'autres partitions étiquetées différemment
         log_prompt "WARNING" && echo "Partition non traitée : /dev/$partition (Label: $part_label)"
     done
-}
 
-# Fonction pour gérer le swap (activation, désactivation, création, etc.)
-manage_swap() {
-
-    # Obtenir la taille exacte de la partition en blocs
-    # part_size=$(blockdev --getsz "/dev/$partition")        
-    
     if [[ "${FILE_SWAP}" == "On" ]]; then
 
         log_prompt "INFO" && read -rp "Taille du fichier swap : " size_swap
