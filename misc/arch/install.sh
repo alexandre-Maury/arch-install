@@ -182,7 +182,20 @@ else
                 break
                 ;;
             4)
-                log_prompt "INFO" && echo "A venir" && echo
+                log_prompt "INFO" && read -p "Entrez le nom de la partition pour l'installation de arch linux : " partition && echo
+                if [ -b "/dev/$partition" ]; then
+                    preparation_disk "$partition"
+                    show_disk_partitions "Montage des partitions" "$partition"
+                    mount_partitions "$partition"
+                    show_disk_partitions "Montage des partitions terminée" "$partition"
+                    install_base "$partition"
+                    install_base_chroot "$partition"
+                    install_base_secu
+                    activate_service
+                    
+                else
+                    echo "Partition invalide !"
+                fi
                 break
                 ;;
             5)
