@@ -6,10 +6,10 @@ set -e  # Quitte immédiatement en cas d'erreur.
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-source $SCRIPT_DIR/config.sh # Inclure le fichier de configuration.
-source $SCRIPT_DIR/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
-source $SCRIPT_DIR/functions_disk.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
-source $SCRIPT_DIR/functions_install.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
+source $SCRIPT_DIR/misc/config/config.sh # Inclure le fichier de configuration.
+source $SCRIPT_DIR/misc/functions/functions.sh  # Charge les fonctions définies dans le fichier fonction.sh.
+source $SCRIPT_DIR/misc/functions/functions_disk.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
+source $SCRIPT_DIR/misc/functions/functions_install.sh  # Charge les fonctions définies dans le fichier fonction_disk.sh.
 
 # Vérifier les privilèges root
 if [ "$EUID" -ne 0 ]; then
