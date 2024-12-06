@@ -186,12 +186,12 @@ else
                 if [ -b "/dev/$partition" ]; then
                     preparation_disk "$partition"
                     show_disk_partitions "Montage des partitions" "$partition"
-                    mount_partitions "$partition"
-                    show_disk_partitions "Montage des partitions terminée" "$partition"
-                    install_base "$partition"
-                    install_base_chroot "$partition"
-                    install_base_secu
-                    activate_service
+                    # mount_partitions "$partition"
+                    # show_disk_partitions "Montage des partitions terminée" "$partition"
+                    # install_base "$partition"
+                    # install_base_chroot "$partition"
+                    # install_base_secu
+                    # activate_service
                     
                 else
                     echo "Partition invalide !"
