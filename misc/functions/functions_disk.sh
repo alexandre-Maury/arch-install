@@ -272,12 +272,12 @@ erase_partition() {
 }
 
 preparation_disk() {
-
+    
     local DEFAULT_FS_TYPE="btrfs"
     local DEFAULT_BOOT_TYPE="fat32"
     local DEFAULT_ROOT_TYPE="btrfs"
     local DEFAULT_SWAP_TYPE="linux-swap"
-    local DEFAULT_HOME_TYPE="btrfs"  # Utiliser btrfs pour toutes les partitions
+    local DEFAULT_HOME_TYPE="btrfs"
 
     local available_types=("boot" "root" "home")
     local selected_partitions=()
@@ -356,11 +356,14 @@ preparation_disk() {
                 "home") size=$(_get_partition_size "$DEFAULT_HOME_SIZE"); fs_type=$( _get_fs_type "$DEFAULT_HOME_TYPE") ;;
             esac
 
-            selected_partitions+=("$partition_type:$size:$fs_type")
-            used_space=$((used_space + $(convert_to_mib "$size")))
-
-            # Quitter si la taille est 100%
-            [[ "$size" == "100%" ]] && break
+            # Si la taille est spécifiée comme un pourcentage (par exemple, 100%), ne pas l'ajouter à l'espace utilisé.
+            if [[ "$size" == "100%" ]]; then
+                selected_partitions+=("$partition_type:$size:$fs_type")
+                break  # Sortir de la boucle si on choisit "100%" pour cette partition
+            else
+                selected_partitions+=("$partition_type:$size:$fs_type")
+                used_space=$((used_space + $(convert_to_mib "$size")))  # Ajouter l'espace utilisé pour une taille spécifique
+            fi
         else
             echo "Choix invalide. Veuillez entrer un numéro valide."
         fi
@@ -374,11 +377,15 @@ preparation_disk() {
         IFS=':' read -r name size fs_type <<< "$partition"
         local partition_device="/dev/${disk}${partition_number}"
 
-        # Déterminer l'intervalle de la partition
-        local start_in_mib=$(convert_to_mib "$start")
-        local size_in_mib=$(convert_to_mib "$size")
-        local end_in_mib=$((start_in_mib + size_in_mib))
-        end="${end_in_mib}MiB"
+        # Calculer les partitions, mais ignorer "100%" pour l'espace
+        if [[ "$size" != "100%" ]]; then
+            local start_in_mib=$(convert_to_mib "$start")
+            local size_in_mib=$(convert_to_mib "$size")
+            local end_in_mib=$((start_in_mib + size_in_mib))
+            end="${end_in_mib}MiB"
+        else
+            end="100%"  # Si c'est "100%", utiliser l'espace restant
+        fi
 
         parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { echo "Erreur lors de la création de la partition $partition_device"; exit 1; }
         
@@ -392,6 +399,7 @@ preparation_disk() {
         ((partition_number++))
     done
 }
+
 
 
 # preparation_disk() {
