@@ -573,6 +573,29 @@ preparation_disk() {
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(convert_to_mib "$disk_size")
 
+    # Affichage des informations avant de commencer
+    echo "====================================="
+    echo "Configuration du disque : $disk"
+    echo "Type de disque détecté : $disk_type"
+    echo "Mode de démarrage : $MODE"
+    echo "Table de partitions à créer :"
+    echo "====================================="
+    echo "Partitions à créer :"
+    
+    for partition_info in "${partitions[@]}"; do
+        IFS=':' read -r name size fs_type <<< "$partition_info"
+        echo "  Partition : $name - Taille : $size - Type de système de fichiers : $fs_type"
+    done
+
+    if [[ "${FILE_SWAP}" == "Off" ]]; then
+        echo "  Swap : Activé"
+    else
+        echo "  Swap : Désactivé"
+    fi
+
+    echo "====================================="
+    read -p "Appuyez sur [Entrée] pour continuer ou [Ctrl+C] pour annuler."
+
     # Création de la table de partitions
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "Création de la table GPT"
@@ -640,24 +663,28 @@ preparation_disk() {
                     exit 1
                 }
                 ;;
+
             "ext4")
                 mkfs.ext4 -f -L "$name" "$partition_device" || {
                     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
                     exit 1
                 }
                 ;;
+
             "fat32")
                 mkfs.vfat -F32 -n "$name" "$partition_device" || {
                     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
                     exit 1
                 }
                 ;;
+
             "linux-swap")
                 mkswap -L "$name" "$partition_device" && swapon "$partition_device" || {
                     log_prompt "ERROR" && echo "Erreur lors du formatage ou de l'activation de la partition $partition_device en $fs_type"
                     exit 1
                 }
                 ;;
+
             *)
                 log_prompt "ERROR" && echo "$fs_type : type de fichier non reconnu"
                 exit 1
