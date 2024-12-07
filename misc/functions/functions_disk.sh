@@ -573,13 +573,6 @@ preparation_disk() {
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(convert_to_mib "$disk_size")
 
-    # local partitionss=(
-    #     "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-    #     "swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}"
-    #     "root:100GiB:${DEFAULT_MNT_TYPE}"
-    #     "home:100%:btrfs"
-    # )
-
     # Affichage des informations avant de commencer
     echo "====================================="
     echo "Configuration du disque : $disk"
@@ -588,7 +581,7 @@ preparation_disk() {
     echo "====================================="
     echo "Partitions à créer :"
     
-    for partition_info in "${partitionss[@]}"; do
+    for partition_info in "${PARTITIONS_CREATE[@]}"; do
         echo "$partition_info"
     done
 
@@ -606,7 +599,7 @@ preparation_disk() {
 
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
-    for partition_info in "${partitions[@]}"; do
+    for partition_info in "${PARTITIONS_CREATE[@]}"; do
         IFS=':' read -r name size fs_type <<< "$partition_info"
         
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
