@@ -578,7 +578,6 @@ preparation_disk() {
     echo "Configuration du disque : $disk"
     echo "Type de disque détecté : $disk_type"
     echo "Mode de démarrage : $MODE"
-    echo "Table de partitions à créer :"
     echo "====================================="
     echo "Partitions à créer :"
     
@@ -586,12 +585,6 @@ preparation_disk() {
         IFS=':' read -r name size fs_type <<< "$partition_info"
         echo "  Partition : $name - Taille : $size - Type de système de fichiers : $fs_type"
     done
-
-    if [[ "${FILE_SWAP}" == "Off" ]]; then
-        echo "  Swap : Activé"
-    else
-        echo "  Swap : Désactivé"
-    fi
 
     echo "====================================="
     read -p "Appuyez sur [Entrée] pour continuer ou [Ctrl+C] pour annuler."
