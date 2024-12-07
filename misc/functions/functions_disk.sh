@@ -584,17 +584,6 @@ preparation_disk() {
 
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
-    # Définition des partitions avec leurs tailles et types
-    local partitions=(
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_MNT_TYPE}"
-    )
-
-    # Ajouter la partition swap seulement si FILE_SWAP est "Off"
-    if [[ "${FILE_SWAP}" == "Off" ]]; then
-        partitions+=("swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}")
-    fi
-
     for partition_info in "${partitions[@]}"; do
         IFS=':' read -r name size fs_type <<< "$partition_info"
         

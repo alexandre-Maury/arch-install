@@ -16,13 +16,46 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 MOUNT_POINT="/mnt"
 FILE_SWAP="On"  # Fichier de mémoire virtuelle - On | Off
 
-DEFAULT_BOOT_SIZE="512MiB"
-DEFAULT_SWAP_SIZE="8GiB"
-DEFAULT_MNT_SIZE="100%"
-
 DEFAULT_BOOT_TYPE="fat32"
-DEFAULT_MNT_TYPE="btrfs"
-DEFAULT_SWAP_TYPE="linux-swap"
+DEFAULT_FS_TYPE="ext4" # Systeme de fichier - btrfs | ext4
+
+
+# Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
+if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
+
+    DEFAULT_BOOT_SIZE="512MiB"
+    DEFAULT_MNT_SIZE="100GiB"
+    DEFAULT_HOME_SIZE="100%"
+
+    # Définition des partitions avec leurs tailles et types
+    partitions=(
+        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
+        "home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}"
+    )
+
+elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
+
+    DEFAULT_BOOT_SIZE="512MiB"
+    DEFAULT_MNT_SIZE="100%"
+
+    # Définition des partitions avec leurs tailles et types
+    partitions=(
+        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
+    )
+
+fi
+
+# Ajouter la partition swap seulement si FILE_SWAP est "Off"
+if [[ "${FILE_SWAP}" == "Off" ]]; then
+
+    DEFAULT_SWAP_TYPE="linux-swap"
+    DEFAULT_SWAP_SIZE="8GiB"
+
+    partitions+=("swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}")
+
+fi
 
 # Détection automatique du mode de démarrage (UEFI ou Legacy)
 if [ -d /sys/firmware/efi ]; then
