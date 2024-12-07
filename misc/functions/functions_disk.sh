@@ -279,6 +279,51 @@ preparation_disk() {
     # local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     # local disk_size_mib=$(convert_to_mib "$disk_size")
 
+    ##############################################################################
+    ## Affichage des informations avant de procéder à la création des partitions
+    ##############################################################################
+
+    # Affichage des informations de configuration
+    echo "Configuration actuelle :"
+    echo "----------------------------"
+    echo "Zone : $ZONE"
+    echo "Pays : $PAYS"
+    echo "Ville : $CITY"
+    echo "Langue : $LANG"
+    echo "Locale : $LOCALE"
+    echo "Disposition du clavier : $KEYMAP"
+    echo "Nom d'hôte : $HOSTNAME"
+    echo "Port SSH : $SSH_PORT"
+    echo
+    echo "Point de montage principal : $MOUNT_POINT"
+    echo "Fichier swap activé : $FILE_SWAP"
+    echo "Type de système de fichiers par défaut : $DEFAULT_FS_TYPE"
+    echo "Mode de démarrage détecté : $MODE"
+    echo "Chargeur de démarrage utilisé : $BOOTLOADER"
+    echo
+
+    echo "Partitions à créer :"
+    echo "----------------------------"
+    for partition in "${PARTITIONS_CREATE[@]}"; do
+        IFS=":" read -r name size fstype <<< "$partition"
+        echo "==> Partition : $name - Taille : $size - Type : $fstype"
+        echo
+    done
+
+    echo "----------------------------"
+    echo "Veuillez vérifier les informations ci-dessus avant de continuer."
+
+    # Demander confirmation à l'utilisateur pour procéder à la création des partitions
+    read -rp "Souhaitez-vous continuer avec cette configuration ? (y/n) : " user_input
+
+    if [[ "$user_input" != "y" && "$user_input" != "Y" ]]; then
+        echo "Annulation du processus. Aucune partition n'a été créée."
+        exit 1
+    fi
+
+    # Si l'utilisateur accepte, procéder à la création des partitions
+    echo "Procédure de création des partitions en cours..."
+
     # Création de la table de partitions
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "Création de la table GPT"
