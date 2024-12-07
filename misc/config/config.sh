@@ -14,7 +14,7 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 # Configuration générale
 
 MOUNT_POINT="/mnt"
-FILE_SWAP="Off"  # Fichier de mémoire virtuelle - On | Off
+FILE_SWAP="On"  # Fichier de mémoire virtuelle - On | Off
 
 DEFAULT_BOOT_SIZE="512MiB"
 DEFAULT_SWAP_SIZE="8GiB"
