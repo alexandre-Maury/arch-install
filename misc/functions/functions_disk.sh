@@ -599,18 +599,22 @@ preparation_disk() {
 
     local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
 
+    # Boucle de création des partitions
     for partition_info in "${PARTITIONS_CREATE[@]}"; do
         IFS=':' read -r name size fs_type <<< "$partition_info"
         
         local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
 
-        if [[ "$size" != "100%" ]]; then
+        # Si la taille est "100%", utiliser l'espace restant
+        if [[ "$size" == "100%" ]]; then
+            # Utilisation de l'espace restant pour la partition
+            end="100%"
+        else
+            # Si ce n'est pas "100%", calculer la fin de la partition
             local start_in_mib=$(convert_to_mib "$start")
             local size_in_mib=$(convert_to_mib "$size")
             local end_in_mib=$((start_in_mib + size_in_mib))
             end="${end_in_mib}MiB"
-        else
-            end="100%"
         fi
 
         log_prompt "INFO" && echo "Création de la partition $partition_device"
@@ -686,6 +690,7 @@ preparation_disk() {
         start="$end"
         ((partition_number++))
     done
+
 }
 
 
