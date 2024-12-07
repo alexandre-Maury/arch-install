@@ -29,6 +29,7 @@ if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
 
     # Définition des partitions avec leurs tailles et types
     partitions=(
+        "test:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
         "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
         "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
         "home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}"
