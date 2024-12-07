@@ -18,7 +18,7 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 MOUNT_POINT="/mnt" # Point de montage
 FILE_SWAP="Off"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
 
-DEFAULT_FS_TYPE="btrfs" # Choix entre "btrfs" ou "ext4" pour pour le Systeme de fichier
+DEFAULT_FS_TYPE="ext4" # Choix entre "btrfs" ou "ext4" pour pour le Systeme de fichier
 
 ## Toute modification incorrecte peut entraîner des perturbations lors de l'installation        
 #######################################################################################                                       
