@@ -573,21 +573,6 @@ preparation_disk() {
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(convert_to_mib "$disk_size")
 
-    # Affichage des informations avant de commencer
-    echo "====================================="
-    echo "Configuration du disque : $disk"
-    echo "Type de disque détecté : $disk_type"
-    echo "Mode de démarrage : $MODE"
-    echo "====================================="
-    echo "Partitions à créer :"
-    
-    for partition_info in "${PARTITIONS_CREATE[@]}"; do
-        echo "$partition_info"
-    done
-
-    echo "====================================="
-    read -p "Appuyez sur [Entrée] pour continuer ou [Ctrl+C] pour annuler."
-
     # Création de la table de partitions
     if [[ "$MODE" == "UEFI" ]]; then
         log_prompt "INFO" && echo "Création de la table GPT"

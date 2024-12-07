@@ -27,7 +27,6 @@ PARTITIONS_CREATE=(
 
 # Ajouter la partition swap seulement si FILE_SWAP est "Off"
 if [[ "${FILE_SWAP}" == "Off" ]]; then
-
     DEFAULT_SWAP_TYPE="linux-swap"
     DEFAULT_SWAP_SIZE="8GiB"
 
@@ -38,7 +37,6 @@ fi
 
 # Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
 if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
-
     DEFAULT_MNT_SIZE="100GiB"
     DEFAULT_HOME_SIZE="100%"
 
@@ -46,14 +44,11 @@ if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
     PARTITIONS_CREATE+=("home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}")
 
 elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
-
     DEFAULT_MNT_SIZE="100%"
 
     PARTITIONS_CREATE+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
 
 fi
-
-
 
 # Détection automatique du mode de démarrage (UEFI ou Legacy)
 if [ -d /sys/firmware/efi ]; then
