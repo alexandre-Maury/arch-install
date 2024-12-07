@@ -657,7 +657,7 @@ preparation_disk() {
                 ;;
 
             "ext4")
-                mkfs.ext4 -f -L "$name" "$partition_device" || {
+                mkfs.ext4 -L "$name" "$partition_device" || {
                     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
                     exit 1
                 }
