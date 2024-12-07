@@ -686,7 +686,7 @@ preparation_disk() {
                 ;;
 
             *)
-                log_prompt "ERROR" && echo "$fs_type : type de fichier non reconnu"
+                log_prompt "ERROR" && echo "type de fichier non reconnu : $fs_type"
                 exit 1
                 ;;
         esac
