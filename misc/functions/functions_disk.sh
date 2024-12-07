@@ -640,6 +640,12 @@ preparation_disk() {
                     exit 1
                 }
                 ;;
+            "ext4")
+                mkfs.ext4 -f -L "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
             "fat32")
                 mkfs.vfat -F32 -n "$name" "$partition_device" || {
                     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
