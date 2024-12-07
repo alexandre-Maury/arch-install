@@ -271,134 +271,7 @@ erase_partition() {
     fi
 }
 
-preparation_disk() {
-    
-    local DEFAULT_FS_TYPE="btrfs"
-    local DEFAULT_BOOT_TYPE="fat32"
-    local DEFAULT_ROOT_TYPE="btrfs"
-    local DEFAULT_SWAP_TYPE="linux-swap"
-    local DEFAULT_HOME_TYPE="btrfs"
 
-    local available_types=("boot" "root" "home")
-    local selected_partitions=()
-    local disk="$1"
-    local partition_number=1
-    local start="1MiB"
-    local used_space=0
-    local disk_size_mib=$(convert_to_mib "$(lsblk -d -o SIZE --noheadings "/dev/$disk")")
-
-    # Fonction pour demander une taille valide
-    _get_partition_size() {
-        local default_size=$1
-        local custom_size
-        while true; do
-            read -p "Taille pour cette partition (par défaut: $default_size) : " custom_size
-            custom_size=${custom_size:-$default_size}
-            if [[ "$custom_size" =~ ^[0-9]+(MiB|GiB|%)$ ]]; then
-                echo "$custom_size"
-                break
-            else
-                echo "Unité de taille invalide, réessayez."
-            fi
-        done
-    }
-
-    # Fonction pour demander un type de fichier valide
-    _get_fs_type() {
-        local default_fs=$1
-        local custom_fs
-        while true; do
-            read -p "Type de système de fichiers pour cette partition (par défaut: $default_fs) : " custom_fs
-            custom_fs=${custom_fs:-$default_fs}
-            if [[ "$custom_fs" =~ ^(btrfs|fat32)$ ]]; then
-                echo "$custom_fs"
-                break
-            else
-                echo "Type de système de fichiers invalide. Choisissez parmi: btrfs, fat32."
-            fi
-        done
-    }
-
-    # Fonction pour afficher le menu de sélection des partitions
-    _display_menu() {
-        local remaining_space=$((disk_size_mib - used_space))
-        echo "Espace restant sur le disque : $(format_space $remaining_space)"
-        echo "============================================"
-        echo "         Sélection des partitions"
-        echo "============================================"
-        local i=1
-        for type in "${available_types[@]}"; do
-            echo "  $i ) partition : $type"
-            ((i++))
-        done
-        echo "  exit ) : Saisir 'q' pour quitter"
-    }
-
-    # Processus interactif pour la sélection des partitions
-    while [[ ${#available_types[@]} -gt 0 ]]; do
-        clear
-        _display_menu
-        read -rp "Sélectionnez un type de partition : " choice
-
-        if [[ "$choice" =~ ^[qQ]$ ]]; then
-            echo "Arrêt de la sélection."
-            break
-        fi
-
-        if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice > 0 && choice <= ${#available_types[@]} )); then
-            local partition_type="${available_types[choice-1]}"
-            local size fs_type
-
-            case "$partition_type" in
-                "boot") size=$(_get_partition_size "$DEFAULT_BOOT_SIZE"); fs_type=$( _get_fs_type "$DEFAULT_BOOT_TYPE") ;;
-                "root") size=$(_get_partition_size "$DEFAULT_ROOT_SIZE"); fs_type=$( _get_fs_type "$DEFAULT_ROOT_TYPE") ;;
-                "swap") size=$(_get_partition_size "$DEFAULT_SWAP_SIZE"); fs_type="$DEFAULT_SWAP_TYPE" ;;
-                "home") size=$(_get_partition_size "$DEFAULT_HOME_SIZE"); fs_type=$( _get_fs_type "$DEFAULT_HOME_TYPE") ;;
-            esac
-
-            # Si la taille est spécifiée comme un pourcentage (par exemple, 100%), ne pas l'ajouter à l'espace utilisé.
-            if [[ "$size" == "100%" ]]; then
-                selected_partitions+=("$partition_type:$size:$fs_type")
-                break  # Sortir de la boucle si on choisit "100%" pour cette partition
-            else
-                selected_partitions+=("$partition_type:$size:$fs_type")
-                used_space=$((used_space + $(convert_to_mib "$size")))  # Ajouter l'espace utilisé pour une taille spécifique
-            fi
-        else
-            echo "Choix invalide. Veuillez entrer un numéro valide."
-        fi
-    done
-
-    # Création des partitions
-    echo "Création des partitions sur /dev/$disk..."
-    parted --script -a optimal /dev/$disk mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
-
-    for partition in "${selected_partitions[@]}"; do
-        IFS=':' read -r name size fs_type <<< "$partition"
-        local partition_device="/dev/${disk}${partition_number}"
-
-        # Calculer les partitions, mais ignorer "100%" pour l'espace
-        if [[ "$size" != "100%" ]]; then
-            local start_in_mib=$(convert_to_mib "$start")
-            local size_in_mib=$(convert_to_mib "$size")
-            local end_in_mib=$((start_in_mib + size_in_mib))
-            end="${end_in_mib}MiB"
-        else
-            end="100%"  # Si c'est "100%", utiliser l'espace restant
-        fi
-
-        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { echo "Erreur lors de la création de la partition $partition_device"; exit 1; }
-        
-        case "$fs_type" in
-            "btrfs") mkfs.btrfs -f -L "$name" "$partition_device" || { echo "Erreur lors du formatage de la partition"; exit 1; } ;;
-            "fat32") mkfs.vfat -F32 -n "$name" "$partition_device" || { echo "Erreur lors du formatage de la partition"; exit 1; } ;;
-            "linux-swap") mkswap -L "$name" "$partition_device" && swapon "$partition_device" || { echo "Erreur lors du formatage de la partition"; exit 1; } ;;
-        esac
-
-        start="$end"
-        ((partition_number++))
-    done
-}
 
 
 
@@ -691,6 +564,111 @@ preparation_disk() {
 #     done
 
 # }
+
+preparation_disk() {
+    local disk="$1"
+    local disk_type=$(detect_disk_type "$disk")
+    local partition_number=1
+    local start="1MiB"
+    local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
+    local disk_size_mib=$(convert_to_mib "$disk_size")
+
+    # Création de la table de partitions
+    if [[ "$MODE" == "UEFI" ]]; then
+        log_prompt "INFO" && echo "Création de la table GPT"
+        parted --script -a optimal /dev/$disk mklabel gpt || { echo "Erreur lors de la création de la table GPT"; exit 1; }
+    else
+        log_prompt "INFO" && echo "Création de la table MBR"
+        parted --script -a optimal /dev/$disk mklabel msdos || { echo "Erreur lors de la création de la table MBR"; exit 1; }              
+    fi
+
+    local partition_prefix=$([[ "$disk_type" == "nvme" ]] && echo "p" || echo "")
+
+    # Définition des partitions avec leurs tailles et types
+    local partitions=(
+        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+        "swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}"
+        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_MNT_TYPE}"
+    )
+
+    for partition_info in "${partitions[@]}"; do
+        IFS=':' read -r name size fs_type <<< "$partition_info"
+        
+        local partition_device="/dev/${disk}${partition_prefix}${partition_number}"
+
+        if [[ "$size" != "100%" ]]; then
+            local start_in_mib=$(convert_to_mib "$start")
+            local size_in_mib=$(convert_to_mib "$size")
+            local end_in_mib=$((start_in_mib + size_in_mib))
+            end="${end_in_mib}MiB"
+        else
+            end="100%"
+        fi
+
+        log_prompt "INFO" && echo "Création de la partition $partition_device"
+        parted --script -a optimal "/dev/$disk" mkpart primary "$start" "$end" || { 
+            echo "Erreur lors de la création de la partition $partition_device"
+            exit 1 
+        }
+
+        # Gestion des flags spécifiques
+        case "$name" in
+            "boot") 
+                if [[ "$MODE" == "UEFI" ]]; then
+                    log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode UEFI"
+                    parted --script -a optimal "/dev/$disk" set "$partition_number" esp on || { 
+                        echo "Erreur lors de l'activation de la partition $partition_device"
+                        exit 1 
+                    }
+                else
+                    log_prompt "INFO" && echo "Activation de la partition boot $partition_device en mode LEGACY"
+                    parted --script -a optimal /dev/$disk set "$partition_number" boot on || { 
+                        echo "Erreur lors de l'activation de la partition $partition_device"
+                        exit 1 
+                    }
+                fi
+                ;;
+
+            "swap") 
+                log_prompt "INFO" && echo "Activation de la partition swap $partition_device"
+                parted --script -a optimal "/dev/$disk" set "$partition_number" swap on || { 
+                    echo "Erreur lors de l'activation de la partition $partition_device"
+                    exit 1 
+                }
+                ;;
+        esac
+
+        # Formatage des partitions
+        log_prompt "INFO" && echo "Formatage de la partition $partition_device en $fs_type"
+        case "$fs_type" in
+            "btrfs")
+                mkfs.btrfs -f -L "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "fat32")
+                mkfs.vfat -F32 -n "$name" "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            "linux-swap")
+                mkswap -L "$name" "$partition_device" && swapon "$partition_device" || {
+                    log_prompt "ERROR" && echo "Erreur lors du formatage ou de l'activation de la partition $partition_device en $fs_type"
+                    exit 1
+                }
+                ;;
+            *)
+                log_prompt "ERROR" && echo "$fs_type : type de fichier non reconnu"
+                exit 1
+                ;;
+        esac
+
+        start="$end"
+        ((partition_number++))
+    done
+}
 
 
 
