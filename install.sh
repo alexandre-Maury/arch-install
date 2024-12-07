@@ -36,6 +36,7 @@ if [[ -z "${list}" ]]; then
     exit 1  # Arrête le script ou effectue une autre action en cas d'erreur
 else
     clear
+    echo
     log_prompt "INFO" && echo "Choisissez un disque pour l'installation (ex : 1) " && echo
     echo "${list}" && echo
 fi

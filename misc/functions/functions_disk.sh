@@ -307,14 +307,14 @@ preparation_disk() {
     for partition in "${PARTITIONS_CREATE[@]}"; do
         IFS=":" read -r name size fstype <<< "$partition"
         echo "==> Partition : $name - Taille : $size - Type : $fstype"
-        echo
     done
 
     echo "----------------------------"
+    echo
     echo "Veuillez vérifier les informations ci-dessus avant de continuer."
-
+    echo
     # Demander confirmation à l'utilisateur pour procéder à la création des partitions
-    read -rp "Souhaitez-vous continuer avec cette configuration ? (y/n) : " user_input
+    log_prompt "INFO" && read -rp "Souhaitez-vous continuer avec cette configuration ? (y/n) : " user_input
 
     if [[ "$user_input" != "y" && "$user_input" != "Y" ]]; then
         echo "Annulation du processus. Aucune partition n'a été créée."
