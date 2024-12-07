@@ -118,11 +118,11 @@ if [ -z "$partitions" ]; then
                 break
                 ;;
             2)
-                echo "Opération annulée"
+                log_prompt "WARNING" && echo "Opération annulée"
                 exit 0
                 ;;
             *)
-                echo "Choix invalide"
+                log_prompt "WARNING" && echo "Choix invalide"
                 ;;
         esac
     done
@@ -192,7 +192,7 @@ else
                 ;;
 
             0)
-                echo "Opération annulée"
+                log_prompt "WARNING" && echo "Opération annulée"
                 exit 0
                 ;;
             *)
