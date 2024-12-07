@@ -21,7 +21,7 @@ DEFAULT_BOOT_TYPE="fat32"
 DEFAULT_BOOT_SIZE="512MiB"
 
 # Définition des partitions avec leurs tailles et types
-partitions=(
+partitionss=(
     "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
 )
 
@@ -32,15 +32,15 @@ if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
     DEFAULT_MNT_SIZE="100GiB"
     DEFAULT_HOME_SIZE="100%"
     
-    partitions+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
-    partitions+=("home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}")
+    partitionss+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
+    partitionss+=("home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}")
 
 elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
 
     DEFAULT_MNT_SIZE="100%"
 
     # Définition des partitions avec leurs tailles et types
-    partitions+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
+    partitionss+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
 
 fi
 
@@ -50,7 +50,7 @@ if [[ "${FILE_SWAP}" == "Off" ]]; then
     DEFAULT_SWAP_TYPE="linux-swap"
     DEFAULT_SWAP_SIZE="8GiB"
 
-    partitions+=("swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}")
+    partitionss+=("swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}")
 
 fi
 

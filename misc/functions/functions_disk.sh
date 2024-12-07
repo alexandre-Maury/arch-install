@@ -573,12 +573,12 @@ preparation_disk() {
     local disk_size=$(lsblk -d -o SIZE --noheadings "/dev/$disk" | tr -d '[:space:]')
     local disk_size_mib=$(convert_to_mib "$disk_size")
 
-    local partitionss=(
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}"
-        "root:100GiB:${DEFAULT_MNT_TYPE}"
-        "home:100%:btrfs"
-    )
+    # local partitionss=(
+    #     "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+    #     "swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}"
+    #     "root:100GiB:${DEFAULT_MNT_TYPE}"
+    #     "home:100%:btrfs"
+    # )
 
     # Affichage des informations avant de commencer
     echo "====================================="
