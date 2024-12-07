@@ -15,37 +15,15 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 
 MOUNT_POINT="/mnt"
 FILE_SWAP="On"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
+
 DEFAULT_FS_TYPE="ext4" # Systeme de fichier - btrfs | ext4
 
+DEFAULT_BOOT_TYPE="fat32"
+DEFAULT_BOOT_SIZE="512MiB"
 
-# Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
-if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
-
-    # Définition des partitions avec leurs tailles et types
-    DEFAULT_BOOT_TYPE="fat32"
-    DEFAULT_BOOT_SIZE="512MiB"
-    DEFAULT_MNT_SIZE="100GiB"
-    DEFAULT_HOME_SIZE="100%"
-
-    PARTITIONS_CREATE=(
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
-        "home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}"
-    )
-
-elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
-
-    # Définition des partitions avec leurs tailles et types
-    DEFAULT_BOOT_TYPE="fat32"
-    DEFAULT_BOOT_SIZE="512MiB"
-    DEFAULT_MNT_SIZE="100%"
-
-    PARTITIONS_CREATE=(
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
-    )
-
-fi
+PARTITIONS_CREATE=(
+    "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+)
 
 # Ajouter la partition swap seulement si FILE_SWAP est "Off"
 if [[ "${FILE_SWAP}" == "Off" ]]; then
@@ -56,6 +34,26 @@ if [[ "${FILE_SWAP}" == "Off" ]]; then
     PARTITIONS_CREATE+=("swap:${DEFAULT_SWAP_SIZE}:${DEFAULT_SWAP_TYPE}")
 
 fi
+
+
+# Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
+if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
+
+    DEFAULT_MNT_SIZE="100GiB"
+    DEFAULT_HOME_SIZE="100%"
+
+    PARTITIONS_CREATE+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
+    PARTITIONS_CREATE+=("home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}")
+
+elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
+
+    DEFAULT_MNT_SIZE="100%"
+
+    PARTITIONS_CREATE+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
+
+fi
+
+
 
 # Détection automatique du mode de démarrage (UEFI ou Legacy)
 if [ -d /sys/firmware/efi ]; then
