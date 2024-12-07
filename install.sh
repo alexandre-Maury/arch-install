@@ -20,6 +20,7 @@ fi
 ##############################################################################
 ## Valide la connexion internet                                                          
 ##############################################################################
+echo
 log_prompt "INFO" && echo "Vérification de la connexion Internet"
 $(ping -c 3 archlinux.org &>/dev/null) || (log_prompt "ERROR" && echo "Pas de connexion Internet" && echo)
 sleep 2
@@ -76,12 +77,12 @@ if [ -z "$partitions" ]; then
 
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
-
+    echo
     echo "Status : Le disque est vierge"
     echo "Device : /dev/$disk"
     echo "Taille : $(lsblk -n -o SIZE "/dev/$disk" | head -1)"
     echo "Type   : $(lsblk -n -o TRAN "/dev/$disk")"
-    echo ""
+    echo
 
     # Afficher le menu
     while true; do
@@ -95,7 +96,9 @@ if [ -z "$partitions" ]; then
         log_prompt "INFO" && read -p "Votre Choix (1-2) " choice && echo 
 
         case $choice in
-            1)
+            1)  
+                clear
+                echo
                 log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo
                 if [[ "$choice" =~ ^[yY]$ ]]; then
                     erase_disk "$disk"                    
@@ -133,7 +136,7 @@ else
 
     # TODO: Implémenter cette partie plus tard
     # Cette section de code n'est pas terminée, elle nécessite encore du travail.
-
+    echo
     echo "$(show_disk_partitions "Le disque n'est pas vierge" "$disk")"
     echo
 
@@ -144,9 +147,9 @@ else
 
         echo "1) Nettoyage du disque          ==> Suppression des données sur /dev/$disk"
         echo "2) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
-        echo "3) Réinstallation de Arch Linux ==> Partition Racine"
-        echo "4) Installation en double boot  ==> Windows - Arch Linux"
-        echo "5) Annuler"
+        echo "3) Installation en double boot  ==> Windows - Arch Linux"
+
+        echo "0) Annuler"
         echo
 
         log_prompt "INFO" && read -p "Votre Choix (1-5) " choice && echo
@@ -154,15 +157,16 @@ else
         case $choice in
             1)
                 clear
-                # erase_disk "$disk"
-                preparation_disk "$disk"
-                show_disk_partitions "Montage des partitions" "$disk"
-                mount_partitions "$disk"
-                show_disk_partitions "Montage des partitions terminée" "$disk"
+                erase_disk "$disk"
                 break
                 ;;
             2)
                 clear
+                echo
+                log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage du disque "/dev/$disk" ? (y/n) : " choice && echo
+                if [[ "$choice" =~ ^[yY]$ ]]; then
+                    erase_disk "$disk"                    
+                fi
                 preparation_disk "$disk"
                 show_disk_partitions "Montage des partitions" "$disk"
                 mount_partitions "$disk"
@@ -171,38 +175,22 @@ else
                 install_base_chroot "$disk"
                 install_base_secu
                 activate_service
+
+                log_prompt "INFO" && echo "Installation terminée ==> redémarrer votre systeme"
                 break
                 ;;
             3)
-                log_prompt "INFO" && read -p "Entrez le nom de la partition root à effacer (ex: sda3) : " partition && echo
-                if [ -b "/dev/$partition" ]; then
-                    erase_partition "$partition"
-                else
-                    echo "Partition invalide !"
-                fi
-
+                clear
+                echo
+                show_disk_partitions "Montage des partitions" "$disk"
+                echo
+                double_boot
                 log_prompt "INFO" && echo "A venir" && echo
 
                 break
                 ;;
-            4)
-                log_prompt "INFO" && read -p "Entrez le nom de la partition pour l'installation de arch linux : " partition && echo
-                if [ -b "/dev/$partition" ]; then
-                    preparation_disk "$partition"
-                    show_disk_partitions "Montage des partitions" "$partition"
-                    # mount_partitions "$partition"
-                    # show_disk_partitions "Montage des partitions terminée" "$partition"
-                    # install_base "$partition"
-                    # install_base_chroot "$partition"
-                    # install_base_secu
-                    # activate_service
-                    
-                else
-                    echo "Partition invalide !"
-                fi
-                break
-                ;;
-            5)
+
+            0)
                 echo "Opération annulée"
                 exit 0
                 ;;

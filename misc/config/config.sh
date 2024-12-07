@@ -11,13 +11,17 @@ KEYMAP="fr"
 HOSTNAME="archlinux-alexandre"
 SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 
-# Configuration générale
+##############################################################################
+## Configuration générale                                              
+##############################################################################
 
-MOUNT_POINT="/mnt"
+MOUNT_POINT="/mnt" # Point de montage
 FILE_SWAP="Off"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
 
-DEFAULT_FS_TYPE="btrfs" # Choix entre "btrfs" , "ext4" pour pour Systeme de fichier
+DEFAULT_FS_TYPE="btrfs" # Choix entre "btrfs" ou "ext4" pour pour le Systeme de fichier
 
+## Toute modification incorrecte peut entraîner des perturbations lors de l'installation        
+#######################################################################################                                       
 DEFAULT_BOOT_TYPE="fat32"
 DEFAULT_BOOT_SIZE="512MiB"
 
@@ -49,6 +53,7 @@ elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
     PARTITIONS_CREATE+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
 
 fi
+#######################################################################################
 
 # Détection automatique du mode de démarrage (UEFI ou Legacy)
 if [ -d /sys/firmware/efi ]; then
