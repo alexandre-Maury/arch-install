@@ -14,7 +14,7 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 # Configuration générale
 
 MOUNT_POINT="/mnt"
-FILE_SWAP="On"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
+FILE_SWAP="Off"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
 
 DEFAULT_FS_TYPE="ext4" # Systeme de fichier - btrfs | ext4
 
