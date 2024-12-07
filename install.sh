@@ -149,7 +149,7 @@ else
         echo "1) Nettoyage du disque          ==> Suppression des données sur /dev/$disk"
         echo "2) Installation de Arch Linux   ==> Espace total sur le disque /dev/$disk"
         echo "3) Installation en double boot  ==> Windows - Arch Linux"
-
+        echo
         echo "0) Annuler"
         echo
 
