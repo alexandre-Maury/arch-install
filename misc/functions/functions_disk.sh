@@ -715,12 +715,6 @@ mount_partitions() {
         esac
     done
 
-    # Vérifier s'il faut créer @home
-    local create_home=false
-    if [[ -z "$home_partition" ]]; then
-        create_home=true
-    fi
-
     # Monter la partition root EN PREMIER
     if [[ -n "$root_partition" ]]; then
         local NAME=$(lsblk "/dev/$root_partition" -n -o NAME)
