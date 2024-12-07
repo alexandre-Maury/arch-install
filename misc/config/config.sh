@@ -14,15 +14,15 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 # Configuration générale
 
 MOUNT_POINT="/mnt"
-FILE_SWAP="On"  # Fichier de mémoire virtuelle - On | Off
+FILE_SWAP="Off"  # Fichier de mémoire virtuelle - On | Off
 
-DEFAULT_BOOT_TYPE="fat32"
 DEFAULT_FS_TYPE="ext4" # Systeme de fichier - btrfs | ext4
 
 
 # Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
 if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
 
+    DEFAULT_BOOT_TYPE="fat32"
     DEFAULT_BOOT_SIZE="512MiB"
     DEFAULT_MNT_SIZE="100GiB"
     DEFAULT_HOME_SIZE="100%"
@@ -36,6 +36,7 @@ if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
 
 elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
 
+    DEFAULT_BOOT_TYPE="fat32"
     DEFAULT_BOOT_SIZE="512MiB"
     DEFAULT_MNT_SIZE="100%"
 
