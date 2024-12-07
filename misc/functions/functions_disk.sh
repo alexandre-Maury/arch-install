@@ -738,17 +738,12 @@ mount_partitions() {
             # Créer les sous-volumes de base
             btrfs subvolume create "${MOUNT_POINT}/@"
             btrfs subvolume create "${MOUNT_POINT}/@root"
+            btrfs subvolume create "${MOUNT_POINT}/@home"
             btrfs subvolume create "${MOUNT_POINT}/@srv"
             btrfs subvolume create "${MOUNT_POINT}/@log"
             btrfs subvolume create "${MOUNT_POINT}/@cache"
             btrfs subvolume create "${MOUNT_POINT}/@tmp"
             btrfs subvolume create "${MOUNT_POINT}/@snapshots"
-            
-            # Créer @home si nécessaire
-            if [ "$create_home" = true ]; then
-                btrfs subvolume create "${MOUNT_POINT}/@home"
-                log_prompt "INFO" && echo "Sous-volume @home créé car aucune partition home n'existe."
-            fi
             
             # Démonter la partition temporaire
             umount "${MOUNT_POINT}"
@@ -758,6 +753,7 @@ mount_partitions() {
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$NAME" "${MOUNT_POINT}"
 
             mkdir -p "${MOUNT_POINT}/root"
+            mkdir -p "${MOUNT_POINT}/home"
             mkdir -p "${MOUNT_POINT}/srv"
             mkdir -p "${MOUNT_POINT}/var/log"
             mkdir -p "${MOUNT_POINT}/var/cache/"
@@ -765,17 +761,12 @@ mount_partitions() {
             mkdir -p "${MOUNT_POINT}/snapshots"
 
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$NAME" "${MOUNT_POINT}/root"
+            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$NAME" "${MOUNT_POINT}/tmp"
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$NAME" "${MOUNT_POINT}/srv"
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$NAME" "${MOUNT_POINT}/var/log"
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$NAME" "${MOUNT_POINT}/var/cache"
             mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$NAME" "${MOUNT_POINT}/snapshots"
-            
-            # Si @home a été créé, le monter
-            if [ "$create_home" = true ]; then
-                mkdir -p "${MOUNT_POINT}/home"
-                mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
-            fi
 
         elif [[ "$FSTYPE" == "ext4" ]]; then
             # Pour les autres systèmes de fichiers
@@ -793,18 +784,10 @@ mount_partitions() {
     # Monter la partition home (si existante)
     if [[ -n "$home_partition" ]]; then
         local NAME=$(lsblk "/dev/$home_partition" -n -o NAME)
-        local FSTYPE=$(lsblk "/dev/$home_partition" -n -o FSTYPE)
+        # local FSTYPE=$(lsblk "/dev/$home_partition" -n -o FSTYPE)
 
-        # Vérifier si c'est un système de fichiers Btrfs
-        if [[ "$FSTYPE" == "btrfs" ]]; then
-            mkdir -p "${MOUNT_POINT}/home"
-            btrfs subvolume create "${MOUNT_POINT}/@home"
-            mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$NAME" "${MOUNT_POINT}/home"
-
-        elif [[ "$FSTYPE" == "ext4" ]]; then
-            mkdir -p "${MOUNT_POINT}/home"  
-            mount "/dev/$NAME" "${MOUNT_POINT}/home"
-        fi
+        mkdir -p "${MOUNT_POINT}/home"  
+        mount "/dev/$NAME" "${MOUNT_POINT}/home"
     fi
 
     # Monter les autres partitions

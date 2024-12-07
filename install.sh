@@ -154,8 +154,7 @@ else
         case $choice in
             1)
                 clear
-                # erase_disk "$disk"
-                preparation_disk "$disk"
+                erase_disk "$disk"
                 break
                 ;;
             2)
