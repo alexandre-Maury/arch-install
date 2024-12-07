@@ -563,8 +563,42 @@ mount_partitions() {
 
 double_boot() {
 
-    log_prompt "INFO" && read -p "Entrez le nom de la partition de démarrage de votre systeme (ex. sda1) : " partition_boot
-    log_prompt "INFO" && read -p "Entrez le nom de la partition pour l'installation de arch linux (ex. sda3) : " partition_root
+    echo "Pour procéder à une installation en double boot, vous devez préparer les partitions nécessaires."
+    echo "Voici les partitions à spécifier :"
+    echo
+    echo "1. Partition '/boot' :"
+    echo "   - Cette partition est créée au préalable, soit par Windows, soit par une autre distribution Linux."
+    echo "   - Assurez-vous qu'elle est formatée avec un système de fichiers compatible (par exemple, FAT32 pour UEFI)."
+    echo "   - Assurez-vous de connaître le nom de la partition (ex. /dev/sda1)."
+    echo
+    echo "2. Partition '/root' :"
+    echo "   - La partition racine doit être créée par vos soins, généralement en réduisant la partition système existante."
+    echo "   - Vous pouvez utiliser un outil de partitionnement pour redimensionner la partition actuelle afin de libérer de l'espace pour la partition 'root'."
+    echo "   - Assurez-vous de créer la partition avec un système de fichiers approprié, comme EXT4 ou Btrfs."
+    echo
+    echo "   - ⚠️ Si vous choisissez Btrfs comme système de fichiers, la partition '/home' **ne sera pas une partition physique distincte**, mais un **sous-volume** créé dans la partition 'root'."
+    echo "   - En Btrfs, il est courant de gérer les répertoires comme /home, /var, /tmp, etc., en tant que sous-volumes dans la même partition 'root'."
+    echo
+    echo "3. Partition '/home' (facultative ==> uniquement en ext4) :"
+    echo "   - Si vous souhaitez avoir une partition séparée pour vos fichiers personnels (répertoire /home), vous pouvez créer une partition 'home'."
+    echo "   - Cela permet de séparer vos données personnelles du système d'exploitation, facilitant les réinstallations sans perte de données."
+    echo "   - La partition 'home' doit être formatée avec un système de fichiers compatible (EXT4)."
+    echo
+    echo "⚠️ Remarque importante : Veuillez être prudent lors de la réduction des partitions existantes."
+    echo "     La réduction incorrecte d'une partition système pourrait entraîner une perte de données."
+    echo "     Assurez-vous d'avoir effectué une sauvegarde complète avant de procéder."
+
+
+    # Demander confirmation à l'utilisateur pour procéder à la création des partitions
+    log_prompt "INFO" && read -rp "Souhaitez-vous continuer ? (y/n) : " user_input
+
+    if [[ "$user_input" != "y" && "$user_input" != "Y" ]]; then
+        log_prompt "WARNING" && echo "Annulation du processus. Aucune installation n'a été faite."
+        exit 1
+    fi
+
+    log_prompt "INFO" && read -p "Entrez le nom de la partition de démarrage < boot > de votre systeme (ex. sda1) : " partition_boot
+    log_prompt "INFO" && read -p "Entrez le nom de la partition racine < root > pour l'installation de arch linux (ex. sda3) : " partition_root
     echo
     log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage de la partition "/dev/$partition_root" ? (y/n) : " choice 
     if [[ "$choice" =~ ^[yY]$ ]]; then
