@@ -15,37 +15,32 @@ SSH_PORT=2222  # Remplacez 2222 par le port que vous souhaitez utiliser
 
 MOUNT_POINT="/mnt"
 FILE_SWAP="Off"  # Choix entre "On" pour fichier swap, "Off" pour partition swap
-
 DEFAULT_FS_TYPE="ext4" # Systeme de fichier - btrfs | ext4
+
+DEFAULT_BOOT_TYPE="fat32"
+DEFAULT_BOOT_SIZE="512MiB"
+
+# Définition des partitions avec leurs tailles et types
+partitions=(
+    "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
+)
 
 
 # Ajouter la partition home seulement si DEFAULT_FS_TYPE est "ext4"
 if [[ "${DEFAULT_FS_TYPE}" == "ext4" ]]; then
 
-    DEFAULT_BOOT_TYPE="fat32"
-    DEFAULT_BOOT_SIZE="512MiB"
     DEFAULT_MNT_SIZE="100GiB"
     DEFAULT_HOME_SIZE="100%"
-
-    # Définition des partitions avec leurs tailles et types
-    partitions=(
-        "test:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
-        "home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}"
-    )
+    
+    partitions+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
+    partitions+=("home:${DEFAULT_HOME_SIZE}:${DEFAULT_FS_TYPE}")
 
 elif [[ "${DEFAULT_FS_TYPE}" == "btrfs" ]]; then
 
-    DEFAULT_BOOT_TYPE="fat32"
-    DEFAULT_BOOT_SIZE="512MiB"
     DEFAULT_MNT_SIZE="100%"
 
     # Définition des partitions avec leurs tailles et types
-    partitions=(
-        "boot:${DEFAULT_BOOT_SIZE}:${DEFAULT_BOOT_TYPE}"
-        "root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}"
-    )
+    partitions+=("root:${DEFAULT_MNT_SIZE}:${DEFAULT_FS_TYPE}")
 
 fi
 

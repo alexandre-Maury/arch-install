@@ -581,9 +581,11 @@ preparation_disk() {
     echo "====================================="
     echo "Partitions à créer :"
     
-    echo "Tableau des partitions après définition :"
     for partition_info in "${partitions[@]}"; do
         echo "$partition_info"
+        # Séparer chaque partition en trois parties : nom, taille, type
+        IFS=':' read -r name size fs_type <<< "$partition_info"
+        echo "Nom : $name, Taille : $size, Type : $fs_type"
     done
 
     echo "====================================="
