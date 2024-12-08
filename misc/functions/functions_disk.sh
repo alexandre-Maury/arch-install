@@ -563,6 +563,8 @@ mount_partitions() {
 
 double_boot() {
 
+    local file_swap=False
+
     echo "Pour procéder à une installation en double boot, vous devez préparer les partitions nécessaires."
     echo "Voici les partitions à spécifier :"
     echo
@@ -575,14 +577,14 @@ double_boot() {
     echo "   - La partition racine doit être créée par vos soins, généralement en réduisant la partition système existante."
     echo "   - Vous pouvez utiliser un outil de partitionnement pour redimensionner la partition actuelle afin de libérer de l'espace pour la partition 'root'."
     echo "   - Assurez-vous de créer la partition avec un système de fichiers approprié, comme EXT4 ou Btrfs."
-    echo
-    echo "   - ⚠️ Si vous choisissez Btrfs comme système de fichiers, la partition '/home' **ne sera pas une partition physique distincte**, mais un **sous-volume** créé dans la partition 'root'."
-    echo "   - En Btrfs, il est courant de gérer les répertoires comme /home, /var, /tmp, etc., en tant que sous-volumes dans la même partition 'root'."
+    echo "   - Taille recommandée : 20-30 GiB minimum (selon vos besoins)."
+
     echo
     echo "3. Partition '/home' (facultative ==> uniquement en ext4) :"
     echo "   - Si vous souhaitez avoir une partition séparée pour vos fichiers personnels (répertoire /home), vous pouvez créer une partition 'home'."
     echo "   - Cela permet de séparer vos données personnelles du système d'exploitation, facilitant les réinstallations sans perte de données."
     echo "   - La partition 'home' doit être formatée avec un système de fichiers compatible (EXT4)."
+    echo "   - Taille recommandée : selon la capacité de stockage et l'utilisation (par exemple, 50-100 GiB ou plus)."
     echo
     echo "⚠️ Remarque importante : Veuillez être prudent lors de la réduction des partitions existantes."
     echo "     La réduction incorrecte d'une partition système pourrait entraîner une perte de données."
@@ -597,17 +599,81 @@ double_boot() {
         exit 1
     fi
 
-    log_prompt "INFO" && read -p "Entrez le nom de la partition de démarrage < boot > de votre systeme (ex. sda1) : " partition_boot
-    log_prompt "INFO" && read -p "Entrez le nom de la partition racine < root > pour l'installation de arch linux (ex. sda3) : " partition_root
+    log_prompt "INFO" && read -p "1- Saisir le nom de la partition de démarrage /boot de votre système (ex. sda1) : " partition_boot
+    log_prompt "INFO" && read -p "2- (facultatif) Souhaitez-vous activer la gestion de la mémoire virtuelle /swap : (y/n) " use_swap_virtuel
+
+    if [[ "$use_swap_virtuel" =~ ^[yY]$ ]]; then
+        echo
+        echo "1) Partition Swap"
+        echo "2) Fichier Swap"
+        echo
+        log_prompt "INFO" && read -p "Votre Choix (1-2) : " choice
+
+        if [[ "$choice" == "1" ]]; then
+            log_prompt "INFO" && read -p "3- Saisir le nom de la partition /swap de votre système (ex. sda2) : " partition_swap
+        elif [[ "$choice" == "2" ]]; then
+            file_swap=True
+            log_prompt "INFO" && read -p "Taille du fichier swap (ex. 8GiB) : " swap_file_size
+        fi
+    fi
+
+    log_prompt "INFO" && read -p "4- Saisir le nom de la partition racine /root pour l'installation de Arch Linux (ex. sda3) : " partition_root
+    log_prompt "INFO" && read -p "5- Saisir le nom du système de fichiers souhaité pour /root (ex. btrfs/ext4) : " use_fs_type
+    log_prompt "INFO" && read -p "Souhaitez-vous procéder au nettoyage de la partition /dev/$partition_root ? (y/n) : " shred_partition_root
+
+    if [[ "$use_fs_type" == "ext4" ]]; then
+        log_prompt "INFO" && read -p "(facultatif) Avez-vous une partition physique /home pour vos fichiers personnels ? (y/n) " use_home_partition
+        if [[ "$use_home_partition" =~ ^[yY]$ ]]; then
+            log_prompt "INFO" && read -p "6- Saisir le nom de la partition /home pour vos fichiers personnels (ex. sda4) : " partition_home
+            log_prompt "INFO" && read -p "Souhaitez-vous procéder au nettoyage de la partition /dev/$partition_home ? (y/n) : " shred_partition_home
+        fi
+    fi
+
     echo
-    log_prompt "INFO" && read -p "Souhaitez-vous procéder au formatage de la partition "/dev/$partition_root" ? (y/n) : " choice 
-    if [[ "$choice" =~ ^[yY]$ ]]; then
+
+    if [[ "$shred_partition_root" =~ ^[yY]$ ]]; then
         erase_partition "$partition_root"
+    fi
+
+    if [[ "$shred_partition_home" =~ ^[yY]$ ]]; then
+        erase_partition "$partition_home"
     fi
 
 
 
-    mkdir -p "${MOUNT_POINT}/boot"
-    mount "/dev/$NAME" "${MOUNT_POINT}/boot"
+    if [[ "$use_fs_type" == "btrfs" ]]; then
+        log_prompt "INFO" && echo "Formatage de la partition root /dev/$partition_root en BTRFS"
+        # mkfs.btrfs -f -L "root" "/dev/$partition_root" || {
+        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
+        #     exit 1
+        # }
+
+    elif [[ "$use_fs_type" == "ext4" ]]; then
+        log_prompt "INFO" && echo "Formatage de la partition root /dev/$partition_root en EXT4"
+        # mkfs.ext4 -L "root" "/dev/$partition_root" || {
+        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
+        #     exit 1
+        # }
+    fi
+
+    if [[ "$use_fs_type" == "ext4" && "$use_home_partition" =~ ^[yY]$ ]]; then
+        log_prompt "INFO" && echo "Formatage de la partition home /dev/$partition_home en EXT4"
+        # mkfs.ext4 -L "home" "/dev/$partition_home" || {
+        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_home en $use_fs_type"
+        #     exit 1
+        # }
+    fi
+
+    if [[ "$use_swap_virtuel" =~ ^[yY]$ && "$file_swap" == True ]]; then
+        log_prompt "INFO" && echo "activation du fichier swap"
+    elif [[ "$use_swap_virtuel" =~ ^[yY]$ && "$file_swap" == False ]]; then
+        log_prompt "INFO" && echo "activation de la partition swap"
+    fi
+
+
+
+
+    # mkdir -p "${MOUNT_POINT}/boot"
+    # mount "/dev/$NAME" "${MOUNT_POINT}/boot"
 
 }
