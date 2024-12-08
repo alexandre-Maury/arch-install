@@ -182,9 +182,6 @@ install_base_chroot() {
                 "btrfs")
                     arch-chroot ${MOUNT_POINT} pacman -S btrfs-progs --noconfirm 
                     ;;
-                *)
-                    log_prompt "ERROR" && echo "Système de fichiers non pris en charge : ${root_fs}" && exit 1
-                    ;;
             esac
 
             if [[ "$MODE" == "UEFI" ]]; then

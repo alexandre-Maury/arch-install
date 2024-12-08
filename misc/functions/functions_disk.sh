@@ -632,10 +632,12 @@ double_boot() {
     echo
 
     if [[ "$shred_partition_root" =~ ^[yY]$ ]]; then
+        log_prompt "INFO" && echo "Nettoyage de la partition /dev/$partition_root"
         erase_partition "$partition_root"
     fi
 
     if [[ "$shred_partition_home" =~ ^[yY]$ ]]; then
+        log_prompt "INFO" && echo "Nettoyage de la partition /dev/$partition_home"
         erase_partition "$partition_home"
     fi
 
@@ -643,37 +645,94 @@ double_boot() {
 
     if [[ "$use_fs_type" == "btrfs" ]]; then
         log_prompt "INFO" && echo "Formatage de la partition root /dev/$partition_root en BTRFS"
-        # mkfs.btrfs -f -L "root" "/dev/$partition_root" || {
-        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
-        #     exit 1
-        # }
+        mkfs.btrfs -f -L "root" "/dev/$partition_root" || {
+            log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
+            exit 1
+        }
+
+        log_prompt "INFO" && echo "Montage de la partition /dev/$partition_root"
+
+        mount "/dev/$partition_root" "${MOUNT_POINT}"
+
+        # Créer les sous-volumes de base
+        btrfs subvolume create "${MOUNT_POINT}/@"
+        btrfs subvolume create "${MOUNT_POINT}/@root"
+        btrfs subvolume create "${MOUNT_POINT}/@home"
+        btrfs subvolume create "${MOUNT_POINT}/@srv"
+        btrfs subvolume create "${MOUNT_POINT}/@log"
+        btrfs subvolume create "${MOUNT_POINT}/@cache"
+        btrfs subvolume create "${MOUNT_POINT}/@tmp"
+        btrfs subvolume create "${MOUNT_POINT}/@snapshots"
+            
+        # Démonter la partition temporaire
+        umount "${MOUNT_POINT}"
+
+        # Remonter les sous-volumes avec des options spécifiques
+        echo "Montage des sous-volumes Btrfs avec options optimisées..."
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@ "/dev/$partition_root" "${MOUNT_POINT}"
+
+        # Créer les sous-répertoires
+        mkdir -p "${MOUNT_POINT}/root"
+        mkdir -p "${MOUNT_POINT}/home"
+        mkdir -p "${MOUNT_POINT}/srv"
+        mkdir -p "${MOUNT_POINT}/var/log"
+        mkdir -p "${MOUNT_POINT}/var/cache/"
+        mkdir -p "${MOUNT_POINT}/tmp"
+        mkdir -p "${MOUNT_POINT}/snapshots"
+
+        # Montage des sous-volumes
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@root "/dev/$partition_root" "${MOUNT_POINT}/root"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@home "/dev/$partition_root" "${MOUNT_POINT}/home"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@tmp "/dev/$partition_root" "${MOUNT_POINT}/tmp"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@srv "/dev/$partition_root" "${MOUNT_POINT}/srv"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@log "/dev/$partition_root" "${MOUNT_POINT}/var/log"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@cache "/dev/$partition_root" "${MOUNT_POINT}/var/cache"
+        mount -o defaults,noatime,compress=zstd,commit=120,subvol=@snapshots "/dev/$partition_root" "${MOUNT_POINT}/snapshots"
 
     elif [[ "$use_fs_type" == "ext4" ]]; then
         log_prompt "INFO" && echo "Formatage de la partition root /dev/$partition_root en EXT4"
-        # mkfs.ext4 -L "root" "/dev/$partition_root" || {
-        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
-        #     exit 1
-        # }
+        mkfs.ext4 -L "root" "/dev/$partition_root" || {
+            log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_root en $use_fs_type"
+            exit 1
+        }
+
+        log_prompt "INFO" && echo "Montage de la partition /dev/$partition_root"
+
+        mount "/dev/$partition_root" "${MOUNT_POINT}"
     fi
 
     if [[ "$use_fs_type" == "ext4" && "$use_home_partition" =~ ^[yY]$ ]]; then
         log_prompt "INFO" && echo "Formatage de la partition home /dev/$partition_home en EXT4"
-        # mkfs.ext4 -L "home" "/dev/$partition_home" || {
-        #     log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_home en $use_fs_type"
-        #     exit 1
-        # }
+        mkfs.ext4 -L "home" "/dev/$partition_home" || {
+            log_prompt "ERROR" && echo "Erreur lors du formatage de la partition $partition_home en $use_fs_type"
+            exit 1
+        }
+
+        log_prompt "INFO" && echo "Montage de la partition /dev/$partition_home"
+
+        mount "/dev/$partition_home" "${MOUNT_POINT}"
     fi
 
     if [[ "$use_swap_virtuel" =~ ^[yY]$ && "$file_swap" == True ]]; then
-        log_prompt "INFO" && echo "activation du fichier swap"
+        log_prompt "INFO" && echo "activation du fichier linux-swap"
     elif [[ "$use_swap_virtuel" =~ ^[yY]$ && "$file_swap" == False ]]; then
-        log_prompt "INFO" && echo "activation de la partition swap"
+        log_prompt "INFO" && echo "activation de la partition linux-swap"
+
+        partition_number=$(echo "/dev/$partition_swap" | sed 's/[^0-9]*\([0-9]*\)$/\1/')
+
+        parted --script -a optimal "/dev/$partition_swap" set "$partition_number" swap on
+
+        mkswap -L "linux-swap" "/dev/$partition_swap" && swapon "/dev/$partition_swap" || {
+            log_prompt "ERROR" && echo "Erreur lors du formatage ou de l'activation de la partition $partition_swap"
+            exit 1
+        }
     fi
 
+    log_prompt "INFO" && echo "Montage de la partition $partition_boot"
+    mkdir -p "${MOUNT_POINT}/boot"
+    mount "/dev/$partition_boot" "${MOUNT_POINT}/boot"
 
 
 
-    # mkdir -p "${MOUNT_POINT}/boot"
-    # mount "/dev/$NAME" "${MOUNT_POINT}/boot"
 
 }
