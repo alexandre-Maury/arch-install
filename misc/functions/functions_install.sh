@@ -186,7 +186,8 @@ install_base_chroot() {
 
             if [[ "$MODE" == "UEFI" ]]; then
                 arch-chroot ${MOUNT_POINT} pacman -S efibootmgr --noconfirm 
-                arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+                # arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+                arch-chroot ${MOUNT_POINT} grub-install --target=x86_64-efi --bootloader-id=grub-uefi --recheck
 
             elif [[ "$MODE" == "LEGACY" ]]; then
                 arch-chroot ${MOUNT_POINT} grub-install --target=i386-pc --no-floppy /dev/"${disk}"
@@ -199,6 +200,14 @@ install_base_chroot() {
 
             if [[ -n "${kernel_option}" ]]; then
                 sed -i "s/^GRUB_CMDLINE_LINUX_DEFAULT=\"/&$kernel_option /" /etc/default/grub
+            fi
+
+
+            if grep -q "^#GRUB_DISABLE_OS_PROBER=false" "/etc/default/grub"; then
+                sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+                echo "La ligne 'GRUB_DISABLE_OS_PROBER=false' a été décommentée."
+            else
+                echo "La ligne 'GRUB_DISABLE_OS_PROBER=false' est déjà active ou absente."
             fi
 
             arch-chroot ${MOUNT_POINT} grub-mkconfig -o /boot/grub/grub.cfg
@@ -227,7 +236,8 @@ install_base_chroot() {
 
             log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot"
             arch-chroot ${MOUNT_POINT} pacman -S efibootmgr os-prober --noconfirm 
-            arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
+            # arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
+            arch-chroot ${MOUNT_POINT} bootctl --esp-path=/boot/efi --boot-path=/boot install
 
             {
                 echo "title   Arch Linux"

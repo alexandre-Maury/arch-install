@@ -729,8 +729,8 @@ double_boot() {
     fi
 
     log_prompt "INFO" && echo "Montage de la partition $partition_boot"
-    mkdir -p "${MOUNT_POINT}/boot"
-    mount "/dev/$partition_boot" "${MOUNT_POINT}/boot"
+    mkdir -p "${MOUNT_POINT}/boot/efi"
+    mount "/dev/$partition_boot" "${MOUNT_POINT}/boot/efi"
 
 
 
