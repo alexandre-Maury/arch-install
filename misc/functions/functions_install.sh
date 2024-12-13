@@ -237,7 +237,7 @@ install_base_chroot() {
             log_prompt "INFO" && echo "arch-chroot - Installation de systemd-boot"
             arch-chroot ${MOUNT_POINT} pacman -S efibootmgr os-prober --noconfirm 
             # arch-chroot ${MOUNT_POINT} bootctl --path=/boot install
-            arch-chroot ${MOUNT_POINT} bootctl --esp-path=/boot/efi --boot-path=/boot install
+            arch-chroot ${MOUNT_POINT} bootctl --esp-path=/boot/efi --boot-path=/boot/efi install
 
             {
                 echo "title   Arch Linux"
