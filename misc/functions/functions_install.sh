@@ -172,6 +172,17 @@ install_base_chroot() {
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-vesa mesa --noconfirm
     fi
 
+    # Modification des paramètres de compression
+    sed -i 's/^COMPRESSION=.*/COMPRESSION="xz"/' "${MOUNT_POINT}/etc/mkinitcpio.conf"
+    sed -i 's/^COMPRESSION_OPTIONS=.*/COMPRESSION_OPTIONS=(-9e)/' "${MOUNT_POINT}/etc/mkinitcpio.conf"
+    sed -i 's/^MODULES_DECOMPRESS=.*/MODULES_DECOMPRESS="yes"/' "${MOUNT_POINT}/etc/mkinitcpio.conf"
+
+    arch-chroot "${MOUNT_POINT}" mkinitcpio -P | while IFS= read -r line; do
+        echo "$line"
+    done
+
+    echo "mkinitcpio terminé avec succès."
+
     while true; do
         if [[ "${BOOTLOADER}" == "grub" ]]; then
             log_prompt "INFO" && echo "arch-chroot - Installation de GRUB" 
@@ -268,14 +279,6 @@ install_base_chroot() {
             continue  # Revient au début de la boucle pour recommencer avec le nouveau choix
         fi
     done
-
-    log_prompt "INFO" && echo "arch-chroot - mkinitcpio"
-
-    arch-chroot "${MOUNT_POINT}" mkinitcpio -p linux | while IFS= read -r line; do
-        echo "$line"
-    done
-
-    echo "mkinitcpio terminé avec succès."
 
 }
 
