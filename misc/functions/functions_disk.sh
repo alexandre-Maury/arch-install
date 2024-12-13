@@ -517,7 +517,7 @@ mount_partitions() {
         fi
     fi
 
-    # Monter la partition boot (AJOUT EFI)
+    # Monter la partition boot 
     if [[ -n "$boot_partition" ]]; then
         local NAME=$(lsblk "/dev/$boot_partition" -n -o NAME)
         mkdir -p "${MOUNT_POINT}/boot"
