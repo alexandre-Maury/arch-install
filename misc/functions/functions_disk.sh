@@ -520,8 +520,8 @@ mount_partitions() {
     # Monter la partition boot (AJOUT EFI)
     if [[ -n "$boot_partition" ]]; then
         local NAME=$(lsblk "/dev/$boot_partition" -n -o NAME)
-        mkdir -p "${MOUNT_POINT}/boot/efi"
-        mount "/dev/$NAME" "${MOUNT_POINT}/boot/efi"
+        mkdir -p "${MOUNT_POINT}/boot"
+        mount "/dev/$NAME" "${MOUNT_POINT}/boot"
     fi
 
     # Monter la partition home 
@@ -729,8 +729,8 @@ double_boot() {
     fi
 
     log_prompt "INFO" && echo "Montage de la partition $partition_boot"
-    mkdir -p "${MOUNT_POINT}/boot/efi"
-    mount "/dev/$partition_boot" "${MOUNT_POINT}/boot/efi"
+    mkdir -p "${MOUNT_POINT}/boot"
+    mount "/dev/$partition_boot" "${MOUNT_POINT}/boot"
 
 
 
