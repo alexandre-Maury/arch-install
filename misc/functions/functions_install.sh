@@ -323,13 +323,13 @@ install_base_secu() {
 
     ## arch-chroot Création d'un mot de passe root                                             
     while true; do
-        log_prompt "INFO" && read -p "Souhaitez-vous changer le mot de passe root (Y/n) : " pass_root && echo ""
+        log_prompt "INFO" && read -p "Souhaitez-vous changer le mot de passe root (Y/n) : " pass_root 
             
         # Vérifie la validité de l'entrée
         if [[ "$pass_root" =~ ^[yYnN]$ ]]; then
             break
         else
-            log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)." && echo ""
+            log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)." 
         fi
     done
 
@@ -337,8 +337,8 @@ install_base_secu() {
     if [[ "$pass_root" =~ ^[yY]$ ]]; then
         # Demande de changer le mot de passe root
         while true; do
-            read -p "Veuillez entrer le nouveau mot de passe pour root : " -s new_pass && echo ""
-            read -p "Confirmez le mot de passe : " -s confirm_pass && echo ""
+            read -p "Veuillez entrer le nouveau mot de passe pour root : " -s new_pass 
+            read -p "Confirmez le mot de passe : " -s confirm_pass 
 
             # Vérifie si les mots de passe correspondent
             if [[ "$new_pass" == "$confirm_pass" ]]; then
@@ -346,7 +346,7 @@ install_base_secu() {
                 echo -e "$new_pass\n$new_pass" | arch-chroot ${MOUNT_POINT} passwd "root"
                 break
             else
-                log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
+                log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." 
             fi
         done
     fi
@@ -357,25 +357,25 @@ install_base_secu() {
 
     # Demande tant que la réponse n'est pas y/Y ou n/N
     while true; do
-        log_prompt "INFO" && read -p "Souhaitez-vous créer un utilisateur (Y/n) : " add_user && echo ""
+        log_prompt "INFO" && read -p "Souhaitez-vous créer un utilisateur (Y/n) : " add_user 
             
         # Vérifie la validité de l'entrée
         if [[ "$add_user" =~ ^[yYnN]$ ]]; then
             break
         else
-            log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)." && echo ""
+            log_prompt "WARNING" && echo "Veuillez répondre par Y (oui) ou N (non)."
         fi
     done
 
     # Si l'utilisateur répond Y ou y
     if [[ "$add_user" =~ ^[yY]$ ]]; then
-        log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité : " sudo_user && echo ""
+        log_prompt "INFO" && read -p "Saisir le nom d'utilisateur souhaité : " sudo_user
         arch-chroot ${MOUNT_POINT} useradd -m -G wheel,audio,video,optical,storage,power,input "$sudo_user"
 
         # Demande de changer le mot de passe $USER
         while true; do
-            read -p "Veuillez entrer le nouveau mot de passe pour $sudo_user : " -s new_pass  && echo ""
-            read -p "Confirmez le mot de passe : " -s confirm_pass  && echo ""
+            read -p "Veuillez entrer le nouveau mot de passe pour $sudo_user : " -s new_pass  
+            read -p "Confirmez le mot de passe : " -s confirm_pass  
 
             # Vérifie si les mots de passe correspondent
             if [[ "$new_pass" == "$confirm_pass" ]]; then
@@ -383,7 +383,7 @@ install_base_secu() {
                 echo -e "$new_pass\n$new_pass" | arch-chroot ${MOUNT_POINT} passwd $sudo_user
                 break
             else
-                log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer." && echo ""
+                log_prompt "WARNING" && echo "Les mots de passe ne correspondent pas. Veuillez réessayer."
             fi
         done
     fi
