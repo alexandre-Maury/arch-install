@@ -24,8 +24,9 @@ install_base() {
 
     if [[  $total_mem -gt 8000000 ]]; then  # Vérifie si la mémoire totale est supérieure à 8 Go
         log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " coeurs."
-        sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
-        sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les paramètres de compression
+
+        sed -i "s/^#\?MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$nc\"/" ${MOUNT_POINT}/etc/makepkg.conf # Modifie les makeflags dans makepkg.conf
+        sed -i "s/^#\?COMPRESSXZ=(.*)/COMPRESSXZ=(xz -c -T $nc -z -)/" ${MOUNT_POINT}/etc/makepkg.conf # Modifie les paramètres de compression
 
     fi
 
@@ -131,7 +132,8 @@ install_base_chroot() {
         kernel_option="nvidia_drm.modeset=1"
         arch-chroot "${MOUNT_POINT}" pacman -S nvidia mesa --noconfirm
         modprobe $modules
-        sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+
+        sed -i "s/^#\?MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
 
         [ ! -d "${MOUNT_POINT}/etc/pacman.d/hooks" ] && mkdir -p ${MOUNT_POINT}/etc/pacman.d/hooks
 
@@ -156,7 +158,8 @@ install_base_chroot() {
         kernel_option="amdgpu.dc=1"
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-amdgpu xf86-video-ati mesa --noconfirm 
         modprobe $modules
-        sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+
+        sed -i "s/^#\?MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
 
     elif [[ "$gpu_vendor" == *"intel"* ]]; then
         log_prompt "INFO" && echo "arch-chroot - Configuration pour GPU Intel"
@@ -164,7 +167,8 @@ install_base_chroot() {
         kernel_option="i915.enable_psr=1"
         arch-chroot "${MOUNT_POINT}" pacman -S xf86-video-intel mesa --noconfirm 
         modprobe $modules
-        sed -i "s/^MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
+
+        sed -i "s/^#\?MODULES=.*/MODULES=($modules)/" ${MOUNT_POINT}/etc/mkinitcpio.conf
 
     else
         log_prompt "WARNING" && echo "arch-chroot - Aucun GPU reconnu, installation des pilottes générique : xf86-video-vesa mesa"
