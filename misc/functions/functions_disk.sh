@@ -312,8 +312,8 @@ preparation_disk() {
     echo "----------------------------"
     echo
     echo "Veuillez vérifier les informations ci-dessus avant de continuer."
-    echo "Vous pouvez modifier le fichier config.sh pour adapter la configuration selon vos besoins."
-
+    log_prompt "INFO" && echo "Vous pouvez modifier le fichier config.sh pour adapter la configuration selon vos besoins."
+    echo
     # Demander confirmation à l'utilisateur pour procéder à la création des partitions
     log_prompt "INFO" && read -rp "Souhaitez-vous continuer avec cette configuration ? (y/n) : " user_input
 
