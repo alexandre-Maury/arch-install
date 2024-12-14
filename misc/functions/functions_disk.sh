@@ -733,7 +733,4 @@ double_boot() {
     mkdir -p "${MOUNT_POINT}/boot"
     mount "/dev/$partition_boot" "${MOUNT_POINT}/boot"
 
-
-
-
 }
