@@ -26,7 +26,7 @@ install_base() {
         log_prompt "INFO" && echo "Changement des paramètres de compression pour " $nc " coeurs."
         sed -i "s/#MAKEFLAGS=\"-j2\"/MAKEFLAGS=\"-j$nc\"/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les makeflags dans makepkg.conf
         sed -i "s/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -T $nc -z -)/g" ${MOUNT_POINT}/etc/makepkg.conf  # Modifie les paramètres de compression
-        log_prompt "SUCCESS" && echo "OK" && echo ""
+
     fi
 
     ## Définir le fuseau horaire + local                                                  
@@ -106,7 +106,6 @@ install_base_chroot() {
     log_prompt "INFO" && echo "Installation des paquages de bases"
     arch-chroot ${MOUNT_POINT} pacman -Syu --noconfirm
     arch-chroot ${MOUNT_POINT} pacman -S man-db man-pages nano vim sudo pambase sshpass xdg-user-dirs git curl tar wget --noconfirm
-    log_prompt "SUCCESS" && echo "OK" && echo ""
 
     # Détection du type de processeur
     case "$cpu_vendor" in
