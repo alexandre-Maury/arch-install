@@ -733,4 +733,10 @@ double_boot() {
     mkdir -p "${MOUNT_POINT}/boot"
     mount "/dev/$partition_boot" "${MOUNT_POINT}/boot"
 
+    # nettoyage de EFI WINDOWS
+    rm -rf ${MOUNT_POINT}/boot/EFI/Microsoft/Boot/Fonts/*
+    rm -rf ${MOUNT_POINT}/boot/EFI/Microsoft/Recovery/*
+    find ${MOUNT_POINT}/boot/EFI/Microsoft/Boot/ -type d -mindepth 1 -maxdepth 1 -not -name "en-US" -exec rm -rf {} \;
+
+
 }
