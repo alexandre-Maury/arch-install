@@ -186,11 +186,10 @@ else
                 show_disk_partitions "Montage des partitions" "$disk"
                 echo
                 double_boot
-                
                 install_base "$disk"
-                install_base_chroot "$disk"
-                install_base_secu
-                activate_service
+                # install_base_chroot "$disk"
+                # install_base_secu
+                # activate_service
                 log_prompt "INFO" && echo "A venir" && echo
 
                 break
